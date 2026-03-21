@@ -1,36 +1,39 @@
 import { useState, useEffect } from "react";
 
-// ── Colour palette — vibrant & bold ──────────────────────────────────────────
+// ── Colour palette — Apple-inspired ──────────────────────────────────────────
 const C = {
-  bg: "#0d0d1a",
-  surface: "#13132b",
-  card: "#1a1a35",
-  accent: "#ff6b6b",
-  accentB: "#ffd93d",
-  accentC: "#6bcb77",
-  accentD: "#4d96ff",
-  purple: "#c77dff",
-  orange: "#ff9f1c",
-  text: "#f0f0ff",
-  muted: "#8888aa",
-  border: "#2a2a50",
-  green: "#6bcb77",
-  red: "#ff6b6b",
-  blue: "#4d96ff",
-  yellow: "#ffd93d",
+  bg: "#000000",
+  surface: "#0d0d0d",
+  card: "#1c1c1e",
+  accent: "#0a84ff",
+  accentB: "#30d158",
+  accentC: "#30d158",
+  accentD: "#0a84ff",
+  purple: "#bf5af2",
+  orange: "#ff9f0a",
+  text: "#ffffff",
+  muted: "#8e8e93",
+  border: "#2c2c2e",
+  green: "#30d158",
+  red: "#ff453a",
+  blue: "#0a84ff",
+  yellow: "#ffd60a",
+  teal: "#5ac8fa",
+  pink: "#ff375f",
 };
 
 const GRAD = {
-  header: "linear-gradient(135deg, #ff6b6b22, #4d96ff22)",
-  card1: "linear-gradient(135deg, #ff6b6b15, #ffd93d10)",
-  card2: "linear-gradient(135deg, #4d96ff15, #c77dff10)",
-  card3: "linear-gradient(135deg, #6bcb7715, #4d96ff10)",
+  header: "linear-gradient(160deg, #0a84ff18, #30d15812)",
+  card1: "linear-gradient(160deg, #0a84ff12, #bf5af210)",
+  card2: "linear-gradient(160deg, #30d15812, #0a84ff10)",
+  card3: "linear-gradient(160deg, #5ac8fa12, #30d15810)",
 };
 
 const TABS = ["Today", "Meals", "Workout", "Shopping", "Progress", "Supps"];
 const ICONS = { Today: "🏠", Meals: "🍽️", Workout: "💪", Shopping: "🛒", Progress: "📈", Supps: "💊" };
 const TARGET_LBS = 14;
 const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+const FONT = "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif";
 
 // ── All meals gluten-free, no cow's milk, no oats ────────────────────────────
 const ALL_MEALS = [
@@ -312,7 +315,7 @@ const REVIEWS = [
 
 const Card = ({ children, style = {}, onClick }) => (
   <div onClick={onClick} style={{
-    background: C.card, border: `1px solid ${C.border}`, borderRadius: 18,
+    background: C.card, border: `1px solid ${C.border}`, borderRadius: 20,
     padding: 18, marginBottom: 14, cursor: onClick ? "pointer" : "default",
     transition: "transform 0.15s, border-color 0.2s", ...style,
   }}
@@ -336,7 +339,7 @@ const Btn = ({ children, onClick, color = C.accent, style = {}, disabled, small 
   <button onClick={onClick} disabled={disabled} style={{
     background: `linear-gradient(135deg, ${color}, ${color}cc)`,
     color: color === C.accentB || color === C.accentC ? "#111" : "#fff",
-    border: "none", borderRadius: 12,
+    border: "none", borderRadius: 14,
     padding: small ? "7px 14px" : "11px 22px",
     fontFamily: "inherit", fontWeight: 700,
     fontSize: small ? 12 : 13, cursor: disabled ? "not-allowed" : "pointer",
@@ -383,7 +386,7 @@ const Setup = ({ onDone }) => {
   })() : null;
 
   return (
-    <div style={{ minHeight: "100vh", background: C.bg, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 24px", fontFamily: "Georgia, serif" }}>
+    <div style={{ minHeight: "100vh", background: C.bg, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 24px", fontFamily: FONT }}>
       <div style={{ textAlign: "center", marginBottom: 32 }}>
         <div style={{ fontSize: 56, marginBottom: 8 }}>🏃</div>
         <h1 style={{ background: `linear-gradient(135deg, ${C.accent}, ${C.accentB})`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", fontSize: 34, margin: 0, fontWeight: 800 }}>LeanPlan</h1>
@@ -894,7 +897,7 @@ export default function App() {
   }, [profile, entries, favourites, removed, loading]);
 
   if (loading) return (
-    <div style={{ background: C.bg, minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "Georgia, serif" }}>
+    <div style={{ background: C.bg, minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FONT }}>
       <div style={{ textAlign: "center" }}>
         <div style={{ fontSize: 48, marginBottom: 12 }}>🏃</div>
         <p style={{ color: C.muted, fontSize: 14 }}>Loading your plan...</p>
@@ -916,11 +919,11 @@ export default function App() {
   };
 
   return (
-    <div style={{ background: C.bg, minHeight: "100vh", fontFamily: "Georgia, serif", color: C.text, maxWidth: 430, margin: "0 auto" }}>
-      <style>{`* { box-sizing: border-box; } input, select { outline: none; } ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-thumb { background: #2a2a50; border-radius: 4px; }`}</style>
+    <div style={{ background: C.bg, minHeight: "100vh", fontFamily: FONT, color: C.text, maxWidth: 430, margin: "0 auto" }}>
+      <style>{`* { box-sizing: border-box; } input, select { outline: none; } body { font-family: ${FONT}; } ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-thumb { background: #3a3a3c; border-radius: 4px; }`}</style>
 
       {/* Header */}
-      <div style={{ padding: "14px 18px 12px", background: `linear-gradient(180deg, ${C.surface} 0%, ${C.bg} 100%)`, borderBottom: `1px solid ${C.border}`, position: "sticky", top: 0, zIndex: 10 }}>
+      <div style={{ padding: "14px 18px 12px", background: "rgba(0,0,0,0.85)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", borderBottom: `1px solid ${C.border}`, position: "sticky", top: 0, zIndex: 10 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div>
             <h1 style={{ margin: 0, fontSize: 19, fontWeight: 800, background: `linear-gradient(90deg, ${C.accent}, ${C.accentB})`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>🏃 LeanPlan</h1>
@@ -948,9 +951,9 @@ export default function App() {
       </div>
 
       {/* Tab bar */}
-      <div style={{ position: "fixed", bottom: 0, left: "50%", transform: "translateX(-50%)", width: "100%", maxWidth: 430, background: C.surface, borderTop: `1px solid ${C.border}`, display: "flex", padding: "6px 0 14px" }}>
+      <div style={{ position: "fixed", bottom: 0, left: "50%", transform: "translateX(-50%)", width: "100%", maxWidth: 430, background: "rgba(0,0,0,0.92)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", borderTop: `1px solid ${C.border}`, display: "flex", padding: "6px 0 14px" }}>
         {TABS.map((t, i) => {
-          const colors = [C.accent, C.accentB, C.accentD, C.accentC, C.purple, C.orange];
+          const colors = ["#0a84ff", "#30d158", "#5ac8fa", "#ff9f0a", "#bf5af2", "#ff375f"];
           const col = colors[i];
           return (
             <div key={t} onClick={() => setTab(t)} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer", gap: 3, padding: "5px 0" }}>
