@@ -24,6 +24,15 @@ const ICONS = { Today:"🏠", Meals:"🍽️", Workout:"💪", Progress:"📈", 
 const TARGET_DEFAULT = 14;
 const pick = arr => arr[Math.floor(Math.random() * arr.length)];
 const todayKey = () => new Date().toISOString().split("T")[0];
+
+// ── Pace options ─────────────────────────────────────────────────────────────
+const PACE_OPTIONS = [
+  { id:"slow",   label:"Steady",   lbs:0.5, weeks_per_stone:28, color:"#34c759", desc:"0.5 lbs/week — very sustainable, minimal hunger, ideal for long-term habit building.", warning:null },
+  { id:"normal", label:"Moderate", lbs:1,   weeks_per_stone:14, color:"#007aff", desc:"1 lb/week — the gold standard. Sustainable fat loss with good energy levels.", warning:null },
+  { id:"fast",   label:"Active",   lbs:1.5, weeks_per_stone:10, color:"#ff9500", desc:"1.5 lbs/week — achievable with consistent training and a tighter calorie deficit.", warning:"⚠️ Requires a strict 750 cal/day deficit. Make sure protein intake stays high (120g+) to protect muscle." },
+  { id:"vfast",  label:"Aggressive",lbs:2,  weeks_per_stone:7,  color:"#ff3b30", desc:"2 lbs/week — maximum recommended rate. Only sustainable short-term.", warning:"🚨 2 lbs/week is the upper safe limit. Below this risks muscle loss, fatigue and nutrient deficiency. Requires 1000 cal/day deficit — consult your GP if you have any health concerns." },
+];
+const getPace = id => PACE_OPTIONS.find(p => p.id === id) || PACE_OPTIONS[1];
 const weekStart = () => { const d=new Date(); d.setDate(d.getDate()-d.getDay()+1); return d; };
 
 // ── Allergens & dislikes ─────────────────────────────────────────────────────
@@ -279,12 +288,52 @@ const StatBox = ({ label, val, color, sub }) => (
   </div>
 );
 
+
+// ── Pace Picker ───────────────────────────────────────────────────────────────
+const PacePicker = ({ value, onChange, targetLbs }) => {
+  const selected = getPace(value);
+  const etaWeeks = Math.ceil(targetLbs / selected.lbs);
+  const etaMonths = (etaWeeks / 4.3).toFixed(1);
+  return (
+    <div>
+      <div style={{ display:"flex", gap:8, marginBottom:12, flexWrap:"wrap" }}>
+        {PACE_OPTIONS.map(p => (
+          <div key={p.id} onClick={() => onChange(p.id)} style={{
+            flex:"1 1 calc(50% - 4px)", background: value===p.id ? `${p.color}18` : C.card,
+            border:`2px solid ${value===p.id ? p.color : C.border}`, borderRadius:12,
+            padding:"10px 12px", cursor:"pointer", transition:"all 0.2s",
+          }}>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:2 }}>
+              <span style={{ color: value===p.id ? p.color : C.text, fontWeight:700, fontSize:14 }}>{p.label}</span>
+              <span style={{ color: p.color, fontSize:12, fontWeight:700 }}>{p.lbs} lb/wk</span>
+            </div>
+            <div style={{ color:C.muted, fontSize:11 }}>{p.weeks_per_stone} weeks / stone</div>
+          </div>
+        ))}
+      </div>
+      {/* ETA summary */}
+      <div style={{ background:`${selected.color}10`, border:`1px solid ${selected.color}33`, borderRadius:12, padding:"12px 14px", marginBottom: selected.warning ? 10 : 0 }}>
+        <p style={{ color:C.text, fontSize:14, margin:0 }}>
+          📅 At this pace: <strong style={{ color:selected.color }}>{etaWeeks} weeks</strong> (~{etaMonths} months) to lose {targetLbs/14 % 1 === 0 ? targetLbs/14 : (targetLbs/14).toFixed(1)} stone
+        </p>
+        <p style={{ color:C.muted, fontSize:12, margin:"4px 0 0" }}>{selected.desc}</p>
+      </div>
+      {/* Warning */}
+      {selected.warning && (
+        <div style={{ background:"#ff3b3010", border:"1px solid #ff3b3033", borderRadius:12, padding:"10px 14px" }}>
+          <p style={{ color:C.red, fontSize:13, margin:0, lineHeight:1.6 }}>{selected.warning}</p>
+        </div>
+      )}
+    </div>
+  );
+};
+
 // ── Onboarding ────────────────────────────────────────────────────────────────
 const STEPS = ["Welcome","Goal","Weight","Allergies","Dislikes","Done"];
 
 const Onboarding = ({ onDone }) => {
   const [step, setStep] = useState(0);
-  const [data, setData] = useState({ name:"", goal:"lose_weight", targetLbs:14, startWeight:"", unit:"lbs", allergies:[], dislikes:[], workoutsPerWeek:3 });
+  const [data, setData] = useState({ name:"", goal:"lose_weight", targetLbs:14, startWeight:"", unit:"lbs", allergies:[], dislikes:[], workoutsPerWeek:3, paceId:"normal" });
 
   const update = (k, v) => setData(d => ({...d, [k]:v}));
   const toggleArr = (k, v) => setData(d => ({...d, [k]: d[k].includes(v) ? d[k].filter(x=>x!==v) : [...d[k], v]}));
@@ -381,6 +430,10 @@ const Onboarding = ({ onDone }) => {
                 ))}
               </div>
             </div>
+            <div style={{ marginBottom:24 }}>
+              <p style={{ color:C.muted, fontSize:13, marginBottom:8 }}>How fast do you want to lose weight?</p>
+              <PacePicker value={data.paceId} onChange={v=>update("paceId",v)} targetLbs={data.targetLbs} />
+            </div>
             <Btn onClick={()=>setStep(3)} disabled={!data.startWeight} style={{ width:"100%" }}>Next →</Btn>
           </div>
         )}
@@ -418,7 +471,7 @@ const Onboarding = ({ onDone }) => {
             <h2 style={{ fontSize:28, fontWeight:700, color:C.text, marginBottom:12 }}>You're all set{data.name ? `, ${data.name}` : ""}!</h2>
             <p style={{ color:C.muted, fontSize:15, lineHeight:1.6, marginBottom:32 }}>Your plan is personalised and ready. All meals are gluten-free, dairy-free, and avoid everything you've flagged.</p>
             <div style={{ background:C.card, borderRadius:16, padding:16, marginBottom:24, textAlign:"left", border:`1px solid ${C.border}` }}>
-              {[["🎯","Goal",data.goal.replace("_"," ")],["⚖️","Target",`Lose ${data.targetLbs} lbs`],["🏋️","Workouts",`${data.workoutsPerWeek}x per week`],["🚫","Allergies",data.allergies.length>0?data.allergies.join(", "):"None selected"],["😐","Dislikes",data.dislikes.length>0?data.dislikes.slice(0,3).join(", ")+(data.dislikes.length>3?` +${data.dislikes.length-3} more`:""):"None selected"]].map(([ico,k,v])=>(
+              {[["🎯","Goal",data.goal.replace("_"," ")],["⚖️","Target",`Lose ${data.targetLbs} lbs`],["📅","Pace",`${getPace(data.paceId).lbs} lbs/week (${getPace(data.paceId).label})`],["🏋️","Workouts",`${data.workoutsPerWeek}x per week`],["🚫","Allergies",data.allergies.length>0?data.allergies.join(", "):"None selected"],["😐","Dislikes",data.dislikes.length>0?data.dislikes.slice(0,3).join(", ")+(data.dislikes.length>3?` +${data.dislikes.length-3} more`:""):"None selected"]].map(([ico,k,v])=>(
                 <div key={k} style={{ display:"flex", gap:12, padding:"8px 0", borderBottom:`1px solid ${C.border}` }}>
                   <span>{ico}</span>
                   <span style={{ color:C.muted, fontSize:14, minWidth:80 }}>{k}</span>
@@ -497,7 +550,7 @@ const TodayTab = ({ profile, entries, mealLog, setMealLog, workoutLog }) => {
   const todayMeals = mealLog[today]||[];
   const todayWorked = workoutLog[today];
   const weeksIn = entries.length;
-  const eta = lost<profile.targetLbs && weeksIn>0 ? Math.ceil((profile.targetLbs-lost)/(lost/weeksIn)) : null;
+  const pace = getPace(profile.paceId||'normal'); const eta = lost<profile.targetLbs ? Math.ceil((profile.targetLbs-lost)/pace.lbs) : null;
 
   return (
     <div>
@@ -505,7 +558,7 @@ const TodayTab = ({ profile, entries, mealLog, setMealLog, workoutLog }) => {
       <div style={{ background:`linear-gradient(145deg, ${C.accent}, #5ac8fa)`, borderRadius:20, padding:"20px 18px", marginBottom:16, color:"#fff" }}>
         <p style={{ opacity:0.85, fontSize:14, margin:"0 0 4px" }}>Hello{profile.name?`, ${profile.name}`:""}  👋</p>
         <h2 style={{ fontSize:26, fontWeight:700, margin:"0 0 4px" }}>Lose {profile.targetLbs/14} Stone</h2>
-        <p style={{ opacity:0.8, fontSize:13, margin:"0 0 14px" }}>{lost.toFixed(1)} lbs lost · {Math.max(0,profile.targetLbs-lost).toFixed(1)} to go · {pct}%{eta?` · ~${eta} weeks left`:""}</p>
+        <p style={{ opacity:0.8, fontSize:13, margin:"0 0 14px" }}>{lost.toFixed(1)} lbs lost · {Math.max(0,profile.targetLbs-lost).toFixed(1)} to go · {pct}%{eta?` · ~${eta} wks`:""} · {pace.lbs} lb/wk</p>
         <div style={{ background:"rgba(255,255,255,0.25)", borderRadius:99, height:8, overflow:"hidden" }}>
           <div style={{ width:`${pct}%`, height:"100%", background:"rgba(255,255,255,0.9)", borderRadius:99, transition:"width 0.6s" }} />
         </div>
@@ -908,7 +961,7 @@ const ProgressTab = ({ profile, entries, setEntries }) => {
   const lost = Math.max(0, profile.startWeightLbs-cur);
   const wks = entries.length;
   const avg = wks>0?(lost/wks).toFixed(1):null;
-  const eta = lost<profile.targetLbs&&avg&&parseFloat(avg)>0?Math.ceil((profile.targetLbs-lost)/parseFloat(avg)):null;
+  const pace = getPace(profile.paceId||'normal'); const eta = lost<profile.targetLbs ? Math.ceil((profile.targetLbs-lost)/pace.lbs) : null;
   const target = profile.startWeightLbs-profile.targetLbs;
   const pct = Math.min(100,Math.round((lost/profile.targetLbs)*100));
 
@@ -1020,7 +1073,7 @@ const ProfileTab = ({ profile, setProfile, onReset }) => {
 
       {editing==="weight" && (
         <>
-          <p style={{ color:C.muted, fontSize:14, marginBottom:16 }}>Update your weight target</p>
+          <p style={{ color:C.muted, fontSize:14, marginBottom:16 }}>Update your weight target and pace</p>
           <div style={{ marginBottom:16 }}>
             <p style={{ color:C.muted, fontSize:13, marginBottom:8 }}>Weight loss target</p>
             <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
@@ -1028,6 +1081,10 @@ const ProfileTab = ({ profile, setProfile, onReset }) => {
                 <Chip key={lbs} color={C.accent} active={tempData.targetLbs===lbs} onClick={()=>setTempData(d=>({...d,targetLbs:lbs}))}>{lbs/14} stone ({lbs} lbs)</Chip>
               ))}
             </div>
+          </div>
+          <div style={{ marginBottom:16 }}>
+            <p style={{ color:C.muted, fontSize:13, marginBottom:8 }}>How fast do you want to lose weight?</p>
+            <PacePicker value={tempData.paceId||"normal"} onChange={v=>setTempData(d=>({...d,paceId:v}))} targetLbs={tempData.targetLbs||14} />
           </div>
         </>
       )}
@@ -1077,7 +1134,8 @@ const ProfileTab = ({ profile, setProfile, onReset }) => {
 
       <Section title="Goals">
         <Row label="Main goal" value={profile.goal.replace("_"," ")} onClick={()=>startEdit("goal")} />
-        <Row label="Weight target" value={`Lose ${profile.targetLbs/14} stone (${profile.targetLbs} lbs)`} onClick={()=>startEdit("weight")} last />
+        <Row label="Weight target" value={`Lose ${profile.targetLbs/14} stone (${profile.targetLbs} lbs)`} onClick={()=>startEdit("weight")} />
+        <Row label="Weekly pace" value={`${getPace(profile.paceId||'normal').lbs} lbs/week — ${getPace(profile.paceId||'normal').label}`} onClick={()=>startEdit("weight")} last />
       </Section>
 
       <Section title="Training">
