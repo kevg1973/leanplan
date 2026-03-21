@@ -12,7 +12,56 @@ const C = {
 };
 
 const TABS = ["Today","Meals","Train","Track","Profile"];
-const ICONS = { Today:"🏠", Meals:"🍽️", Train:"💪", Track:"📊", Profile:"⚙️" };
+
+// ── SVG Icon system ───────────────────────────────────────────────────────────
+const Icon = ({ name, size=22, color="currentColor", style={} }) => {
+  const paths = {
+    home:      <><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H5a1 1 0 01-1-1V9.5z" fill="none" stroke={color} strokeWidth="1.8" strokeLinejoin="round"/><path d="M9 21V12h6v9" stroke={color} strokeWidth="1.8" strokeLinecap="round"/></>,
+    meals:     <><circle cx="12" cy="12" r="9" fill="none" stroke={color} strokeWidth="1.8"/><path d="M12 7v5l3 3" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></>,
+    train:     <><path d="M6 4v16M18 4v16M6 12h12" stroke={color} strokeWidth="1.8" strokeLinecap="round"/><circle cx="6" cy="4" r="2" fill={color}/><circle cx="6" cy="20" r="2" fill={color}/><circle cx="18" cy="4" r="2" fill={color}/><circle cx="18" cy="20" r="2" fill={color}/></>,
+    track:     <><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></>,
+    profile:   <><circle cx="12" cy="8" r="4" fill="none" stroke={color} strokeWidth="1.8"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round"/></>,
+    water:     <><path d="M12 2C12 2 5 10 5 15a7 7 0 0014 0c0-5-7-13-7-13z" fill="none" stroke={color} strokeWidth="1.8" strokeLinejoin="round"/></>,
+    fire:      <><path d="M12 2c0 0-5 5-5 10a5 5 0 0010 0C17 7 12 2 12 2z" fill="none" stroke={color} strokeWidth="1.8" strokeLinejoin="round"/><path d="M12 12c0 0-2 2-2 4a2 2 0 004 0c0-2-2-4-2-4z" fill={color}/></>,
+    tip:       <><circle cx="12" cy="12" r="10" fill="none" stroke={color} strokeWidth="1.8"/><path d="M12 8v4M12 16h.01" stroke={color} strokeWidth="2" strokeLinecap="round"/></>,
+    check:     <><polyline points="20 6 9 17 4 12" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></>,
+    star:      <><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" fill="none" stroke={color} strokeWidth="1.8" strokeLinejoin="round"/></>,
+    starFill:  <><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" fill={color} stroke={color} strokeWidth="1.8" strokeLinejoin="round"/></>,
+    heart:     <><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" fill="none" stroke={color} strokeWidth="1.8" strokeLinejoin="round"/></>,
+    calendar:  <><rect x="3" y="4" width="18" height="18" rx="2" fill="none" stroke={color} strokeWidth="1.8"/><line x1="16" y1="2" x2="16" y2="6" stroke={color} strokeWidth="1.8" strokeLinecap="round"/><line x1="8" y1="2" x2="8" y2="6" stroke={color} strokeWidth="1.8" strokeLinecap="round"/><line x1="3" y1="10" x2="21" y2="10" stroke={color} strokeWidth="1.8"/></>,
+    weight:    <><circle cx="12" cy="12" r="9" fill="none" stroke={color} strokeWidth="1.8"/><path d="M8 12h8M12 8v8" stroke={color} strokeWidth="1.8" strokeLinecap="round"/></>,
+    ruler:     <><path d="M2 12h20M2 12l4-4M2 12l4 4M6 8v8M10 10v4M14 10v4M18 8v8" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round"/></>,
+    chart:     <><polyline points="4 20 4 4" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round"/><polyline points="4 20 20 20" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round"/><polyline points="4 16 8 10 12 13 16 7 20 4" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></>,
+    barbell:   <><line x1="2" y1="12" x2="22" y2="12" stroke={color} strokeWidth="1.8" strokeLinecap="round"/><rect x="2" y="9" width="3" height="6" rx="1" fill={color}/><rect x="19" y="9" width="3" height="6" rx="1" fill={color}/><rect x="6" y="7" width="3" height="10" rx="1" fill={color}/><rect x="15" y="7" width="3" height="10" rx="1" fill={color}/></>,
+    run:       <><circle cx="16" cy="4" r="2" fill={color}/><path d="M8 21l4-8 4 4 2-6" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/><path d="M6 13l2-2 4 1" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></>,
+    settings:  <><circle cx="12" cy="12" r="3" fill="none" stroke={color} strokeWidth="1.8"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" stroke={color} strokeWidth="1.8" strokeLinecap="round"/></>,
+    arrow:     <><line x1="5" y1="12" x2="19" y2="12" stroke={color} strokeWidth="1.8" strokeLinecap="round"/><polyline points="12 5 19 12 12 19" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></>,
+    plus:      <><line x1="12" y1="5" x2="12" y2="19" stroke={color} strokeWidth="1.8" strokeLinecap="round"/><line x1="5" y1="12" x2="19" y2="12" stroke={color} strokeWidth="1.8" strokeLinecap="round"/></>,
+    minus:     <><line x1="5" y1="12" x2="19" y2="12" stroke={color} strokeWidth="1.8" strokeLinecap="round"/></>,
+    close:     <><line x1="18" y1="6" x2="6" y2="18" stroke={color} strokeWidth="1.8" strokeLinecap="round"/><line x1="6" y1="6" x2="18" y2="18" stroke={color} strokeWidth="1.8" strokeLinecap="round"/></>,
+    chevron:   <><polyline points="9 18 15 12 9 6" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></>,
+    chevronD:  <><polyline points="6 9 12 15 18 9" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></>,
+    chevronU:  <><polyline points="18 15 12 9 6 15" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></>,
+    snowflake: <><line x1="12" y1="2" x2="12" y2="22" stroke={color} strokeWidth="1.8" strokeLinecap="round"/><line x1="2" y1="12" x2="22" y2="12" stroke={color} strokeWidth="1.8" strokeLinecap="round"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07" stroke={color} strokeWidth="1.8" strokeLinecap="round"/><line x1="19.07" y1="4.93" x2="4.93" y2="19.07" stroke={color} strokeWidth="1.8" strokeLinecap="round"/></>,
+    flame:     <><path d="M12 2c0 0-4 6-4 10a4 4 0 008 0C16 8 12 2 12 2z" fill="none" stroke={color} strokeWidth="1.8" strokeLinejoin="round"/></>,
+    note:      <><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" fill="none" stroke={color} strokeWidth="1.8"/><polyline points="14 2 14 8 20 8" fill="none" stroke={color} strokeWidth="1.8"/><line x1="8" y1="13" x2="16" y2="13" stroke={color} strokeWidth="1.8" strokeLinecap="round"/><line x1="8" y1="17" x2="12" y2="17" stroke={color} strokeWidth="1.8" strokeLinecap="round"/></>,
+    medal:     <><circle cx="12" cy="14" r="7" fill="none" stroke={color} strokeWidth="1.8"/><path d="M8.21 3.06L7 7h10l-1.21-3.94A1 1 0 0014.83 2H9.17a1 1 0 00-.96.06z" fill="none" stroke={color} strokeWidth="1.8" strokeLinejoin="round"/><line x1="12" y1="11" x2="12" y2="17" stroke={color} strokeWidth="1.6" strokeLinecap="round"/></>,
+    bag:       <><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" fill="none" stroke={color} strokeWidth="1.8" strokeLinejoin="round"/><line x1="3" y1="6" x2="21" y2="6" stroke={color} strokeWidth="1.8"/><path d="M16 10a4 4 0 01-8 0" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round"/></>,
+    pill:      <><path d="M10.5 20.5L3.5 13.5a5 5 0 017-7l7 7a5 5 0 01-7 7z" fill="none" stroke={color} strokeWidth="1.8"/><line x1="8.5" y1="8.5" x2="15.5" y2="15.5" stroke={color} strokeWidth="1.8" strokeLinecap="round"/></>,
+    info:      <><circle cx="12" cy="12" r="10" fill="none" stroke={color} strokeWidth="1.8"/><line x1="12" y1="8" x2="12" y2="8.01" stroke={color} strokeWidth="2.5" strokeLinecap="round"/><line x1="12" y1="12" x2="12" y2="16" stroke={color} strokeWidth="1.8" strokeLinecap="round"/></>,
+    target:    <><circle cx="12" cy="12" r="10" fill="none" stroke={color} strokeWidth="1.8"/><circle cx="12" cy="12" r="6" fill="none" stroke={color} strokeWidth="1.8"/><circle cx="12" cy="12" r="2" fill={color}/></>,
+    pencil:    <><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></>,
+    restore:   <><polyline points="1 4 1 10 7 10" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></>,
+    warning:   <><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" fill="none" stroke={color} strokeWidth="1.8" strokeLinejoin="round"/><line x1="12" y1="9" x2="12" y2="13" stroke={color} strokeWidth="1.8" strokeLinecap="round"/><line x1="12" y1="17" x2="12.01" y2="17" stroke={color} strokeWidth="2.5" strokeLinecap="round"/></>,
+  };
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" style={{ display:"inline-block", flexShrink:0, ...style }}>
+      {paths[name]||paths.info}
+    </svg>
+  );
+};
+
+const TAB_ICON_MAP = { Today:"home", Meals:"meals", Train:"train", Track:"track", Profile:"profile" };
 const pick = arr => arr[Math.floor(Math.random() * arr.length)];
 const todayKey = () => new Date().toISOString().split("T")[0];
 const fmtDate = d => new Date(d).toLocaleDateString("en-GB",{day:"numeric",month:"short"});
@@ -318,7 +367,7 @@ const Onboarding = ({ onDone }) => {
         </div>}
 
         {step===5&&<div style={{ textAlign:"center", paddingTop:40 }}>
-          <div style={{ fontSize:64, marginBottom:16 }}>✅</div>
+          <div style={{ marginBottom:16, display:"flex", justifyContent:"center" }}><div style={{ width:80, height:80, borderRadius:99, background:`${C.green}18`, border:`2px solid ${C.green}44`, display:"flex", alignItems:"center", justifyContent:"center" }}><Icon name="check" size={40} color={C.green} /></div></div>
           <h2 style={{ fontSize:28, fontWeight:700, color:C.text, marginBottom:12 }}>All set{data.name?`, ${data.name}`:""}!</h2>
           <p style={{ color:C.muted, fontSize:15, lineHeight:1.6, marginBottom:28 }}>Your plan is ready — fully personalised to you.</p>
           <Card style={{ textAlign:"left", marginBottom:24 }}>
@@ -426,7 +475,7 @@ const TodayTab = ({ profile, entries, mealLog, workoutLog, water, setWater, jour
 
       {/* Weekly summary on Mondays */}
       {isMonday&&lastWeekWorkouts>0&&<Card style={{ background:`${C.green}08`, borderColor:`${C.green}33`, marginBottom:12 }}>
-        <p style={{ color:C.green, fontSize:12, fontWeight:700, marginBottom:6 }}>📋 LAST WEEK'S SUMMARY</p>
+        <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:6 }}><Icon name="calendar" size={14} color={C.green} /><p style={{ color:C.green, fontSize:12, fontWeight:700, margin:0 }}>LAST WEEK'S SUMMARY</p></div>
         <p style={{ color:C.text, fontSize:14, margin:0 }}>You completed <strong style={{ color:C.green }}>{lastWeekWorkouts} workout{lastWeekWorkouts!==1?"s":""}</strong> last week. {lastWeekWorkouts>=profile.workoutsPerWeek?"🎯 Goal hit!":"Keep pushing this week!"}</p>
       </Card>}
 
@@ -440,30 +489,30 @@ const TodayTab = ({ profile, entries, mealLog, workoutLog, water, setWater, jour
       {/* Water tracker */}
       <Card>
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10 }}>
-          <p style={{ color:C.muted, fontSize:12, fontWeight:600, letterSpacing:"0.06em", margin:0 }}>💧 WATER TODAY</p>
-          <span style={{ color:C.teal, fontWeight:700, fontSize:15 }}>{todayWater} / 8 glasses</span>
+          <div style={{ display:"flex", alignItems:"center", gap:6 }}><Icon name="water" size={16} color={C.teal} /><p style={{ color:C.muted, fontSize:12, fontWeight:600, letterSpacing:"0.06em", margin:0 }}>WATER TODAY</p></div>
+          <span style={{ color:C.teal, fontWeight:700, fontSize:15 }}>{(todayWater*0.25).toFixed(2)}L / 2.0L</span>
         </div>
         <ProgressBar value={todayWater} max={8} color={C.teal} height={10} />
         <div style={{ display:"flex", gap:8, marginTop:12 }}>
-          <Btn onClick={()=>setWater(w=>({...w,[today]:Math.max(0,(w[today]||0)-1)})) } color={C.teal} outline small style={{ flex:1 }}>−</Btn>
-          <Btn onClick={()=>setWater(w=>({...w,[today]:Math.min(12,(w[today]||0)+1)}))} color={C.teal} small style={{ flex:2 }}>+ Add glass</Btn>
+          <Btn onClick={()=>setWater(w=>({...w,[today]:Math.max(0,(w[today]||0)-1)})) } color={C.teal} outline small style={{ flex:1 }}>− 250ml</Btn>
+          <Btn onClick={()=>setWater(w=>({...w,[today]:Math.min(16,(w[today]||0)+1)}))} color={C.teal} small style={{ flex:2 }}>+ 250ml</Btn>
         </div>
       </Card>
 
       {/* Today status */}
       <div style={{ display:"flex", gap:10, marginBottom:16 }}>
         <div style={{ flex:1, background:C.card, borderRadius:14, padding:14, border:`1px solid ${C.border}`, textAlign:"center" }}>
-          <div style={{ fontSize:22, marginBottom:4 }}>{todayWorked?"✅":"🏋️"}</div>
+          <div style={{ marginBottom:4, display:"flex", justifyContent:"center" }}><Icon name={todayWorked?"check":"barbell"} size={24} color={todayWorked?C.green:C.muted} /></div>
           <div style={{ color:C.text, fontSize:13, fontWeight:600 }}>{todayWorked?todayWorked.type.split("-").join(" "):"Rest day"}</div>
           <div style={{ color:C.muted, fontSize:11 }}>workout</div>
         </div>
         <div style={{ flex:1, background:C.card, borderRadius:14, padding:14, border:`1px solid ${C.border}`, textAlign:"center" }}>
-          <div style={{ fontSize:22, marginBottom:4 }}>🍽️</div>
+          <div style={{ marginBottom:4, display:"flex", justifyContent:"center" }}><Icon name="meals" size={24} color={C.orange} /></div>
           <div style={{ color:C.text, fontSize:13, fontWeight:600 }}>{todayMeals.length} meals</div>
           <div style={{ color:C.muted, fontSize:11 }}>logged today</div>
         </div>
         <div style={{ flex:1, background:C.card, borderRadius:14, padding:14, border:`1px solid ${C.border}`, textAlign:"center" }}>
-          <div style={{ fontSize:22, marginBottom:4 }}>⚖️</div>
+          <div style={{ marginBottom:4, display:"flex", justifyContent:"center" }}><Icon name="weight" size={24} color={C.accent} /></div>
           <div style={{ color:C.text, fontSize:13, fontWeight:600 }}>{cur.toFixed(1)}</div>
           <div style={{ color:C.muted, fontSize:11 }}>lbs current</div>
         </div>
@@ -471,7 +520,7 @@ const TodayTab = ({ profile, entries, mealLog, workoutLog, water, setWater, jour
 
       {/* TDEE info */}
       {tdee&&<Card style={{ borderLeft:`3px solid ${C.green}` }}>
-        <p style={{ color:C.muted, fontSize:12, fontWeight:600, letterSpacing:"0.06em", marginBottom:8 }}>🔥 YOUR CALORIE TARGETS</p>
+        <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:8 }}><Icon name="flame" size={15} color={C.orange} /><p style={{ color:C.muted, fontSize:12, fontWeight:600, letterSpacing:"0.06em", margin:0 }}>YOUR CALORIE TARGETS</p></div>
         <div style={{ display:"flex", gap:8 }}>
           <div style={{ flex:1, textAlign:"center", padding:"8px 0" }}><div style={{ color:C.text, fontSize:17, fontWeight:700 }}>{tdee}</div><div style={{ color:C.muted, fontSize:11 }}>TDEE (maintenance)</div></div>
           <div style={{ width:1, background:C.border }} />
@@ -482,7 +531,7 @@ const TodayTab = ({ profile, entries, mealLog, workoutLog, water, setWater, jour
       {/* Journal */}
       <Card>
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:showJournal?12:0 }}>
-          <p style={{ color:C.muted, fontSize:12, fontWeight:600, letterSpacing:"0.06em", margin:0 }}>📝 DAILY JOURNAL</p>
+          <div style={{ display:"flex", alignItems:"center", gap:6 }}><Icon name="note" size={15} color={C.muted} /><p style={{ color:C.muted, fontSize:12, fontWeight:600, letterSpacing:"0.06em", margin:0 }}>DAILY JOURNAL</p></div>
           <button onClick={()=>setShowJournal(s=>!s)} style={{ background:"none", border:"none", color:C.accent, fontSize:13, cursor:"pointer", fontFamily:FONT, fontWeight:600 }}>{showJournal?"Done":"Write"}</button>
         </div>
         {showJournal&&<textarea value={journal[today]||""} onChange={e=>setJournal(j=>({...j,[today]:e.target.value}))} placeholder="How are you feeling today? Energy levels, sleep, anything notable..." style={{ width:"100%", minHeight:80, background:C.sectionBg, border:`1px solid ${C.border}`, borderRadius:10, padding:"10px 12px", fontSize:14, fontFamily:FONT, color:C.text, outline:"none", resize:"vertical" }} />}
@@ -491,7 +540,7 @@ const TodayTab = ({ profile, entries, mealLog, workoutLog, water, setWater, jour
 
       {/* Tip */}
       <Card style={{ borderLeft:`3px solid ${C.accent}` }}>
-        <p style={{ color:C.accent, fontSize:11, fontWeight:700, letterSpacing:"0.08em", marginBottom:8 }}>💡 TODAY'S TIP</p>
+        <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:8 }}><Icon name="tip" size={15} color={C.accent} /><p style={{ color:C.accent, fontSize:11, fontWeight:700, letterSpacing:"0.08em", margin:0 }}>TODAY'S TIP</p></div>
         <p style={{ color:C.text, fontSize:14, lineHeight:1.75, margin:0 }}>{DAILY_TIPS[tipIdx]}</p>
         <button onClick={()=>setTipIdx(i=>(i+1)%DAILY_TIPS.length)} style={{ background:"none", border:"none", color:C.accent, fontSize:13, cursor:"pointer", marginTop:10, fontFamily:FONT, fontWeight:600 }}>↻ Next tip</button>
       </Card>
@@ -538,7 +587,7 @@ const MealsTab = ({ profile, favourites, setFavourites, removed, setRemoved, mea
   return (
     <div>
       <div style={{ display:"flex", gap:6, marginBottom:16, overflowX:"auto", paddingBottom:2 }}>
-        {[["meals","🍽️ Meals"],["shopping","🛒 Shopping"],["supps","💊 Supplements"]].map(([k,l])=>(
+        {[["meals","Meals"],["shopping","Shopping"],["supps","Supplements"]].map(([k,l])=>(
           <Chip key={k} color={C.accent} active={section===k} onClick={()=>setSection(k)}>{l}</Chip>
         ))}
       </div>
@@ -547,7 +596,7 @@ const MealsTab = ({ profile, favourites, setFavourites, removed, setRemoved, mea
         {/* Daily log summary */}
         {todayLogged.length>0&&<Card style={{ background:`${C.green}08`, borderColor:`${C.green}33` }}>
           <div style={{ display:"flex", justifyContent:"space-between", marginBottom:10 }}>
-            <p style={{ color:C.green, fontSize:12, fontWeight:700, letterSpacing:"0.06em", margin:0 }}>✅ TODAY'S LOG</p>
+            <div style={{ display:"flex", alignItems:"center", gap:6 }}><Icon name="check" size={14} color={C.green} /><p style={{ color:C.green, fontSize:12, fontWeight:700, letterSpacing:"0.06em", margin:0 }}>TODAY'S LOG</p></div>
             <span style={{ color:C.muted, fontSize:12 }}>{todayCals} cal · {todayProt}g protein</span>
           </div>
           {tdee&&<div style={{ marginBottom:10 }}>
@@ -567,7 +616,7 @@ const MealsTab = ({ profile, favourites, setFavourites, removed, setRemoved, mea
 
         {/* Favourites */}
         {favMeals.length>0&&<div onClick={()=>setViewFavs(v=>!v)} style={{ background:`${C.yellow}15`, border:`1px solid ${C.yellow}33`, borderRadius:12, padding:"10px 14px", marginBottom:12, cursor:"pointer", display:"flex", justifyContent:"space-between" }}>
-          <span style={{ color:C.orange, fontWeight:600, fontSize:14 }}>⭐ {favMeals.length} favourite{favMeals.length!==1?"s":""}</span>
+          <div style={{ display:"flex", alignItems:"center", gap:6 }}><Icon name="starFill" size={15} color={C.orange} /><span style={{ color:C.orange, fontWeight:600, fontSize:14 }}>{favMeals.length} favourite{favMeals.length!==1?"s":""}</span></div>
           <span style={{ color:C.muted, fontSize:13 }}>{viewFavs?"▲":"▼"}</span>
         </div>}
         {viewFavs&&favMeals.map(m=><Card key={m.id} style={{ borderColor:`${C.yellow}44` }}>
@@ -608,15 +657,15 @@ const MealsTab = ({ profile, favourites, setFavourites, removed, setRemoved, mea
                   </div>
                 </div>
                 {m.items.map((item,j)=><div key={j} style={{ padding:"3px 10px", background:C.sectionBg, borderRadius:8, fontSize:13, color:C.textSec, marginBottom:3 }}>· {item}</div>)}
-                <p style={{ color:C.accent, fontSize:12, fontWeight:600, marginTop:8, marginBottom:0 }}>{isExp?"▲ Hide method":"▼ How to make this"}</p>
+                <p style={{ color:C.accent, fontSize:12, fontWeight:600, marginTop:8, marginBottom:0 }}>{isExp?"▲ Hide method":"▼ How to prepare this"}</p>
               </div>
               {isExp&&<div style={{ marginTop:12, padding:"12px 14px", background:C.sectionBg, borderRadius:10 }}>
-                <p style={{ color:C.muted, fontSize:11, fontWeight:700, letterSpacing:"0.06em", marginBottom:8 }}>📋 METHOD</p>
+                <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:8 }}><Icon name="note" size={13} color={C.muted} /><p style={{ color:C.muted, fontSize:11, fontWeight:700, letterSpacing:"0.06em", margin:0 }}>METHOD</p></div>
                 {m.method.split("\n").map((step,i)=><p key={i} style={{ color:C.text, fontSize:13, lineHeight:1.7, margin:"0 0 6px" }}>{step}</p>)}
               </div>}
               <div style={{ display:"flex", gap:8, marginTop:12 }}>
-                <button onClick={()=>toggleFav(m.id)} style={{ flex:1, background:isFav?`${C.yellow}20`:"none", border:`1px solid ${isFav?C.yellow:C.border}`, borderRadius:10, padding:"7px 0", color:isFav?C.orange:C.muted, fontSize:13, cursor:"pointer", fontFamily:FONT, fontWeight:600 }}>{isFav?"⭐ Saved":"☆ Fav"}</button>
-                <button onClick={()=>{if(!isLogged)logMeal(m);}} style={{ flex:2, background:isLogged?`${C.green}15`:"none", border:`1px solid ${isLogged?C.green:C.border}`, borderRadius:10, padding:"7px 0", color:isLogged?C.green:C.muted, fontSize:13, cursor:isLogged?"default":"pointer", fontFamily:FONT, fontWeight:600 }}>{isLogged?"✅ Logged":"+ Log meal"}</button>
+                <button onClick={()=>toggleFav(m.id)} style={{ flex:1, background:isFav?`${C.yellow}20`:"none", border:`1px solid ${isFav?C.yellow:C.border}`, borderRadius:10, padding:"7px 0", color:isFav?C.orange:C.muted, fontSize:13, cursor:"pointer", fontFamily:FONT, fontWeight:600 }}>{isFav?"★ Saved":"☆ Fav"}</button>
+                <button onClick={()=>{if(!isLogged)logMeal(m);}} style={{ flex:2, background:isLogged?`${C.green}15`:"none", border:`1px solid ${isLogged?C.green:C.border}`, borderRadius:10, padding:"7px 0", color:isLogged?C.green:C.muted, fontSize:13, cursor:isLogged?"default":"pointer", fontFamily:FONT, fontWeight:600 }}>{isLogged?"✓ Logged":"+ Log meal"}</button>
                 <button onClick={()=>removeM(m.id)} style={{ background:"none", border:`1px solid ${C.border}`, borderRadius:10, padding:"7px 12px", color:C.red, fontSize:13, cursor:"pointer", fontFamily:FONT }}>✕</button>
               </div>
             </Card>;
@@ -655,7 +704,7 @@ const MealsTab = ({ profile, favourites, setFavourites, removed, setRemoved, mea
             })}
           </Section>)}
           <Card style={{ background:`${C.green}08`, borderColor:`${C.green}22` }}>
-            <p style={{ color:C.green, fontSize:12, fontWeight:700, marginBottom:6 }}>💡 SMART SHOPPING</p>
+            <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:6 }}><Icon name="tip" size={14} color={C.green} /><p style={{ color:C.green, fontSize:12, fontWeight:700, margin:0 }}>SMART SHOPPING</p></div>
             <p style={{ color:C.text, fontSize:13, lineHeight:1.7, margin:0 }}>{shoppingList.tip}</p>
           </Card>
         </>}
@@ -663,7 +712,7 @@ const MealsTab = ({ profile, favourites, setFavourites, removed, setRemoved, mea
 
       {section==="supps"&&<>
         <Card style={{ background:`${C.purple}08`, borderColor:`${C.purple}22` }}>
-          <p style={{ color:C.purple, fontSize:12, fontWeight:700, marginBottom:6 }}>💊 SUPPLEMENT GUIDE</p>
+          <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:6 }}><Icon name="pill" size={14} color={C.purple} /><p style={{ color:C.purple, fontSize:12, fontWeight:700, margin:0 }}>SUPPLEMENT GUIDE</p></div>
           <p style={{ color:C.text, fontSize:13, lineHeight:1.7, margin:0 }}>All dairy-free and GF. Tap for details.</p>
         </Card>
         {SUPPS.map((s,i)=><Card key={i} onClick={()=>setSuppOpen(suppOpen===i?null:i)} style={{ borderLeft:`3px solid ${s.color}` }}>
@@ -674,7 +723,7 @@ const MealsTab = ({ profile, favourites, setFavourites, removed, setRemoved, mea
           </div>
           {suppOpen===i&&<div style={{ marginTop:14, paddingTop:14, borderTop:`1px solid ${C.border}` }}>
             <Chip color={s.color}>⏰ {s.timing}</Chip>
-            <p style={{ color:C.muted, fontSize:11, fontWeight:700, letterSpacing:"0.06em", margin:"12px 0 4px" }}>WHY IT HELPS</p>
+            <div style={{ display:"flex", alignItems:"center", gap:5, margin:"12px 0 4px" }}><Icon name="tip" size={12} color={C.muted} /><p style={{ color:C.muted, fontSize:11, fontWeight:700, letterSpacing:"0.06em", margin:0 }}>WHY IT HELPS</p></div>
             <p style={{ color:C.text, fontSize:13, lineHeight:1.75, marginBottom:10 }}>{s.why}</p>
             <div style={{ background:`${s.color}10`, borderRadius:10, padding:"10px 12px", borderLeft:`3px solid ${s.color}` }}>
               <p style={{ color:s.color, fontSize:11, fontWeight:700, marginBottom:4 }}>💡 NOTES</p>
@@ -719,7 +768,7 @@ const TrainTab = ({ profile, workoutLog, setWorkoutLog }) => {
   return (
     <div>
       <div style={{ display:"flex", gap:6, marginBottom:16 }}>
-        {[["calendar","📅 Calendar"],["workout","💪 Workout"],["lifts","🏋️ Lifts"]].map(([k,l])=>(
+        {[["calendar","Calendar"],["workout","Workout"],["lifts","Lifts"]].map(([k,l])=>(
           <Chip key={k} color={C.accent} active={view===k} onClick={()=>setView(k)}>{l}</Chip>
         ))}
       </div>
@@ -744,7 +793,7 @@ const TrainTab = ({ profile, workoutLog, setWorkoutLog }) => {
 
         {/* Rest day planner */}
         <Card style={{ background:`${C.green}08`, borderColor:`${C.green}22` }}>
-          <p style={{ color:C.muted, fontSize:12, fontWeight:600, letterSpacing:"0.06em", marginBottom:8 }}>🗓️ REST DAY PLANNER</p>
+          <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:8 }}><Icon name="calendar" size={14} color={C.green} /><p style={{ color:C.muted, fontSize:12, fontWeight:600, letterSpacing:"0.06em", margin:0 }}>REST DAY PLANNER</p></div>
           <p style={{ color:C.text, fontSize:14, marginBottom:6 }}>Training <strong style={{ color:C.accent }}>{trainDays}x</strong> per week · <strong style={{ color:C.green }}>{restDays} rest days</strong></p>
           <p style={{ color:C.muted, fontSize:13, marginBottom:10 }}>Suggested schedule: <strong style={{ color:C.text }}>{suggestion}</strong></p>
           <div style={{ background:C.sectionBg, borderRadius:10, padding:"10px 12px" }}>
@@ -782,7 +831,7 @@ const TrainTab = ({ profile, workoutLog, setWorkoutLog }) => {
             <h3 style={{ margin:0, fontSize:20, fontWeight:700 }}>{activeWorkout.title}</h3>
             <p style={{ opacity:0.85, fontSize:13, margin:"4px 0 0" }}>{activeWorkout.duration} min · Low impact · Joint safe</p>
           </div>
-          <Section title="🔥 Warm Up">
+          <Section title={<div style={{display:"flex",alignItems:"center",gap:6}}><Icon name="flame" size={13} color={C.orange} /><span>Warm Up</span></div>}>
             {activeWorkout.warmup.map((x,i)=><Row key={i} label={x} last={i===activeWorkout.warmup.length-1} />)}
           </Section>
           {activeWorkout.exercises.map((ex,i)=><Card key={i} style={{ borderLeft:`3px solid ${activeWorkout.color}` }}>
@@ -795,16 +844,16 @@ const TrainTab = ({ profile, workoutLog, setWorkoutLog }) => {
             </div>
             {ex.tip&&<div style={{ background:C.sectionBg, borderRadius:8, padding:"8px 12px", fontSize:12, color:C.textSec, borderLeft:`3px solid ${C.yellow}` }}>💬 {ex.tip}</div>}
           </Card>)}
-          <Section title="❄️ Cool Down">
+          <Section title={<div style={{display:"flex",alignItems:"center",gap:6}}><Icon name="snowflake" size={13} color={C.teal} /><span>Cool Down</span></div>}>
             {activeWorkout.cooldown.map((x,i)=><Row key={i} label={x} last={i===activeWorkout.cooldown.length-1} />)}
           </Section>
           <Card style={{ background:`${activeWorkout.color}08`, borderColor:`${activeWorkout.color}33` }}>
-            <p style={{ color:activeWorkout.color, fontSize:12, fontWeight:700, marginBottom:6 }}>🏅 COACH NOTES</p>
+            <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:6 }}><Icon name="medal" size={14} color={activeWorkout.color} /><p style={{ color:activeWorkout.color, fontSize:12, fontWeight:700, margin:0 }}>COACH NOTES</p></div>
             <p style={{ color:C.text, fontSize:13, lineHeight:1.75, margin:0 }}>{activeWorkout.note}</p>
           </Card>
           <div style={{ display:"flex", gap:8 }}>
             <Btn onClick={()=>setActiveWorkout(null)} outline color={C.accent} style={{ flex:1 }}>← Back</Btn>
-            {!workoutLog[today]&&<Btn onClick={()=>logWorkout(selectedType)} color={C.green} style={{ flex:2 }}>✅ Log This Workout</Btn>}
+            {!workoutLog[today]&&<Btn onClick={()=>logWorkout(selectedType)} color={C.green} style={{ flex:2 }}>✓ Log This Workout</Btn>}
           </div>
         </>}
       </>}
@@ -841,7 +890,7 @@ const LiftTracker = ({ workoutLog }) => {
   return (
     <div>
       <Card style={{ background:`${C.indigo}08`, borderColor:`${C.indigo}22` }}>
-        <p style={{ color:C.indigo, fontSize:12, fontWeight:700, marginBottom:6 }}>🏋️ LIFT TRACKER</p>
+        <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:6 }}><Icon name="barbell" size={14} color={C.indigo} /><p style={{ color:C.indigo, fontSize:12, fontWeight:700, margin:0 }}>LIFT TRACKER</p></div>
         <p style={{ color:C.text, fontSize:13, lineHeight:1.6, margin:0 }}>Log your weights to track progressive overload — the key to getting stronger over time.</p>
       </Card>
 
@@ -935,7 +984,7 @@ const TrackTab = ({ profile, entries, setEntries, measurements, setMeasurements 
   return (
     <div>
       <div style={{ display:"flex", gap:6, marginBottom:16, overflowX:"auto" }}>
-        {[["weight","⚖️ Weight"],["measurements","📏 Measurements"],["stats","📊 Stats"]].map(([k,l])=>(
+        {[["weight","Weight"],["measurements","Measurements"],["stats","Stats"]].map(([k,l])=>(
           <Chip key={k} color={C.purple} active={activeSection===k} onClick={()=>setActiveSection(k)}>{l}</Chip>
         ))}
       </div>
@@ -990,7 +1039,7 @@ const TrackTab = ({ profile, entries, setEntries, measurements, setMeasurements 
 
       {activeSection==="measurements"&&<>
         <Card style={{ background:`${C.pink}08`, borderColor:`${C.pink}22` }}>
-          <p style={{ color:C.pink, fontSize:12, fontWeight:700, marginBottom:6 }}>📏 WHY MEASURE?</p>
+          <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:6 }}><Icon name="ruler" size={14} color={C.pink} /><p style={{ color:C.pink, fontSize:12, fontWeight:700, margin:0 }}>WHY MEASURE?</p></div>
           <p style={{ color:C.text, fontSize:13, lineHeight:1.6, margin:0 }}>The scale can lie — especially with creatine and muscle gain. Measurements show the real body composition changes that matter.</p>
         </Card>
 
@@ -1035,7 +1084,7 @@ const TrackTab = ({ profile, entries, setEntries, measurements, setMeasurements 
         </Section>}
 
         <Card style={{ background:`${C.orange}08`, borderColor:`${C.orange}22` }}>
-          <p style={{ color:C.orange, fontSize:12, fontWeight:700, marginBottom:6 }}>ℹ️ ABOUT BMI</p>
+          <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:6 }}><Icon name="info" size={14} color={C.orange} /><p style={{ color:C.orange, fontSize:12, fontWeight:700, margin:0 }}>ABOUT BMI</p></div>
           <p style={{ color:C.text, fontSize:13, lineHeight:1.6, margin:0 }}>BMI is a rough guide — it doesn't account for muscle mass. As you build muscle through weight training, your BMI may not fall as fast as your body fat. Waist measurement is often a better indicator of health.</p>
         </Card>
 
@@ -1252,9 +1301,9 @@ export default function App() {
           const col=TAB_COLORS[t]; const active=tab===t;
           return <div key={t} onClick={()=>setTab(t)} style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"center", cursor:"pointer", gap:3 }}>
             <div style={{ width:36, height:36, borderRadius:10, background:active?col:"transparent", display:"flex", alignItems:"center", justifyContent:"center", transition:"all 0.2s" }}>
-              <span style={{ fontSize:20, opacity:active?1:0.65 }}>{ICONS[t]}</span>
+              <Icon name={TAB_ICON_MAP[t]} size={20} color={active?"#fff":C.muted} />
             </div>
-            <span style={{ fontSize:10, fontWeight:active?700:500, color:active?col:"#555" }}>{t}</span>
+            <span style={{ fontSize:10, fontWeight:active?700:600, color:active?col:"#555" }}>{t}</span>
           </div>;
         })}
       </div>
