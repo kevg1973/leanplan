@@ -1221,10 +1221,10 @@ export default function App() {
   };
 
   return (
-    <div style={{ background:C.bg, minHeight:"100vh", fontFamily:FONT, color:C.text, maxWidth:430, margin:"0 auto" }}>
-      <style>{`* { box-sizing:border-box; margin:0; padding:0; } input,select,textarea { outline:none; } body { background:${C.bg}; font-family:${FONT}; } ::-webkit-scrollbar { width:4px; } ::-webkit-scrollbar-thumb { background:${C.divider}; border-radius:4px; }`}</style>
+    <div style={{ background:C.bg, minHeight:"100vh", fontFamily:FONT, color:C.text, width:"100%", overflowX:"hidden" }}>
+      <style>{`* { box-sizing:border-box; margin:0; padding:0; } input,select,textarea { outline:none; } html,body { width:100%; overflow-x:hidden; background:${C.bg}; font-family:${FONT}; } #root { width:100%; } ::-webkit-scrollbar { width:4px; } ::-webkit-scrollbar-thumb { background:${C.divider}; border-radius:4px; }`}</style>
 
-      <div style={{ padding:"52px 18px 12px", background:"rgba(242,242,247,0.92)", backdropFilter:"blur(20px)", WebkitBackdropFilter:"blur(20px)", borderBottom:`1px solid ${C.border}`, position:"sticky", top:0, zIndex:10 }}>
+      <div style={{ padding:"52px 18px 12px", background:"rgba(242,242,247,0.95)", backdropFilter:"blur(20px)", WebkitBackdropFilter:"blur(20px)", borderBottom:`1px solid ${C.border}`, position:"sticky", top:0, zIndex:10, width:"100%" }}>
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
           <div>
             <h1 style={{ fontSize:20, fontWeight:700, color:C.text, margin:0 }}>🏃 LeanPlan</h1>
@@ -1247,14 +1247,14 @@ export default function App() {
         {tab==="Profile"&&<ProfileTab profile={profile} setProfile={setProfile} onReset={handleReset} />}
       </div>
 
-      <div style={{ position:"fixed", bottom:0, left:"50%", transform:"translateX(-50%)", width:"100%", maxWidth:430, background:"rgba(242,242,247,0.92)", backdropFilter:"blur(20px)", WebkitBackdropFilter:"blur(20px)", borderTop:`1px solid ${C.border}`, display:"flex", padding:"8px 0 20px" }}>
+      <div style={{ position:"fixed", bottom:0, left:0, right:0, width:"100%", background:"rgba(242,242,247,0.95)", backdropFilter:"blur(20px)", WebkitBackdropFilter:"blur(20px)", borderTop:`1px solid ${C.border}`, display:"flex", padding:"8px 0 20px" }}>
         {TABS.map(t=>{
           const col=TAB_COLORS[t]; const active=tab===t;
           return <div key={t} onClick={()=>setTab(t)} style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"center", cursor:"pointer", gap:3 }}>
             <div style={{ width:36, height:36, borderRadius:10, background:active?col:"transparent", display:"flex", alignItems:"center", justifyContent:"center", transition:"all 0.2s" }}>
-              <span style={{ fontSize:18, filter:active?"none":"grayscale(1) opacity(0.5)" }}>{ICONS[t]}</span>
+              <span style={{ fontSize:20, opacity:active?1:0.65 }}>{ICONS[t]}</span>
             </div>
-            <span style={{ fontSize:10, fontWeight:active?700:400, color:active?col:C.muted }}>{t}</span>
+            <span style={{ fontSize:10, fontWeight:active?700:500, color:active?col:"#555" }}>{t}</span>
           </div>;
         })}
       </div>
