@@ -588,11 +588,33 @@ const MealsTab = ({ profile, favourites, setFavourites, removed, setRemoved, mea
   const todayCals = todayLogged.reduce((a,m)=>a+m.cals,0);
   const todayProt = todayLogged.reduce((a,m)=>a+m.protein,0);
 
+  const MEAL_ORDER = ["breakfast","snack","lunch","snack2","dinner"];
+  const getMealType = m => m.tags.find(t=>["breakfast","lunch","dinner","snack"].includes(t))||"snack";
+
   const generate = () => {
     const pool=filtered.length>0?filtered:available;
     const favPool=pool.filter(m=>favourites.includes(m.id));
     const usePool=favPool.length>=3?favPool:pool;
-    setShown([...usePool].sort(()=>Math.random()-0.5).slice(0,4));
+
+    // Pick one of each type in order: breakfast, snack, lunch, dinner
+    const byType = {
+      breakfast: [...usePool].filter(m=>getMealType(m)==="breakfast").sort(()=>Math.random()-0.5),
+      snack:     [...usePool].filter(m=>getMealType(m)==="snack").sort(()=>Math.random()-0.5),
+      lunch:     [...usePool].filter(m=>getMealType(m)==="lunch").sort(()=>Math.random()-0.5),
+      dinner:    [...usePool].filter(m=>getMealType(m)==="dinner").sort(()=>Math.random()-0.5),
+    };
+
+    const ordered = [
+      byType.breakfast[0],
+      byType.snack[0],
+      byType.lunch[0],
+      byType.snack[1] || byType.snack[0],
+      byType.dinner[0],
+    ].filter(Boolean);
+
+    // Fallback if not enough variety
+    const result = ordered.length >= 3 ? ordered : [...usePool].sort(()=>Math.random()-0.5).slice(0,4);
+    setShown(result);
     setExpanded(null);
   };
 
