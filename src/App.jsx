@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
 
 const FONT = "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif";
+const toKg = lbs => (lbs * 0.453592).toFixed(1);
+const fromKg = kg => parseFloat((kg * 2.20462).toFixed(1));
 
 const LIGHT = {
   bg:"#f2f2f7", surface:"#ffffff", card:"#ffffff",
@@ -296,11 +298,9 @@ const Onboarding = ({ onDone }) => {
   const toggleArr = (k,v) => setData(d=>({...d,[k]:d[k].includes(v)?d[k].filter(x=>x!==v):[...d[k],v]}));
 
   const startWeightLbs = () => {
-    let sw = parseFloat(data.startWeight);
+    const sw = parseFloat(data.startWeight);
     if (!sw) return null;
-    if (data.unit==="kg") sw*=2.20462;
-    if (data.unit==="stone") sw*=14;
-    return sw;
+    return parseFloat((sw * 2.20462).toFixed(1)); // always kg input
   };
 
   const finish = () => {
@@ -361,13 +361,8 @@ const Onboarding = ({ onDone }) => {
           <h2 style={{ fontSize:24, fontWeight:700, color:C.text, marginBottom:6 }}>About you</h2>
           <p style={{ color:C.muted, fontSize:14, marginBottom:20 }}>Used to calculate your personal calorie targets.</p>
           <div style={{ marginBottom:14 }}>
-            <p style={{ color:C.textSec, fontSize:13, fontWeight:500, marginBottom:6 }}>Starting weight</p>
-            <div style={{ display:"flex", gap:8 }}>
-              <TInput value={data.startWeight} onChange={e=>update("startWeight",e.target.value)} placeholder="Weight" type="number" style={{ flex:1 }} />
-              <select value={data.unit} onChange={e=>update("unit",e.target.value)} style={{ background:C.sectionBg, border:`1px solid ${C.border}`, borderRadius:10, color:C.text, padding:"12px 10px", fontFamily:FONT, fontSize:15, cursor:"pointer", outline:"none" }}>
-                <option value="lbs">lbs</option><option value="kg">kg</option><option value="stone">stone</option>
-              </select>
-            </div>
+            <p style={{ color:C.textSec, fontSize:13, fontWeight:500, marginBottom:6 }}>Starting weight (kg)</p>
+            <TInput value={data.startWeight} onChange={e=>update("startWeight",e.target.value)} placeholder="e.g. 82" type="number" />
           </div>
           <div style={{ display:"flex", gap:10, marginBottom:14 }}>
             <div style={{ flex:1 }}><p style={{ color:C.textSec, fontSize:13, fontWeight:500, marginBottom:6 }}>Height (cm)</p><TInput value={data.heightCm} onChange={e=>update("heightCm",e.target.value)} placeholder="e.g. 175" type="number" /></div>
@@ -380,16 +375,26 @@ const Onboarding = ({ onDone }) => {
             </div>
           </div>
           <div style={{ marginBottom:14 }}>
-            <p style={{ color:C.textSec, fontSize:13, fontWeight:500, marginBottom:8 }}>Weight target</p>
-            <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
-              {[7,14,21,28].map(lbs=><Chip key={lbs} color={C.accent} active={data.targetLbs===lbs} onClick={()=>update("targetLbs",lbs)}>{lbs/14} stone</Chip>)}
-            </div>
+            <p style={{ color:C.textSec, fontSize:13, fontWeight:500, marginBottom:6 }}>Weight loss target (kg)</p>
+            <TInput
+              value={data.targetRaw||""}
+              onChange={e => {
+                const raw = e.target.value;
+                update("targetRaw", raw);
+                const num = parseFloat(raw);
+                if (!isNaN(num) && num > 0) {
+                  update("targetLbs", parseFloat((num * 2.20462).toFixed(1)));
+                }
+              }}
+              placeholder="e.g. 6"
+              type="number"
+            />
           </div>
           <div style={{ marginBottom:20 }}>
             <p style={{ color:C.textSec, fontSize:13, fontWeight:500, marginBottom:8 }}>Weekly pace</p>
             <PacePicker value={data.paceId} onChange={v=>update("paceId",v)} targetLbs={data.targetLbs} />
           </div>
-          <Btn onClick={()=>setStep(3)} disabled={!data.startWeight} style={{ width:"100%" }}>Next →</Btn>
+          <Btn onClick={()=>setStep(3)} disabled={!data.startWeight||((data.goal==="lose_weight"||data.goal==="all")&&!data.targetLbs)} style={{ width:"100%" }}>Next →</Btn>
         </div>}
 
         {/* Step 3 — Fitness level */}
@@ -576,7 +581,8 @@ const Onboarding = ({ onDone }) => {
           <p style={{ color:C.muted, fontSize:14, lineHeight:1.7, marginBottom:24 }}>Everything has been tailored to you. You can update any of these in Profile settings.</p>
           <Card style={{ textAlign:"left", marginBottom:24 }}>
             {[
-              ["🎯", "Goal", data.goal.replace("_"," ")],
+              ["🎯", "Goal", data.goal.replace(/_/g," ")],
+              ...(data.goal==="lose_weight"||data.goal==="all"?[["⚖️","Target",`Lose ${data.targetRaw} kg — ${getPace(data.paceId).label}`]]:[[" ","Goal focus","Build & improve — no weight target"]]),
               ["💪", "Fitness", data.fitnessLevel],
               ["🥗", "Diet", `${data.dietType}${data.dairyPref==="dairy_free"?" · dairy-free":""}${data.glutenPref==="gluten_free"?" · GF":""}`],
               ["🏋️", "Equipment", data.equipment.length>0?`${data.equipment.length} selected`:"None"],
@@ -679,12 +685,12 @@ const TodayTab = ({ profile, entries, mealLog, workoutLog, water, setWater, jour
       <div style={{ background:`linear-gradient(145deg, ${C.accent}, #5ac8fa)`, borderRadius:20, padding:"20px 18px", marginBottom:16, color:"#fff" }}>
         <p style={{ opacity:0.85, fontSize:14, margin:"0 0 4px" }}>Hello{profile.name?`, ${profile.name}`:""}  👋</p>
         <h2 style={{ fontSize:26, fontWeight:700, margin:"0 0 4px" }}>Lose {profile.targetLbs/14} Stone</h2>
-        <p style={{ opacity:0.8, fontSize:13, margin:"0 0 14px" }}>{lost.toFixed(1)} lbs lost · {Math.max(0,profile.targetLbs-lost).toFixed(1)} to go · {pct}% · ~{eta>0?eta:0} wks · {pace.lbs} lb/wk</p>
+        <p style={{ opacity:0.8, fontSize:13, margin:"0 0 14px" }}>{lostKg} kg lost · {(Math.max(0,profile.targetLbs-lost)*0.453592).toFixed(1)} to go · {pct}% · ~{eta>0?eta:0} wks · {pace.lbs} lb/wk</p>
         <div style={{ background:"rgba(255,255,255,0.25)", borderRadius:99, height:8, overflow:"hidden" }}>
           <div style={{ width:`${pct}%`, height:"100%", background:"rgba(255,255,255,0.9)", borderRadius:99, transition:"width 0.6s" }} />
         </div>
         <div style={{ display:"flex", justifyContent:"space-between", marginTop:6, opacity:0.75, fontSize:11 }}>
-          <span>{profile.startWeightLbs} lbs start</span><span>{cur.toFixed(1)} lbs now</span>
+          <span>{toKg(profile.startWeightLbs)} kg start</span><span>{toKg(cur)} kg now</span>
         </div>
       </div>
 
@@ -728,8 +734,8 @@ const TodayTab = ({ profile, entries, mealLog, workoutLog, water, setWater, jour
         </div>
         <div style={{ flex:1, background:C.card, borderRadius:14, padding:14, border:`1px solid ${C.border}`, textAlign:"center" }}>
           <div style={{ marginBottom:4, display:"flex", justifyContent:"center" }}><Icon name="weight" size={24} color={C.accent} /></div>
-          <div style={{ color:C.text, fontSize:13, fontWeight:600 }}>{cur.toFixed(1)}</div>
-          <div style={{ color:C.muted, fontSize:11 }}>lbs current</div>
+          <div style={{ color:C.text, fontSize:13, fontWeight:600 }}>{toKg(cur)}</div>
+          <div style={{ color:C.muted, fontSize:11 }}>kg current</div>
         </div>
       </div>
 
@@ -1250,9 +1256,13 @@ const TrackTab = ({ profile, entries, setEntries, measurements, setMeasurements 
 
   const cur = entries.length>0?entries[entries.length-1].weight:profile.startWeightLbs;
   const lost = Math.max(0,profile.startWeightLbs-cur);
+  const lostKg = parseFloat((lost*0.453592).toFixed(1));
   const pace = getPace(profile.paceId||"normal");
   const eta = Math.ceil((profile.targetLbs-lost)/pace.lbs);
   const target = profile.startWeightLbs-profile.targetLbs;
+  const targetKg = parseFloat((target*0.453592).toFixed(1));
+  const curKg = parseFloat((cur*0.453592).toFixed(1));
+  const startKg = parseFloat((profile.startWeightLbs*0.453592).toFixed(1));
   const pct = Math.min(100,Math.round((lost/profile.targetLbs)*100));
   const tdee = calcTDEE(profile);
   const bmi = calcBMI(profile);
@@ -1260,7 +1270,8 @@ const TrackTab = ({ profile, entries, setEntries, measurements, setMeasurements 
 
   const addWeightEntry = () => {
     if (!newW||isNaN(newW)) return;
-    setEntries(prev=>[...prev,{weight:parseFloat(parseFloat(newW).toFixed(1)),label:`W${prev.length+1}`,date:new Date().toLocaleDateString("en-GB",{day:"numeric",month:"short"})}]);
+    const weightLbs = fromKg(parseFloat(newW));
+    setEntries(prev=>[...prev,{weight:weightLbs, weightKg:parseFloat(parseFloat(newW).toFixed(1)), label:`W${prev.length+1}`,date:new Date().toLocaleDateString("en-GB",{day:"numeric",month:"short"})}]);
     setNewW("");
   };
 
@@ -1290,7 +1301,7 @@ const TrackTab = ({ profile, entries, setEntries, measurements, setMeasurements 
         <div style={{ background:`linear-gradient(145deg, ${C.accent}15, ${C.green}10)`, borderRadius:20, padding:"20px 18px", marginBottom:16, border:`1px solid ${C.accent}22` }}>
           <div style={{ display:"flex", justifyContent:"space-between", marginBottom:14 }}>
             <div><p style={{ color:C.muted, fontSize:13, margin:0 }}>Progress</p><h2 style={{ color:C.text, fontSize:28, fontWeight:700, margin:"2px 0 0" }}>{pct}%</h2></div>
-            <div style={{ textAlign:"right" }}><p style={{ color:C.muted, fontSize:12, margin:0 }}>Lost so far</p><p style={{ color:C.green, fontSize:22, fontWeight:700, margin:0 }}>{lost.toFixed(1)} lbs</p></div>
+            <div style={{ textAlign:"right" }}><p style={{ color:C.muted, fontSize:12, margin:0 }}>Lost so far</p><p style={{ color:C.green, fontSize:22, fontWeight:700, margin:0 }}>{lostKg} kg</p></div>
           </div>
           <ProgressBar value={lost} max={profile.targetLbs} color={C.accent} height={10} />
           <div style={{ display:"flex", justifyContent:"space-between", marginTop:6, fontSize:11, color:C.muted }}>
@@ -1299,15 +1310,15 @@ const TrackTab = ({ profile, entries, setEntries, measurements, setMeasurements 
         </div>
 
         <div style={{ display:"flex", gap:8, marginBottom:16 }}>
-          <StatBox label="Per week" val={entries.length>0?(lost/entries.length).toFixed(1)+" lbs":"—"} color={C.accent} />
+          <StatBox label="Per week" val={entries.length>0?((lost/entries.length)*0.453592).toFixed(2)+" kg":"—"} color={C.accent} />
           <StatBox label="ETA" val={eta>0?`${eta} wks`:"Done!"} color={C.purple} />
-          <StatBox label="To go" val={`${Math.max(0,profile.targetLbs-lost).toFixed(1)}`} sub="lbs" color={C.orange} />
+          <StatBox label="To go" val={`${(Math.max(0,profile.targetLbs-lost)*0.453592).toFixed(1)}`} sub="kg" color={C.orange} />
         </div>
 
         <Card>
           <p style={{ color:C.muted, fontSize:12, fontWeight:600, letterSpacing:"0.06em", marginBottom:12 }}>⚖️ LOG WEEKLY WEIGH-IN</p>
           <div style={{ display:"flex", gap:8, alignItems:"center", marginBottom:10 }}>
-            <TInput value={newW} onChange={e=>setNewW(e.target.value)} placeholder="Current weight in lbs" type="number" style={{ flex:1 }} />
+            <TInput value={newW} onChange={e=>setNewW(e.target.value)} placeholder="Current weight in kg" type="number" style={{ flex:1 }} />
             <Btn onClick={addWeightEntry} disabled={!newW} color={C.accent} style={{ padding:"12px 18px" }}>+ Log</Btn>
           </div>
           <div style={{ display:"flex", gap:16, fontSize:12 }}>
@@ -1323,11 +1334,11 @@ const TrackTab = ({ profile, entries, setEntries, measurements, setMeasurements 
         </Card>}
 
         {entries.length>0&&<Section title="Weekly Log">
-          <Row label="Starting weight" value={`${profile.startWeightLbs} lbs`} color={C.muted} />
+          <Row label="Starting weight" value={`${startKg} kg`} color={C.muted} />
           {entries.map((e,i)=>{
             const prev=i===0?profile.startWeightLbs:entries[i-1].weight;
             const diff=e.weight-prev;
-            return <Row key={i} label={`${e.label}${e.date?` · ${e.date}`:""}`} value={`${e.weight} lbs`} last={i===entries.length-1}
+            return <Row key={i} label={`${e.label}${e.date?` · ${e.date}`:""}`} value={`${e.weightKg||toKg(e.weight)} kg`} last={i===entries.length-1}
               icon={<span style={{ color:diff<0?C.green:diff>0?C.red:C.muted, fontSize:12, fontWeight:700 }}>{diff<0?"▼":diff>0?"▲":"●"} {Math.abs(diff).toFixed(1)}</span>}
             />;
           })}
@@ -1386,8 +1397,8 @@ const TrackTab = ({ profile, entries, setEntries, measurements, setMeasurements 
         </Card>
 
         <Section title="Your Plan">
-          <Row label="Starting weight" value={`${profile.startWeightLbs} lbs`} />
-          <Row label="Target weight" value={`${(profile.startWeightLbs-profile.targetLbs).toFixed(1)} lbs`} />
+          <Row label="Starting weight" value={`${toKg(profile.startWeightLbs)} kg`} />
+          <Row label="Target weight" value={`${toKg(profile.startWeightLbs-profile.targetLbs)} kg`} />
           <Row label="Pace" value={`${getPace(profile.paceId||"normal").lbs} lbs/week`} />
           <Row label="Estimated weeks" value={`${Math.ceil(profile.targetLbs/getPace(profile.paceId||"normal").lbs)} weeks`} last />
         </Section>
@@ -2075,7 +2086,7 @@ export default function App() {
             <p style={{ fontSize:11, color:C.muted, margin:0 }}>{profile.name?.toUpperCase()||"YOUR PLAN"}</p>
           </div>
           <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:12, padding:"6px 14px", textAlign:"right", boxShadow:"0 1px 3px rgba(0,0,0,0.06)" }}>
-            <div><span style={{ color:C.green, fontWeight:700, fontSize:16 }}>{lost.toFixed(1)}</span><span style={{ color:C.muted, fontSize:13 }}> / {profile.targetLbs} lbs</span></div>
+            <div><span style={{ color:C.green, fontWeight:700, fontSize:16 }}>{toKg(lost)}</span><span style={{ color:C.muted, fontSize:13 }}> / {(profile.targetLbs*0.453592).toFixed(1)} kg</span></div>
             <div style={{ background:C.border, borderRadius:99, height:3, marginTop:4, overflow:"hidden", width:80 }}>
               <div style={{ width:`${pct}%`, height:"100%", background:`linear-gradient(90deg, ${C.accent}, ${C.green})`, borderRadius:99 }} />
             </div>
