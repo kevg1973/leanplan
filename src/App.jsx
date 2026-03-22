@@ -256,7 +256,7 @@ const PacePicker = ({ value, onChange, targetLbs }) => {
               <span style={{ color:value===p.id?p.color:C.text, fontWeight:700, fontSize:14 }}>{p.label}</span>
               <span style={{ color:p.color, fontSize:12, fontWeight:700 }}>{p.lbs} lb/wk</span>
             </div>
-            <div style={{ color:C.muted, fontSize:11 }}>{p.lbs===1?14:Math.round(targetLbs/p.lbs)} wks / {targetLbs/14} stone</div>
+            <div style={{ color:C.muted, fontSize:11 }}>{Math.round(targetLbs/p.lbs)} wks / {(targetLbs*0.453592).toFixed(1)} kg</div>
           </div>
         ))}
       </div>
@@ -375,26 +375,38 @@ const Onboarding = ({ onDone }) => {
             </div>
           </div>
           <div style={{ marginBottom:14 }}>
-            <p style={{ color:C.textSec, fontSize:13, fontWeight:500, marginBottom:6 }}>Weight loss target (kg)</p>
+            <p style={{ color:C.textSec, fontSize:13, fontWeight:500, marginBottom:6 }}>Target weight (kg)</p>
             <TInput
               value={data.targetRaw||""}
               onChange={e => {
                 const raw = e.target.value;
                 update("targetRaw", raw);
-                const num = parseFloat(raw);
-                if (!isNaN(num) && num > 0) {
-                  update("targetLbs", parseFloat((num * 2.20462).toFixed(1)));
+                const targetKg = parseFloat(raw);
+                const startKg = parseFloat(data.startWeight);
+                if (!isNaN(targetKg) && !isNaN(startKg) && startKg > targetKg) {
+                  const diffKg = startKg - targetKg;
+                  update("targetLbs", parseFloat((diffKg * 2.20462).toFixed(1)));
                 }
               }}
-              placeholder="e.g. 6"
+              placeholder="e.g. 73"
               type="number"
             />
+            {data.targetRaw && data.startWeight && parseFloat(data.startWeight) > parseFloat(data.targetRaw) && (
+              <p style={{ color:C.green, fontSize:12, marginTop:4 }}>
+                ✓ That's {(parseFloat(data.startWeight) - parseFloat(data.targetRaw)).toFixed(1)} kg to lose
+              </p>
+            )}
+            {data.targetRaw && data.startWeight && parseFloat(data.targetRaw) >= parseFloat(data.startWeight) && (
+              <p style={{ color:C.red, fontSize:12, marginTop:4 }}>
+                Target must be less than your starting weight
+              </p>
+            )}
           </div>
           <div style={{ marginBottom:20 }}>
             <p style={{ color:C.textSec, fontSize:13, fontWeight:500, marginBottom:8 }}>Weekly pace</p>
             <PacePicker value={data.paceId} onChange={v=>update("paceId",v)} targetLbs={data.targetLbs} />
           </div>
-          <Btn onClick={()=>setStep(3)} disabled={!data.startWeight||((data.goal==="lose_weight"||data.goal==="all")&&!data.targetLbs)} style={{ width:"100%" }}>Next →</Btn>
+          <Btn onClick={()=>setStep(3)} disabled={!data.startWeight||((data.goal==="lose_weight"||data.goal==="all")&&(!data.targetLbs||parseFloat(data.targetRaw)>=parseFloat(data.startWeight)))} style={{ width:"100%" }}>Next →</Btn>
         </div>}
 
         {/* Step 3 — Fitness level */}
@@ -582,7 +594,7 @@ const Onboarding = ({ onDone }) => {
           <Card style={{ textAlign:"left", marginBottom:24 }}>
             {[
               ["🎯", "Goal", data.goal.replace(/_/g," ")],
-              ...(data.goal==="lose_weight"||data.goal==="all"?[["⚖️","Target",`Lose ${data.targetRaw} kg — ${getPace(data.paceId).label}`]]:[[" ","Goal focus","Build & improve — no weight target"]]),
+              ...(data.goal==="lose_weight"||data.goal==="all"?[["⚖️","Target",`${data.startWeight} → ${data.targetRaw} kg (lose ${(parseFloat(data.startWeight)-parseFloat(data.targetRaw)).toFixed(1)} kg) — ${getPace(data.paceId).label}`]]:[[" ","Goal focus","Build & improve — no weight target"]]),
               ["💪", "Fitness", data.fitnessLevel],
               ["🥗", "Diet", `${data.dietType}${data.dairyPref==="dairy_free"?" · dairy-free":""}${data.glutenPref==="gluten_free"?" · GF":""}`],
               ["🏋️", "Equipment", data.equipment.length>0?`${data.equipment.length} selected`:"None"],
@@ -684,7 +696,7 @@ const TodayTab = ({ profile, entries, mealLog, workoutLog, water, setWater, jour
       {/* Hero */}
       <div style={{ background:`linear-gradient(145deg, ${C.accent}, #5ac8fa)`, borderRadius:20, padding:"20px 18px", marginBottom:16, color:"#fff" }}>
         <p style={{ opacity:0.85, fontSize:14, margin:"0 0 4px" }}>Hello{profile.name?`, ${profile.name}`:""}  👋</p>
-        <h2 style={{ fontSize:26, fontWeight:700, margin:"0 0 4px" }}>Lose {profile.targetLbs/14} Stone</h2>
+        <h2 style={{ fontSize:26, fontWeight:700, margin:"0 0 4px" }}>Goal: {toKg(profile.startWeightLbs-profile.targetLbs)} kg loss</h2>
         <p style={{ opacity:0.8, fontSize:13, margin:"0 0 14px" }}>{lostKg} kg lost · {(Math.max(0,profile.targetLbs-lost)*0.453592).toFixed(1)} to go · {pct}% · ~{eta>0?eta:0} wks · {pace.lbs} lb/wk</p>
         <div style={{ background:"rgba(255,255,255,0.25)", borderRadius:99, height:8, overflow:"hidden" }}>
           <div style={{ width:`${pct}%`, height:"100%", background:"rgba(255,255,255,0.9)", borderRadius:99, transition:"width 0.6s" }} />
