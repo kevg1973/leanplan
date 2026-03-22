@@ -296,7 +296,12 @@ const Onboarding = ({ onDone }) => {
       <div style={{ maxWidth:420, margin:"0 auto", padding:"32px 20px 0" }}>
 
         {step===0&&<div style={{ textAlign:"center", paddingTop:40 }}>
-          <img src="/leanplan_logo.png" alt="LeanPlan" style={{ height:56, width:"auto", marginBottom:16 }} />
+          <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:16, justifyContent:"center" }}>
+          <img src="/leanplan_mark.png" alt="" style={{ height:56, width:56, objectFit:"contain" }} />
+          <span style={{ fontSize:36, fontWeight:800, letterSpacing:"-0.02em" }}>
+            <span style={{ color:C.text }}>Lean</span><span style={{ color:C.accent }}>Plan</span>
+          </span>
+        </div>
           <h1 style={{ fontSize:32, fontWeight:700, color:C.text, margin:"0 0 12px" }}>Welcome to LeanPlan</h1>
           <p style={{ color:C.muted, fontSize:16, lineHeight:1.6, marginBottom:32 }}>Let's set up your personal health plan. About 2 minutes — we'll tailor everything to you.</p>
           <div style={{ marginBottom:20 }}><TInput value={data.name} onChange={e=>update("name",e.target.value)} placeholder="Your name (optional)" /></div>
@@ -1498,7 +1503,13 @@ export default function App() {
 
   const loadBg = systemDark ? "#000" : "#f2f2f7";
   const loadText = systemDark ? "#8e8e93" : "#8e8e93";
-  if (loading) return <div style={{ minHeight:"100vh", background:loadBg, display:"flex", alignItems:"center", justifyContent:"center", fontFamily:FONT }}><div style={{ textAlign:"center" }}><img src="/leanplan_logo.png" alt="LeanPlan" style={{ height:40, width:"auto", marginBottom:12, opacity:0.9 }} /><p style={{ color:loadText, marginTop:8 }}>Loading...</p></div></div>;
+  if (loading) return <div style={{ minHeight:"100vh", background:loadBg, display:"flex", alignItems:"center", justifyContent:"center", fontFamily:FONT }}><div style={{ textAlign:"center" }}><div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:16 }}>
+        <img src="/leanplan_mark.png" alt="" style={{ height:44, width:44, objectFit:"contain" }} />
+        <span style={{ fontSize:28, fontWeight:800, color:"#fff", letterSpacing:"-0.02em" }}>
+          <span style={{ color:"#fff" }}>Lean</span><span style={{ color:"#0a84ff" }}>Plan</span>
+        </span>
+      </div>
+      <p style={{ color:loadText }}>Loading...</p></div></div>;
 
   if (!profile) return <Onboarding onDone={p=>setProfile(p)} />;
 
@@ -1527,7 +1538,12 @@ export default function App() {
       <div style={{ padding:"52px 18px 12px", background:isDark?"rgba(0,0,0,0.85)":"rgba(242,242,247,0.95)", backdropFilter:"blur(20px)", WebkitBackdropFilter:"blur(20px)", borderBottom:`1px solid ${C.border}`, position:"sticky", top:0, zIndex:10, width:"100%" }}>
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
           <div>
-            <div style={{ display:"flex", alignItems:"center", gap:8 }}><img src="/leanplan_logo.png" alt="LeanPlan" style={{ height:28, width:"auto" }} /></div>
+            <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+              <img src="/leanplan_mark.png" alt="" style={{ height:32, width:32, objectFit:"contain" }} />
+              <span style={{ fontSize:20, fontWeight:800, letterSpacing:"-0.02em" }}>
+                <span style={{ color:C.text }}>Lean</span><span style={{ color:C.accent }}>Plan</span>
+              </span>
+            </div>
             <p style={{ fontSize:11, color:C.muted, margin:0 }}>{profile.name?.toUpperCase()||"YOUR PLAN"}</p>
           </div>
           <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:12, padding:"6px 14px", textAlign:"right", boxShadow:"0 1px 3px rgba(0,0,0,0.06)" }}>
