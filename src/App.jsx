@@ -1264,12 +1264,14 @@ const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDar
               <p style={{ color:C.green, fontWeight:700, fontSize:15, margin:0 }}>✓ LeanPlan Pro</p>
               <p style={{ color:C.muted, fontSize:12, margin:"2px 0 0" }}>{proData?.plan === "annual" ? "Annual plan" : "Monthly plan"}</p>
             </div>
-            <Btn small outline color={C.green} onClick={async()=>{
-              if (!proData?.customerId) return;
-              const res = await fetch("/api/stripe/portal",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({customerId:proData.customerId})});
-              const data = await res.json();
-              if (data.url) window.location.href = data.url;
-            }}>Manage</Btn>
+            {proData?.customerId !== "bypass" && (
+              <Btn small outline color={C.green} onClick={async()=>{
+                if (!proData?.customerId) return;
+                const res = await fetch("/api/stripe/portal",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({customerId:proData.customerId})});
+                const data = await res.json();
+                if (data.url) window.location.href = data.url;
+              }}>Manage</Btn>
+            )}
           </div>
         </div>
       ) : (
