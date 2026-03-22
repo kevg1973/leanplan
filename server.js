@@ -29,6 +29,9 @@ app.post("/api/stripe/checkout", async (req, res) => {
   if (!plan || !PRICES[plan]) return res.status(400).json({ error: "Invalid plan" });
 
   try {
+    console.log("Creating checkout session for plan:", plan, "price:", PRICES[plan]);
+    console.log("APP_URL:", APP_URL);
+    console.log("Stripe key starts with:", process.env.STRIPE_SECRET_KEY?.slice(0,12));
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       payment_method_types: ["card"],
@@ -40,10 +43,13 @@ app.post("/api/stripe/checkout", async (req, res) => {
       billing_address_collection: "auto",
       customer_creation: "always",
     });
+    console.log("Checkout session created:", session.id);
     res.json({ url: session.url });
   } catch (err) {
     console.error("Stripe checkout error:", err.message);
-    res.status(500).json({ error: "Failed to create checkout session" });
+    console.error("Stripe error type:", err.type);
+    console.error("Stripe error code:", err.code);
+    res.status(500).json({ error: err.message });
   }
 });
 
