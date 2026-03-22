@@ -297,8 +297,8 @@ const Onboarding = ({ onDone }) => {
 
         {step===0&&<div style={{ textAlign:"center", paddingTop:40 }}>
           <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:16, justifyContent:"center" }}>
-          <img src="/leanplan_mark.png" alt="" style={{ height:56, width:56, objectFit:"contain" }} />
-          <span style={{ fontSize:36, fontWeight:800, letterSpacing:"-0.02em" }}>
+          <img src="/leanplan_app_icon.png" alt="" style={{ height:64, width:64, objectFit:"contain", borderRadius:16 }} />
+          <span style={{ fontSize:36, fontWeight:800, letterSpacing:"-0.02em", fontFamily:FONT }}>
             <span style={{ color:C.text }}>Lean</span><span style={{ color:C.accent }}>Plan</span>
           </span>
         </div>
@@ -1504,9 +1504,9 @@ export default function App() {
   const loadBg = systemDark ? "#000" : "#f2f2f7";
   const loadText = systemDark ? "#8e8e93" : "#8e8e93";
   if (loading) return <div style={{ minHeight:"100vh", background:loadBg, display:"flex", alignItems:"center", justifyContent:"center", fontFamily:FONT }}><div style={{ textAlign:"center" }}><div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:16 }}>
-        <img src="/leanplan_mark.png" alt="" style={{ height:44, width:44, objectFit:"contain" }} />
-        <span style={{ fontSize:28, fontWeight:800, color:"#fff", letterSpacing:"-0.02em" }}>
-          <span style={{ color:"#fff" }}>Lean</span><span style={{ color:"#0a84ff" }}>Plan</span>
+        <img src="/leanplan_app_icon.png" alt="" style={{ height:52, width:52, objectFit:"contain", borderRadius:12 }} />
+        <span style={{ fontSize:28, fontWeight:800, letterSpacing:"-0.02em", fontFamily:FONT }}>
+          <span style={{ color:loadBg==="#000"?"#fff":"#000" }}>Lean</span><span style={{ color:"#0a84ff" }}>Plan</span>
         </span>
       </div>
       <p style={{ color:loadText }}>Loading...</p></div></div>;
@@ -1539,8 +1539,8 @@ export default function App() {
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
           <div>
             <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-              <img src="/leanplan_mark.png" alt="" style={{ height:32, width:32, objectFit:"contain" }} />
-              <span style={{ fontSize:20, fontWeight:800, letterSpacing:"-0.02em" }}>
+              {isDark && <img src="/leanplan_mark.png" alt="" style={{ height:32, width:32, objectFit:"contain" }} />}
+              <span style={{ fontSize:20, fontWeight:800, letterSpacing:"-0.02em", fontFamily:FONT }}>
                 <span style={{ color:C.text }}>Lean</span><span style={{ color:C.accent }}>Plan</span>
               </span>
             </div>
