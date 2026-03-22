@@ -1752,11 +1752,29 @@ export default function App() {
   const TAB_COLORS = {Today:"#007aff",Meals:"#34c759",Train:"#5ac8fa",Track:"#af52de",Coach:"#ff2d55",Profile:"#ff9500"};
 
   const handleReset = () => {
-    if (window.confirm("Reset all data?")) {
+    const savedPro = localStorage.getItem("leanplan_pro");
+    const hasRealSub = savedPro && JSON.parse(savedPro)?.customerId && JSON.parse(savedPro)?.customerId !== "bypass";
+
+    if (hasRealSub) {
+      const choice = window.confirm(
+        "Reset your fitness data and start fresh?\n\n✓ Your Pro subscription will be kept\n✓ All workout, meal and progress data will be cleared\n✓ You can set up a new goal in onboarding\n\nTap OK to reset your data."
+      );
+      if (!choice) return;
+      // Clear fitness data but keep Pro status
       localStorage.removeItem("leanplan_v4");
       localStorage.removeItem("leanplan_lifts");
       setProfile(null); setEntries([]); setFavourites([]); setRemoved([]);
       setMealLog({}); setWorkoutLog({}); setWater({}); setJournal({}); setMeasurements([]);
+      // isPro and proData stay intact
+    } else {
+      if (!window.confirm("Reset all data? This cannot be undone.")) return;
+      localStorage.removeItem("leanplan_v4");
+      localStorage.removeItem("leanplan_lifts");
+      localStorage.removeItem("leanplan_pro");
+      localStorage.removeItem("leanplan_device_id");
+      setProfile(null); setEntries([]); setFavourites([]); setRemoved([]);
+      setMealLog({}); setWorkoutLog({}); setWater({}); setJournal({}); setMeasurements([]);
+      setIsPro(false); setProData(null);
     }
   };
 
