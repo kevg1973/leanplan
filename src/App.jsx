@@ -1481,13 +1481,13 @@ For example:
 
 // ── PRO BANNER ────────────────────────────────────────────────────────────────
 const ProBanner = ({ onUpgrade }) => (
-  <div onClick={onUpgrade} style={{ background:`linear-gradient(135deg, ${C.accent}, ${C.indigo})`, borderRadius:14, padding:"12px 16px", marginBottom:14, cursor:"pointer", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+  <div onClick={onUpgrade} style={{ background:"linear-gradient(135deg, #b8860b, #ffd700, #f4a800)", borderRadius:14, padding:"12px 16px", marginBottom:14, cursor:"pointer", display:"flex", justifyContent:"space-between", alignItems:"center", boxShadow:"0 4px 16px rgba(212,160,23,0.35)" }}>
     <div>
-      <p style={{ color:"#fff", fontWeight:700, fontSize:14, margin:0 }}>✦ Unlock LeanPlan Pro</p>
-      <p style={{ color:"rgba(255,255,255,0.8)", fontSize:12, margin:"2px 0 0" }}>AI coach, workouts, tracking & more from £4.99/mo</p>
+      <p style={{ color:"#1a1000", fontWeight:800, fontSize:14, margin:0 }}>✦ Unlock LeanPlan Pro</p>
+      <p style={{ color:"rgba(0,0,0,0.6)", fontSize:12, margin:"2px 0 0" }}>AI coach, workouts, tracking & more from £4.99/mo</p>
     </div>
-    <div style={{ background:"rgba(255,255,255,0.2)", borderRadius:99, padding:"6px 14px" }}>
-      <span style={{ color:"#fff", fontWeight:700, fontSize:13 }}>Upgrade →</span>
+    <div style={{ background:"rgba(0,0,0,0.15)", borderRadius:99, padding:"6px 14px" }}>
+      <span style={{ color:"#1a1000", fontWeight:800, fontSize:13 }}>Upgrade →</span>
     </div>
   </div>
 );
