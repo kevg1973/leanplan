@@ -444,10 +444,6 @@ const TodayTab = ({ profile, entries, mealLog, workoutLog, water, setWater, jour
   const [tipIdx, setTipIdx] = useState(()=>Math.floor(Math.random()*DAILY_TIPS.length));
   const [showJournal, setShowJournal] = useState(false);
   const today = todayKey();
-  // Apply theme
-  const isDark = darkOverride !== null ? darkOverride : systemDark;
-  C = isDark ? DARK : LIGHT;
-
   const cur = entries.length>0?entries[entries.length-1].weight:profile.startWeightLbs;
   const lost = Math.max(0,profile.startWeightLbs-cur);
   const pace = getPace(profile.paceId||"normal");
@@ -966,10 +962,6 @@ const TrackTab = ({ profile, entries, setEntries, measurements, setMeasurements 
   const [newW, setNewW] = useState("");
   const [activeSection, setActiveSection] = useState("weight");
   const [newMeasure, setNewMeasure] = useState({ waist:"", hips:"", chest:"", leftArm:"", rightArm:"" });
-
-  // Apply theme
-  const isDark = darkOverride !== null ? darkOverride : systemDark;
-  C = isDark ? DARK : LIGHT;
 
   const cur = entries.length>0?entries[entries.length-1].weight:profile.startWeightLbs;
   const lost = Math.max(0,profile.startWeightLbs-cur);
