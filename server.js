@@ -11,18 +11,18 @@ const PORT = process.env.PORT || 3000;
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-// ── Test / Live mode switching ───────────────────────────────────────────────
-const IS_TEST = process.env.STRIPE_MODE === "test";
+// ── Auto detect test/live from secret key ────────────────────────────────────
+const IS_TEST = process.env.STRIPE_SECRET_KEY?.startsWith("sk_test_");
 
 const PRICES = IS_TEST ? {
-  monthly: "price_1TDuIWBlEueyqAyRLgOGydQV",
-  annual:  "price_1TDuItBlEueyqAyRcwY269HK",
+  monthly: process.env.STRIPE_PRICE_MONTHLY_TEST || "price_1TDuIWBlEueyqAyRLgOGydQV",
+  annual:  process.env.STRIPE_PRICE_ANNUAL_TEST  || "price_1TDuItBlEueyqAyRcwY269HK",
 } : {
-  monthly: "price_1TDtInPfNxGIwDvC72uuu6ZE",
-  annual:  "price_1TDtJPPfNxGIwDvCffCwzs3j",
+  monthly: process.env.STRIPE_PRICE_MONTHLY_LIVE || "price_1TDtInPfNxGIwDvC72uuu6ZE",
+  annual:  process.env.STRIPE_PRICE_ANNUAL_LIVE  || "price_1TDtJPPfNxGIwDvCffCwzs3j",
 };
 
-console.log("Stripe mode:", IS_TEST ? "TEST" : "LIVE");
+console.log("Stripe mode:", IS_TEST ? "TEST 🧪" : "LIVE 💳");
 
 const APP_URL = process.env.APP_URL || "https://www.leanplan.uk";
 
@@ -119,6 +119,12 @@ app.post("/api/stripe/portal", async (req, res) => {
     console.error("Portal error:", err.message);
     res.status(500).json({ error: "Failed to create portal session" });
   }
+});
+
+// ── Pro bypass check ─────────────────────────────────────────────────────────
+app.get("/api/pro-status", (req, res) => {
+  const bypass = process.env.BYPASS_PRO === "true";
+  res.json({ bypass });
 });
 
 // ── Chat endpoint ─────────────────────────────────────────────────────────────

@@ -1664,8 +1664,19 @@ export default function App() {
     return () => mq.removeEventListener("change", handler);
   }, []);
 
-  // Check for Stripe return
+  // Check for dev bypass and Stripe return
   useEffect(()=>{
+    // Check server-side bypass flag
+    fetch("/api/pro-status")
+      .then(r => r.json())
+      .then(data => {
+        if (data.bypass) {
+          setIsPro(true);
+          setProData({ plan:"annual", customerId:"bypass", subscriptionId:"bypass" });
+        }
+      })
+      .catch(()=>{});
+
     const params = new URLSearchParams(window.location.search);
     const proStatus = params.get("pro");
     const sessionId = params.get("session_id");
