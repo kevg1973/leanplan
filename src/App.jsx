@@ -1539,11 +1539,9 @@ export default function App() {
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
           <div>
             <div style={{ display:"flex", alignItems:"center" }}>
-              <img
-                src={isDark ? "/leanplan_logo_dark.png" : "/leanplan_logo_light.png"}
-                alt="LeanPlan"
-                style={{ height:34, width:"auto", maxWidth:160, objectFit:"contain" }}
-              />
+              <span style={{ fontSize:22, fontWeight:800, letterSpacing:"-0.02em", fontFamily:FONT }}>
+                <span style={{ color:isDark?"#ffffff":"#3d3d3d" }}>Lean</span><span style={{ color:"#3d8ef0" }}>Plan</span>
+              </span>
             </div>
             <p style={{ fontSize:11, color:C.muted, margin:0 }}>{profile.name?.toUpperCase()||"YOUR PLAN"}</p>
           </div>
