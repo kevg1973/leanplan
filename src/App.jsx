@@ -650,7 +650,7 @@ const MealsTab = ({ profile, favourites, setFavourites, removed, setRemoved, mea
           </div>
           {isPro
             ? <Btn onClick={generate} style={{ width:"100%" }}>✦ Generate Today's Meals</Btn>
-            : <Btn onClick={onUpgrade} color={C.indigo} style={{ width:"100%" }}>🔒 Unlock Meal Generation — Pro</Btn>
+            : <Btn onClick={onUpgrade} style={{ width:"100%", background:"linear-gradient(135deg, #b8860b, #ffd700, #f4a800)", color:"#1a1000", boxShadow:"0 2px 8px rgba(212,160,23,0.3)" }}>✦ Unlock Meal Generation — Pro</Btn>
           }
         </Card>
 
@@ -703,7 +703,7 @@ const MealsTab = ({ profile, favourites, setFavourites, removed, setRemoved, mea
           </div>
           {isPro
             ? <Btn onClick={()=>{setShoppingList(SHOPPING[shoppingDays]);setChecked({});}} color={C.green} style={{ width:"100%" }}>✦ Generate List</Btn>
-            : <Btn onClick={onUpgrade} color={C.indigo} style={{ width:"100%" }}>🔒 Unlock Shopping Lists — Pro</Btn>
+            : <Btn onClick={onUpgrade} style={{ width:"100%", background:"linear-gradient(135deg, #b8860b, #ffd700, #f4a800)", color:"#1a1000", boxShadow:"0 2px 8px rgba(212,160,23,0.3)" }}>✦ Unlock Shopping Lists — Pro</Btn>
           }
         </Card>
         {shoppingList&&<>
@@ -1273,7 +1273,7 @@ const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDar
           </div>
         </div>
       ) : (
-        <Btn onClick={onUpgrade} color={C.accent} style={{ width:"100%", marginBottom:16 }}>✦ Upgrade to Pro from £4.99/mo</Btn>
+        <Btn onClick={onUpgrade} style={{ width:"100%", marginBottom:16, background:"linear-gradient(135deg, #b8860b, #ffd700, #f4a800)", color:"#1a1000", boxShadow:"0 4px 16px rgba(212,160,23,0.35)" }}>✦ Upgrade to Pro from £4.99/mo</Btn>
       )}
 
       <div style={{ marginTop:8 }}>
@@ -1486,8 +1486,8 @@ const ProBanner = ({ onUpgrade }) => (
       <p style={{ color:"#1a1000", fontWeight:800, fontSize:14, margin:0 }}>✦ Unlock LeanPlan Pro</p>
       <p style={{ color:"rgba(0,0,0,0.6)", fontSize:12, margin:"2px 0 0" }}>AI coach, workouts, tracking & more from £4.99/mo</p>
     </div>
-    <div style={{ background:"rgba(0,0,0,0.15)", borderRadius:99, padding:"6px 14px" }}>
-      <span style={{ color:"#1a1000", fontWeight:800, fontSize:13 }}>Upgrade →</span>
+    <div style={{ background:"rgba(255,255,255,0.9)", borderRadius:99, padding:"7px 16px", boxShadow:"0 2px 8px rgba(0,0,0,0.2)" }}>
+      <span style={{ color:"#a06800", fontWeight:800, fontSize:13 }}>Upgrade →</span>
     </div>
   </div>
 );
@@ -1500,7 +1500,7 @@ const LockedTab = ({ feature, onUpgrade }) => (
     </div>
     <h2 style={{ color:C.text, fontSize:22, fontWeight:700, marginBottom:10 }}>Pro Feature</h2>
     <p style={{ color:C.muted, fontSize:15, lineHeight:1.7, marginBottom:28, maxWidth:280, margin:"0 auto 28px" }}>{feature} is available on LeanPlan Pro.</p>
-    <Btn onClick={onUpgrade} color={C.accent} style={{ width:"100%", maxWidth:280 }}>✦ Unlock Pro from £4.99/mo</Btn>
+    <Btn onClick={onUpgrade} style={{ width:"100%", maxWidth:280, background:"linear-gradient(135deg, #b8860b, #ffd700, #f4a800)", color:"#1a1000", boxShadow:"0 4px 16px rgba(212,160,23,0.35)" }}>✦ Unlock Pro from £4.99/mo</Btn>
     <p style={{ color:C.muted, fontSize:12, marginTop:14 }}>Cancel anytime. No commitment.</p>
   </div>
 );
