@@ -224,7 +224,7 @@ const Toggle = ({ value, onChange }) => (
 );
 
 const TInput = ({ value, onChange, placeholder, type="text", style={} }) => (
-  <input type={type} value={value} onChange={onChange} placeholder={placeholder} style={{ background:C.sectionBg, border:`1px solid ${C.border}`, borderRadius:10, color:C.text, padding:"12px 14px", fontSize:15, fontFamily:FONT, outline:"none", width:"100%", ...style }} />
+  <input type={type} value={value} onChange={onChange} placeholder={placeholder} style={{ background:C.card, border:`1.5px solid ${C.divider}`, borderRadius:10, color:C.text, padding:"12px 14px", fontSize:15, fontFamily:FONT, outline:"none", width:"100%", ...style }} />
 );
 
 const StatBox = ({ label, val, color, sub }) => (
@@ -260,7 +260,7 @@ const PacePicker = ({ value, onChange, targetLbs }) => {
       </div>
       <div style={{ background:`${selected.color}10`, border:`1px solid ${selected.color}33`, borderRadius:12, padding:"12px 14px", marginBottom:selected.warning?10:0 }}>
         <p style={{ color:C.text, fontSize:14, margin:0 }}>📅 <strong style={{ color:selected.color }}>{etaWeeks} weeks</strong> to reach your goal</p>
-        <p style={{ color:C.muted, fontSize:12, margin:"4px 0 0" }}>{selected.desc}</p>
+        <p style={{ color:C.textSec, fontSize:12, margin:"4px 0 0" }}>{selected.desc}</p>
       </div>
       {selected.warning&&<div style={{ background:"#ff3b3010", border:"1px solid #ff3b3033", borderRadius:12, padding:"10px 14px" }}><p style={{ color:C.red, fontSize:13, margin:0, lineHeight:1.6 }}>{selected.warning}</p></div>}
     </div>
@@ -343,7 +343,7 @@ const Onboarding = ({ onDone }) => {
 
         {/* Step 1 — Goal */}
         {step===1&&<div>
-          <p style={{ color:C.accent, fontSize:12, fontWeight:700, letterSpacing:"0.08em", marginBottom:6 }}>STEP 1 OF 8</p>
+          <p style={{ color:C.accent, fontSize:12, fontWeight:800, letterSpacing:"0.08em", marginBottom:6 }}>STEP 1 OF 8</p>
           <h2 style={{ fontSize:24, fontWeight:700, color:C.text, marginBottom:6 }}>What's your main goal?</h2>
           <p style={{ color:C.muted, fontSize:14, marginBottom:20 }}>We'll tailor everything around this.</p>
           <OptionCard value="lose_weight" current={data.goal} onClick={()=>update("goal","lose_weight")} icon="🎯" title="Lose weight" desc="Reduce body fat through diet and exercise" />
@@ -355,11 +355,11 @@ const Onboarding = ({ onDone }) => {
 
         {/* Step 2 — Personal details */}
         {step===2&&<div>
-          <p style={{ color:C.accent, fontSize:12, fontWeight:700, letterSpacing:"0.08em", marginBottom:6 }}>STEP 2 OF 8</p>
+          <p style={{ color:C.accent, fontSize:12, fontWeight:800, letterSpacing:"0.08em", marginBottom:6 }}>STEP 2 OF 8</p>
           <h2 style={{ fontSize:24, fontWeight:700, color:C.text, marginBottom:6 }}>About you</h2>
           <p style={{ color:C.muted, fontSize:14, marginBottom:20 }}>Used to calculate your personal calorie targets.</p>
           <div style={{ marginBottom:14 }}>
-            <p style={{ color:C.muted, fontSize:13, marginBottom:6 }}>Starting weight</p>
+            <p style={{ color:C.textSec, fontSize:13, fontWeight:500, marginBottom:6 }}>Starting weight</p>
             <div style={{ display:"flex", gap:8 }}>
               <TInput value={data.startWeight} onChange={e=>update("startWeight",e.target.value)} placeholder="Weight" type="number" style={{ flex:1 }} />
               <select value={data.unit} onChange={e=>update("unit",e.target.value)} style={{ background:C.sectionBg, border:`1px solid ${C.border}`, borderRadius:10, color:C.text, padding:"12px 10px", fontFamily:FONT, fontSize:15, cursor:"pointer", outline:"none" }}>
@@ -368,23 +368,23 @@ const Onboarding = ({ onDone }) => {
             </div>
           </div>
           <div style={{ display:"flex", gap:10, marginBottom:14 }}>
-            <div style={{ flex:1 }}><p style={{ color:C.muted, fontSize:13, marginBottom:6 }}>Height (cm)</p><TInput value={data.heightCm} onChange={e=>update("heightCm",e.target.value)} placeholder="e.g. 175" type="number" /></div>
-            <div style={{ flex:1 }}><p style={{ color:C.muted, fontSize:13, marginBottom:6 }}>Age</p><TInput value={data.age} onChange={e=>update("age",e.target.value)} placeholder="e.g. 35" type="number" /></div>
+            <div style={{ flex:1 }}><p style={{ color:C.textSec, fontSize:13, fontWeight:500, marginBottom:6 }}>Height (cm)</p><TInput value={data.heightCm} onChange={e=>update("heightCm",e.target.value)} placeholder="e.g. 175" type="number" /></div>
+            <div style={{ flex:1 }}><p style={{ color:C.textSec, fontSize:13, fontWeight:500, marginBottom:6 }}>Age</p><TInput value={data.age} onChange={e=>update("age",e.target.value)} placeholder="e.g. 35" type="number" /></div>
           </div>
           <div style={{ marginBottom:14 }}>
-            <p style={{ color:C.muted, fontSize:13, marginBottom:8 }}>Biological sex</p>
+            <p style={{ color:C.textSec, fontSize:13, fontWeight:500, marginBottom:8 }}>Biological sex</p>
             <div style={{ display:"flex", gap:8 }}>
               {[["male","Male"],["female","Female"]].map(([v,l])=><Chip key={v} color={C.accent} active={data.sex===v} onClick={()=>update("sex",v)}>{l}</Chip>)}
             </div>
           </div>
           <div style={{ marginBottom:14 }}>
-            <p style={{ color:C.muted, fontSize:13, marginBottom:8 }}>Weight target</p>
+            <p style={{ color:C.textSec, fontSize:13, fontWeight:500, marginBottom:8 }}>Weight target</p>
             <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
               {[7,14,21,28].map(lbs=><Chip key={lbs} color={C.accent} active={data.targetLbs===lbs} onClick={()=>update("targetLbs",lbs)}>{lbs/14} stone</Chip>)}
             </div>
           </div>
           <div style={{ marginBottom:20 }}>
-            <p style={{ color:C.muted, fontSize:13, marginBottom:8 }}>Weekly pace</p>
+            <p style={{ color:C.textSec, fontSize:13, fontWeight:500, marginBottom:8 }}>Weekly pace</p>
             <PacePicker value={data.paceId} onChange={v=>update("paceId",v)} targetLbs={data.targetLbs} />
           </div>
           <Btn onClick={()=>setStep(3)} disabled={!data.startWeight} style={{ width:"100%" }}>Next →</Btn>
@@ -392,7 +392,7 @@ const Onboarding = ({ onDone }) => {
 
         {/* Step 3 — Fitness level */}
         {step===3&&<div>
-          <p style={{ color:C.accent, fontSize:12, fontWeight:700, letterSpacing:"0.08em", marginBottom:6 }}>STEP 3 OF 8</p>
+          <p style={{ color:C.accent, fontSize:12, fontWeight:800, letterSpacing:"0.08em", marginBottom:6 }}>STEP 3 OF 8</p>
           <h2 style={{ fontSize:24, fontWeight:700, color:C.text, marginBottom:6 }}>Your fitness level</h2>
           <p style={{ color:C.muted, fontSize:14, marginBottom:20 }}>Be honest — we'll tailor the intensity to suit you.</p>
           <OptionCard value="beginner" current={data.fitnessLevel} onClick={()=>update("fitnessLevel","beginner")} icon="🌱" title="Beginner" desc="New to exercise or returning after a long break" color={C.green} />
@@ -404,7 +404,7 @@ const Onboarding = ({ onDone }) => {
 
         {/* Step 4 — Injuries & limitations */}
         {step===4&&<div>
-          <p style={{ color:C.accent, fontSize:12, fontWeight:700, letterSpacing:"0.08em", marginBottom:6 }}>STEP 4 OF 8</p>
+          <p style={{ color:C.accent, fontSize:12, fontWeight:800, letterSpacing:"0.08em", marginBottom:6 }}>STEP 4 OF 8</p>
           <h2 style={{ fontSize:24, fontWeight:700, color:C.text, marginBottom:6 }}>Any injuries or limitations?</h2>
           <p style={{ color:C.muted, fontSize:14, marginBottom:20 }}>We'll avoid exercises that could cause problems. Select all that apply.</p>
           <div style={{ display:"flex", flexWrap:"wrap", gap:8, marginBottom:16 }}>
@@ -428,7 +428,7 @@ const Onboarding = ({ onDone }) => {
 
         {/* Step 5 — Equipment */}
         {step===5&&<div>
-          <p style={{ color:C.accent, fontSize:12, fontWeight:700, letterSpacing:"0.08em", marginBottom:6 }}>STEP 5 OF 8</p>
+          <p style={{ color:C.accent, fontSize:12, fontWeight:800, letterSpacing:"0.08em", marginBottom:6 }}>STEP 5 OF 8</p>
           <h2 style={{ fontSize:24, fontWeight:700, color:C.text, marginBottom:6 }}>What equipment do you have?</h2>
           <p style={{ color:C.muted, fontSize:14, marginBottom:20 }}>Select everything available to you. Workouts will be built around this.</p>
           <div style={{ display:"flex", flexWrap:"wrap", gap:8, marginBottom:14 }}>
@@ -447,7 +447,7 @@ const Onboarding = ({ onDone }) => {
 
         {/* Step 6 — Diet type */}
         {step===6&&<div>
-          <p style={{ color:C.accent, fontSize:12, fontWeight:700, letterSpacing:"0.08em", marginBottom:6 }}>STEP 6 OF 8</p>
+          <p style={{ color:C.accent, fontSize:12, fontWeight:800, letterSpacing:"0.08em", marginBottom:6 }}>STEP 6 OF 8</p>
           <h2 style={{ fontSize:24, fontWeight:700, color:C.text, marginBottom:6 }}>Your diet</h2>
           <p style={{ color:C.muted, fontSize:14, marginBottom:20 }}>Meals will be generated to match your preferences.</p>
           <div style={{ marginBottom:16 }}>
@@ -480,7 +480,7 @@ const Onboarding = ({ onDone }) => {
 
         {/* Step 7 — Allergies & dislikes */}
         {step===7&&<div>
-          <p style={{ color:C.accent, fontSize:12, fontWeight:700, letterSpacing:"0.08em", marginBottom:6 }}>STEP 7 OF 8</p>
+          <p style={{ color:C.accent, fontSize:12, fontWeight:800, letterSpacing:"0.08em", marginBottom:6 }}>STEP 7 OF 8</p>
           <h2 style={{ fontSize:24, fontWeight:700, color:C.text, marginBottom:6 }}>Allergies & dislikes</h2>
           <p style={{ color:C.muted, fontSize:14, marginBottom:16 }}>We'll make sure these never appear in your meals.</p>
           <p style={{ color:C.muted, fontSize:12, fontWeight:600, marginBottom:8 }}>ALLERGIES / INTOLERANCES</p>
@@ -496,7 +496,7 @@ const Onboarding = ({ onDone }) => {
 
         {/* Step 8 — Lifestyle */}
         {step===8&&<div>
-          <p style={{ color:C.accent, fontSize:12, fontWeight:700, letterSpacing:"0.08em", marginBottom:6 }}>STEP 8 OF 8</p>
+          <p style={{ color:C.accent, fontSize:12, fontWeight:800, letterSpacing:"0.08em", marginBottom:6 }}>STEP 8 OF 8</p>
           <h2 style={{ fontSize:24, fontWeight:700, color:C.text, marginBottom:6 }}>Your lifestyle</h2>
           <p style={{ color:C.muted, fontSize:14, marginBottom:20 }}>Helps us give the right advice for your situation.</p>
           <div style={{ marginBottom:16 }}>
@@ -1338,15 +1338,15 @@ const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDar
           </div>
         </div>
         <div>
-          <p style={{ color:C.muted, fontSize:13, marginBottom:8 }}>Weekly pace</p>
+          <p style={{ color:C.textSec, fontSize:13, fontWeight:500, marginBottom:8 }}>Weekly pace</p>
           <PacePicker value={tempData.paceId||"normal"} onChange={v=>setTempData(d=>({...d,paceId:v}))} targetLbs={tempData.targetLbs||14} />
         </div>
       </>}
 
       {editing==="details"&&<>
         <div style={{ display:"flex", gap:10, marginBottom:14 }}>
-          <div style={{ flex:1 }}><p style={{ color:C.muted, fontSize:13, marginBottom:6 }}>Height (cm)</p><TInput value={tempData.heightCm||""} onChange={e=>setTempData(d=>({...d,heightCm:e.target.value}))} placeholder="e.g. 178" type="number" /></div>
-          <div style={{ flex:1 }}><p style={{ color:C.muted, fontSize:13, marginBottom:6 }}>Age</p><TInput value={tempData.age||""} onChange={e=>setTempData(d=>({...d,age:e.target.value}))} placeholder="e.g. 53" type="number" /></div>
+          <div style={{ flex:1 }}><p style={{ color:C.textSec, fontSize:13, fontWeight:500, marginBottom:6 }}>Height (cm)</p><TInput value={tempData.heightCm||""} onChange={e=>setTempData(d=>({...d,heightCm:e.target.value}))} placeholder="e.g. 178" type="number" /></div>
+          <div style={{ flex:1 }}><p style={{ color:C.textSec, fontSize:13, fontWeight:500, marginBottom:6 }}>Age</p><TInput value={tempData.age||""} onChange={e=>setTempData(d=>({...d,age:e.target.value}))} placeholder="e.g. 53" type="number" /></div>
         </div>
         <div style={{ marginBottom:14 }}>
           <p style={{ color:C.muted, fontSize:13, marginBottom:6 }}>Biological sex</p>
