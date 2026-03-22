@@ -268,9 +268,28 @@ const PacePicker = ({ value, onChange, targetLbs }) => {
 };
 
 // ── Onboarding ────────────────────────────────────────────────────────────────
+const TOTAL_STEPS = 9;
+
 const Onboarding = ({ onDone }) => {
   const [step, setStep] = useState(0);
-  const [data, setData] = useState({ name:"", goal:"lose_weight", targetLbs:14, startWeight:"", unit:"lbs", allergies:[], dislikes:[], workoutsPerWeek:3, paceId:"normal", heightCm:"", age:"53", sex:"male", darkMode:false });
+  const [data, setData] = useState({
+    name:"", goal:"lose_weight", targetLbs:14, startWeight:"", unit:"lbs",
+    allergies:[], dislikes:[], workoutsPerWeek:3, paceId:"normal",
+    heightCm:"", age:"", sex:"male",
+    // New fields
+    fitnessLevel:"beginner",       // beginner / intermediate / active / athlete
+    injuries:[],                    // back, knees, hips, shoulders, none
+    equipment:[],                   // gym, dumbbells, barbell, rowing, crosstrainer, treadmill, bike, bodyweight
+    workoutStyle:"mixed",           // strength, cardio, mixed, low_impact
+    dietType:"omnivore",            // omnivore, vegetarian, vegan, pescatarian
+    dairyPref:"dairy_free",         // full_dairy, dairy_free, lactose_free
+    glutenPref:"gluten_free",       // regular, gluten_free
+    milkAlt:"soya",                 // soya, oat, almond, coconut, regular
+    cookingTime:"moderate",         // quick (15min), moderate (30min), enjoy (60min+)
+    sleepQuality:"average",         // good, average, poor
+    activityLevel:"moderate",       // sedentary, light, moderate, active, very_active
+  });
+
   const update = (k,v) => setData(d=>({...d,[k]:v}));
   const toggleArr = (k,v) => setData(d=>({...d,[k]:d[k].includes(v)?d[k].filter(x=>x!==v):[...d[k],v]}));
 
@@ -288,44 +307,57 @@ const Onboarding = ({ onDone }) => {
     onDone({...data, startWeightLbs:parseFloat(sw.toFixed(1))});
   };
 
-  const pct = Math.round((step/5)*100);
+  const pct = Math.round((step/TOTAL_STEPS)*100);
+
+  const OptionCard = ({ value, current, onClick, icon, title, desc, color=C.accent }) => (
+    <Card onClick={onClick} style={{ borderColor:current===value?color:C.border, borderWidth:current===value?2:1, marginBottom:10 }}>
+      <div style={{ display:"flex", alignItems:"center", gap:14 }}>
+        <div style={{ width:44, height:44, borderRadius:12, background:`${color}15`, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, fontSize:22 }}>{icon}</div>
+        <div style={{ flex:1 }}>
+          <p style={{ color:C.text, fontWeight:600, fontSize:15, margin:0 }}>{title}</p>
+          {desc&&<p style={{ color:C.muted, fontSize:13, margin:"2px 0 0" }}>{desc}</p>}
+        </div>
+        {current===value&&<div style={{ width:22, height:22, borderRadius:99, background:color, display:"flex", alignItems:"center", justifyContent:"center" }}><Icon name="check" size={13} color="#fff" /></div>}
+      </div>
+    </Card>
+  );
 
   return (
     <div style={{ minHeight:"100vh", background:C.bg, fontFamily:FONT, paddingBottom:40 }}>
       <div style={{ height:4, background:C.border }}><div style={{ height:"100%", width:`${pct}%`, background:C.accent, transition:"width 0.4s", borderRadius:"0 2px 2px 0" }} /></div>
       <div style={{ maxWidth:420, margin:"0 auto", padding:"32px 20px 0" }}>
 
+        {/* Step 0 — Welcome */}
         {step===0&&<div style={{ textAlign:"center", paddingTop:40 }}>
-          <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:16, justifyContent:"center" }}>
-          <img src="/leanplan_app_icon.png" alt="" style={{ height:64, width:64, objectFit:"contain", borderRadius:16 }} />
-          <span style={{ fontSize:36, fontWeight:800, letterSpacing:"-0.02em", fontFamily:FONT }}>
-            <span style={{ color:C.text }}>Lean</span><span style={{ color:C.accent }}>Plan</span>
-          </span>
-        </div>
-          <h1 style={{ fontSize:32, fontWeight:700, color:C.text, margin:"0 0 12px" }}>Welcome to LeanPlan</h1>
-          <p style={{ color:C.muted, fontSize:16, lineHeight:1.6, marginBottom:32 }}>Let's set up your personal health plan. About 2 minutes — we'll tailor everything to you.</p>
-          <div style={{ marginBottom:20 }}><TInput value={data.name} onChange={e=>update("name",e.target.value)} placeholder="Your name (optional)" /></div>
-          <Btn onClick={()=>setStep(1)} style={{ width:"100%" }}>Get Started →</Btn>
+          <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:20, justifyContent:"center" }}>
+            <img src="/leanplan_app_icon.png" alt="" style={{ height:64, width:64, objectFit:"contain", borderRadius:16 }} />
+            <span style={{ fontSize:36, fontWeight:800, letterSpacing:"-0.02em", fontFamily:FONT }}>
+              <span style={{ color:C.text }}>Lean</span><span style={{ color:C.accent }}>Plan</span>
+            </span>
+          </div>
+          <h1 style={{ fontSize:30, fontWeight:700, color:C.text, margin:"0 0 12px" }}>Your personal health coach</h1>
+          <p style={{ color:C.muted, fontSize:15, lineHeight:1.7, marginBottom:32 }}>Let's build your plan. We'll ask about your goals, fitness level, diet and lifestyle — takes about 3 minutes.</p>
+          <div style={{ marginBottom:20 }}><TInput value={data.name} onChange={e=>update("name",e.target.value)} placeholder="Your first name (optional)" /></div>
+          <Btn onClick={()=>setStep(1)} style={{ width:"100%" }}>Let's go →</Btn>
         </div>}
 
+        {/* Step 1 — Goal */}
         {step===1&&<div>
-          <h2 style={{ fontSize:26, fontWeight:700, color:C.text, marginBottom:8 }}>What's your main goal?</h2>
-          <p style={{ color:C.muted, fontSize:15, marginBottom:24 }}>We'll tailor your meals and workouts to this.</p>
-          {[["lose_weight","🎯","Lose weight","Reduce body fat through diet and exercise"],["build_muscle","💪","Build muscle","Gain strength while staying lean"],["get_fitter","🏃","Get fitter","Improve cardio and general fitness"],["all","⭐","All of the above","Lose fat, build muscle, get fitter"]].map(([val,ico,title,desc])=>(
-            <Card key={val} onClick={()=>update("goal",val)} style={{ borderColor:data.goal===val?C.accent:C.border, borderWidth:data.goal===val?2:1 }}>
-              <div style={{ display:"flex", alignItems:"center", gap:14 }}>
-                <span style={{ fontSize:28 }}>{ico}</span>
-                <div><p style={{ color:C.text, fontWeight:600, fontSize:16, margin:0 }}>{title}</p><p style={{ color:C.muted, fontSize:13, margin:"2px 0 0" }}>{desc}</p></div>
-                {data.goal===val&&<span style={{ marginLeft:"auto", color:C.accent, fontSize:20 }}>✓</span>}
-              </div>
-            </Card>
-          ))}
+          <p style={{ color:C.accent, fontSize:12, fontWeight:700, letterSpacing:"0.08em", marginBottom:6 }}>STEP 1 OF 8</p>
+          <h2 style={{ fontSize:24, fontWeight:700, color:C.text, marginBottom:6 }}>What's your main goal?</h2>
+          <p style={{ color:C.muted, fontSize:14, marginBottom:20 }}>We'll tailor everything around this.</p>
+          <OptionCard value="lose_weight" current={data.goal} onClick={()=>update("goal","lose_weight")} icon="🎯" title="Lose weight" desc="Reduce body fat through diet and exercise" />
+          <OptionCard value="build_muscle" current={data.goal} onClick={()=>update("goal","build_muscle")} icon="💪" title="Build muscle" desc="Gain strength while managing weight" />
+          <OptionCard value="get_fitter" current={data.goal} onClick={()=>update("goal","get_fitter")} icon="🏃" title="Get fitter" desc="Improve cardio and general fitness" />
+          <OptionCard value="all" current={data.goal} onClick={()=>update("goal","all")} icon="⭐" title="All of the above" desc="Lose fat, build muscle, get fitter" />
           <Btn onClick={()=>setStep(2)} style={{ width:"100%", marginTop:8 }}>Next →</Btn>
         </div>}
 
+        {/* Step 2 — Personal details */}
         {step===2&&<div>
-          <h2 style={{ fontSize:26, fontWeight:700, color:C.text, marginBottom:8 }}>Your details</h2>
-          <p style={{ color:C.muted, fontSize:15, marginBottom:20 }}>Used to calculate your personalised calorie target (TDEE).</p>
+          <p style={{ color:C.accent, fontSize:12, fontWeight:700, letterSpacing:"0.08em", marginBottom:6 }}>STEP 2 OF 8</p>
+          <h2 style={{ fontSize:24, fontWeight:700, color:C.text, marginBottom:6 }}>About you</h2>
+          <p style={{ color:C.muted, fontSize:14, marginBottom:20 }}>Used to calculate your personal calorie targets.</p>
           <div style={{ marginBottom:14 }}>
             <p style={{ color:C.muted, fontSize:13, marginBottom:6 }}>Starting weight</p>
             <div style={{ display:"flex", gap:8 }}>
@@ -336,68 +368,194 @@ const Onboarding = ({ onDone }) => {
             </div>
           </div>
           <div style={{ display:"flex", gap:10, marginBottom:14 }}>
-            <div style={{ flex:1 }}><p style={{ color:C.muted, fontSize:13, marginBottom:6 }}>Height (cm)</p><TInput value={data.heightCm} onChange={e=>update("heightCm",e.target.value)} placeholder="e.g. 178" type="number" /></div>
-            <div style={{ flex:1 }}><p style={{ color:C.muted, fontSize:13, marginBottom:6 }}>Age</p><TInput value={data.age} onChange={e=>update("age",e.target.value)} placeholder="e.g. 53" type="number" /></div>
+            <div style={{ flex:1 }}><p style={{ color:C.muted, fontSize:13, marginBottom:6 }}>Height (cm)</p><TInput value={data.heightCm} onChange={e=>update("heightCm",e.target.value)} placeholder="e.g. 175" type="number" /></div>
+            <div style={{ flex:1 }}><p style={{ color:C.muted, fontSize:13, marginBottom:6 }}>Age</p><TInput value={data.age} onChange={e=>update("age",e.target.value)} placeholder="e.g. 35" type="number" /></div>
           </div>
           <div style={{ marginBottom:14 }}>
-            <p style={{ color:C.muted, fontSize:13, marginBottom:6 }}>Biological sex (for calorie calculation)</p>
+            <p style={{ color:C.muted, fontSize:13, marginBottom:8 }}>Biological sex</p>
             <div style={{ display:"flex", gap:8 }}>
               {[["male","Male"],["female","Female"]].map(([v,l])=><Chip key={v} color={C.accent} active={data.sex===v} onClick={()=>update("sex",v)}>{l}</Chip>)}
             </div>
           </div>
           <div style={{ marginBottom:14 }}>
-            <p style={{ color:C.muted, fontSize:13, marginBottom:6 }}>Weight loss target</p>
+            <p style={{ color:C.muted, fontSize:13, marginBottom:8 }}>Weight target</p>
             <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
-              {[7,14,21,28].map(lbs=><Chip key={lbs} color={C.accent} active={data.targetLbs===lbs} onClick={()=>update("targetLbs",lbs)}>{lbs/14} stone ({lbs} lbs)</Chip>)}
-            </div>
-          </div>
-          <div style={{ marginBottom:14 }}>
-            <p style={{ color:C.muted, fontSize:13, marginBottom:6 }}>Workouts per week</p>
-            <div style={{ display:"flex", gap:8 }}>
-              {[2,3,4,5].map(n=><Chip key={n} color={C.purple} active={data.workoutsPerWeek===n} onClick={()=>update("workoutsPerWeek",n)}>{n}x</Chip>)}
+              {[7,14,21,28].map(lbs=><Chip key={lbs} color={C.accent} active={data.targetLbs===lbs} onClick={()=>update("targetLbs",lbs)}>{lbs/14} stone</Chip>)}
             </div>
           </div>
           <div style={{ marginBottom:20 }}>
-            <p style={{ color:C.muted, fontSize:13, marginBottom:8 }}>How fast do you want to lose weight?</p>
+            <p style={{ color:C.muted, fontSize:13, marginBottom:8 }}>Weekly pace</p>
             <PacePicker value={data.paceId} onChange={v=>update("paceId",v)} targetLbs={data.targetLbs} />
           </div>
           <Btn onClick={()=>setStep(3)} disabled={!data.startWeight} style={{ width:"100%" }}>Next →</Btn>
         </div>}
 
+        {/* Step 3 — Fitness level */}
         {step===3&&<div>
-          <h2 style={{ fontSize:26, fontWeight:700, color:C.text, marginBottom:8 }}>Allergies & intolerances</h2>
-          <p style={{ color:C.muted, fontSize:15, marginBottom:20 }}>These will be excluded from all meal plans.</p>
-          <div style={{ display:"flex", flexWrap:"wrap", gap:8, marginBottom:20 }}>
-            {ALLERGENS.map(a=><Chip key={a} color={C.red} active={data.allergies.includes(a)} onClick={()=>toggleArr("allergies",a)}>{a}</Chip>)}
-          </div>
-          <p style={{ color:C.muted, fontSize:13, marginBottom:16 }}>Fish, oats and cow's milk are always excluded by default.</p>
-          <Btn onClick={()=>setStep(4)} style={{ width:"100%" }}>Next →</Btn>
+          <p style={{ color:C.accent, fontSize:12, fontWeight:700, letterSpacing:"0.08em", marginBottom:6 }}>STEP 3 OF 8</p>
+          <h2 style={{ fontSize:24, fontWeight:700, color:C.text, marginBottom:6 }}>Your fitness level</h2>
+          <p style={{ color:C.muted, fontSize:14, marginBottom:20 }}>Be honest — we'll tailor the intensity to suit you.</p>
+          <OptionCard value="beginner" current={data.fitnessLevel} onClick={()=>update("fitnessLevel","beginner")} icon="🌱" title="Beginner" desc="New to exercise or returning after a long break" color={C.green} />
+          <OptionCard value="intermediate" current={data.fitnessLevel} onClick={()=>update("fitnessLevel","intermediate")} icon="🔥" title="Intermediate" desc="Exercise 1-3x per week, some experience" color={C.orange} />
+          <OptionCard value="active" current={data.fitnessLevel} onClick={()=>update("fitnessLevel","active")} icon="⚡" title="Active" desc="Regular training 3-5x per week" color={C.accent} />
+          <OptionCard value="athlete" current={data.fitnessLevel} onClick={()=>update("fitnessLevel","athlete")} icon="🏆" title="Athlete" desc="Advanced training 5+ times per week" color={C.purple} />
+          <Btn onClick={()=>setStep(4)} style={{ width:"100%", marginTop:8 }}>Next →</Btn>
         </div>}
 
+        {/* Step 4 — Injuries & limitations */}
         {step===4&&<div>
-          <h2 style={{ fontSize:26, fontWeight:700, color:C.text, marginBottom:8 }}>Foods you dislike</h2>
-          <p style={{ color:C.muted, fontSize:15, marginBottom:20 }}>These won't appear in your meal suggestions.</p>
+          <p style={{ color:C.accent, fontSize:12, fontWeight:700, letterSpacing:"0.08em", marginBottom:6 }}>STEP 4 OF 8</p>
+          <h2 style={{ fontSize:24, fontWeight:700, color:C.text, marginBottom:6 }}>Any injuries or limitations?</h2>
+          <p style={{ color:C.muted, fontSize:14, marginBottom:20 }}>We'll avoid exercises that could cause problems. Select all that apply.</p>
+          <div style={{ display:"flex", flexWrap:"wrap", gap:8, marginBottom:16 }}>
+            {[["none","No limitations"],["back","Lower back"],["knees","Knees"],["hips","Hips"],["shoulders","Shoulders"],["wrists","Wrists"],["neck","Neck"],["ankles","Ankles"]].map(([v,l])=>(
+              <Chip key={v} color={v==="none"?C.green:C.red} active={data.injuries.includes(v)} onClick={()=>{
+                if (v==="none") { update("injuries", data.injuries.includes("none")?[]:["none"]); }
+                else { const without = data.injuries.filter(x=>x!=="none"); toggleArr("injuries",v); if(!without.includes(v)) update("injuries",[...without,v]); else update("injuries",without.filter(x=>x!==v)); }
+              }}>{l}</Chip>
+            ))}
+          </div>
+          <div style={{ marginBottom:14 }}>
+            <p style={{ color:C.muted, fontSize:13, marginBottom:8 }}>Workout style preference</p>
+            <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
+              {[["mixed","Mixed — strength & cardio"],["strength","Strength focused"],["cardio","Cardio focused"],["low_impact","Low impact only"]].map(([v,l])=>(
+                <Chip key={v} color={C.accent} active={data.workoutStyle===v} onClick={()=>update("workoutStyle",v)}>{l}</Chip>
+              ))}
+            </div>
+          </div>
+          <Btn onClick={()=>setStep(5)} style={{ width:"100%", marginTop:8 }}>Next →</Btn>
+        </div>}
+
+        {/* Step 5 — Equipment */}
+        {step===5&&<div>
+          <p style={{ color:C.accent, fontSize:12, fontWeight:700, letterSpacing:"0.08em", marginBottom:6 }}>STEP 5 OF 8</p>
+          <h2 style={{ fontSize:24, fontWeight:700, color:C.text, marginBottom:6 }}>What equipment do you have?</h2>
+          <p style={{ color:C.muted, fontSize:14, marginBottom:20 }}>Select everything available to you. Workouts will be built around this.</p>
+          <div style={{ display:"flex", flexWrap:"wrap", gap:8, marginBottom:14 }}>
+            {[["gym_machines","Gym machines"],["dumbbells","Dumbbells"],["barbell","Barbell"],["cables","Cable machine"],["rowing","Rowing machine"],["crosstrainer","Cross trainer"],["treadmill","Treadmill"],["bike","Exercise bike"],["resistance_bands","Resistance bands"],["bodyweight","Bodyweight only"]].map(([v,l])=>(
+              <Chip key={v} color={C.indigo} active={data.equipment.includes(v)} onClick={()=>toggleArr("equipment",v)}>{l}</Chip>
+            ))}
+          </div>
+          <div style={{ marginBottom:14 }}>
+            <p style={{ color:C.muted, fontSize:13, marginBottom:8 }}>Workouts per week</p>
+            <div style={{ display:"flex", gap:8 }}>
+              {[2,3,4,5].map(n=><Chip key={n} color={C.purple} active={data.workoutsPerWeek===n} onClick={()=>update("workoutsPerWeek",n)}>{n}x</Chip>)}
+            </div>
+          </div>
+          <Btn onClick={()=>setStep(6)} disabled={data.equipment.length===0} style={{ width:"100%", marginTop:8 }}>Next →</Btn>
+        </div>}
+
+        {/* Step 6 — Diet type */}
+        {step===6&&<div>
+          <p style={{ color:C.accent, fontSize:12, fontWeight:700, letterSpacing:"0.08em", marginBottom:6 }}>STEP 6 OF 8</p>
+          <h2 style={{ fontSize:24, fontWeight:700, color:C.text, marginBottom:6 }}>Your diet</h2>
+          <p style={{ color:C.muted, fontSize:14, marginBottom:20 }}>Meals will be generated to match your preferences.</p>
+          <div style={{ marginBottom:16 }}>
+            <p style={{ color:C.muted, fontSize:13, marginBottom:8 }}>Diet type</p>
+            <OptionCard value="omnivore" current={data.dietType} onClick={()=>update("dietType","omnivore")} icon="🥩" title="Omnivore" desc="Eat everything — meat, fish, dairy" />
+            <OptionCard value="pescatarian" current={data.dietType} onClick={()=>update("dietType","pescatarian")} icon="🐟" title="Pescatarian" desc="Fish and seafood, no meat" />
+            <OptionCard value="vegetarian" current={data.dietType} onClick={()=>update("dietType","vegetarian")} icon="🥗" title="Vegetarian" desc="No meat or fish" />
+            <OptionCard value="vegan" current={data.dietType} onClick={()=>update("dietType","vegan")} icon="🌱" title="Vegan" desc="No animal products" />
+          </div>
+          <div style={{ marginBottom:14 }}>
+            <p style={{ color:C.muted, fontSize:13, marginBottom:8 }}>Dairy preference</p>
+            <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
+              {[["full_dairy","Full dairy"],["lactose_free","Lactose-free"],["dairy_free","Dairy-free"]].map(([v,l])=><Chip key={v} color={C.teal} active={data.dairyPref===v} onClick={()=>update("dairyPref",v)}>{l}</Chip>)}
+            </div>
+          </div>
+          <div style={{ marginBottom:14 }}>
+            <p style={{ color:C.muted, fontSize:13, marginBottom:8 }}>Gluten preference</p>
+            <div style={{ display:"flex", gap:8 }}>
+              {[["regular","Regular"],["gluten_free","Gluten-free"]].map(([v,l])=><Chip key={v} color={C.orange} active={data.glutenPref===v} onClick={()=>update("glutenPref",v)}>{l}</Chip>)}
+            </div>
+          </div>
+          {data.dairyPref==="dairy_free"&&<div style={{ marginBottom:14 }}>
+            <p style={{ color:C.muted, fontSize:13, marginBottom:8 }}>Preferred milk alternative</p>
+            <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
+              {[["soya","Soya"],["oat","Oat"],["almond","Almond"],["coconut","Coconut"]].map(([v,l])=><Chip key={v} color={C.green} active={data.milkAlt===v} onClick={()=>update("milkAlt",v)}>{l}</Chip>)}
+            </div>
+          </div>}
+          <Btn onClick={()=>setStep(7)} style={{ width:"100%", marginTop:8 }}>Next →</Btn>
+        </div>}
+
+        {/* Step 7 — Allergies & dislikes */}
+        {step===7&&<div>
+          <p style={{ color:C.accent, fontSize:12, fontWeight:700, letterSpacing:"0.08em", marginBottom:6 }}>STEP 7 OF 8</p>
+          <h2 style={{ fontSize:24, fontWeight:700, color:C.text, marginBottom:6 }}>Allergies & dislikes</h2>
+          <p style={{ color:C.muted, fontSize:14, marginBottom:16 }}>We'll make sure these never appear in your meals.</p>
+          <p style={{ color:C.muted, fontSize:12, fontWeight:600, marginBottom:8 }}>ALLERGIES / INTOLERANCES</p>
+          <div style={{ display:"flex", flexWrap:"wrap", gap:8, marginBottom:16 }}>
+            {ALLERGENS.map(a=><Chip key={a} color={C.red} active={data.allergies.includes(a)} onClick={()=>toggleArr("allergies",a)}>{a}</Chip>)}
+          </div>
+          <p style={{ color:C.muted, fontSize:12, fontWeight:600, marginBottom:8 }}>FOODS I DISLIKE</p>
           <div style={{ display:"flex", flexWrap:"wrap", gap:8, marginBottom:20 }}>
             {DISLIKES_LIST.map(d=><Chip key={d} color={C.orange} active={data.dislikes.includes(d)} onClick={()=>toggleArr("dislikes",d)}>{d}</Chip>)}
           </div>
-          <Btn onClick={()=>setStep(5)} style={{ width:"100%" }}>Next →</Btn>
+          <Btn onClick={()=>setStep(8)} style={{ width:"100%" }}>Next →</Btn>
         </div>}
 
-        {step===5&&<div style={{ textAlign:"center", paddingTop:40 }}>
-          <div style={{ marginBottom:16, display:"flex", justifyContent:"center" }}><div style={{ width:80, height:80, borderRadius:99, background:`${C.green}18`, border:`2px solid ${C.green}44`, display:"flex", alignItems:"center", justifyContent:"center" }}><Icon name="check" size={40} color={C.green} /></div></div>
-          <h2 style={{ fontSize:28, fontWeight:700, color:C.text, marginBottom:12 }}>All set{data.name?`, ${data.name}`:""}!</h2>
-          <p style={{ color:C.muted, fontSize:15, lineHeight:1.6, marginBottom:28 }}>Your plan is ready — fully personalised to you.</p>
+        {/* Step 8 — Lifestyle */}
+        {step===8&&<div>
+          <p style={{ color:C.accent, fontSize:12, fontWeight:700, letterSpacing:"0.08em", marginBottom:6 }}>STEP 8 OF 8</p>
+          <h2 style={{ fontSize:24, fontWeight:700, color:C.text, marginBottom:6 }}>Your lifestyle</h2>
+          <p style={{ color:C.muted, fontSize:14, marginBottom:20 }}>Helps us give the right advice for your situation.</p>
+          <div style={{ marginBottom:16 }}>
+            <p style={{ color:C.muted, fontSize:13, marginBottom:8 }}>Daily activity level (outside exercise)</p>
+            <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
+              {[["sedentary","Mostly sitting"],["light","Light movement"],["moderate","On my feet sometimes"],["active","Very active job"]].map(([v,l])=>(
+                <Chip key={v} color={C.accent} active={data.activityLevel===v} onClick={()=>update("activityLevel",v)}>{l}</Chip>
+              ))}
+            </div>
+          </div>
+          <div style={{ marginBottom:16 }}>
+            <p style={{ color:C.muted, fontSize:13, marginBottom:8 }}>How's your sleep?</p>
+            <div style={{ display:"flex", gap:8 }}>
+              {[["good","Good"],["average","Average"],["poor","Poor"]].map(([v,l])=>(
+                <Chip key={v} color={C.purple} active={data.sleepQuality===v} onClick={()=>update("sleepQuality",v)}>{l}</Chip>
+              ))}
+            </div>
+          </div>
+          <div style={{ marginBottom:20 }}>
+            <p style={{ color:C.muted, fontSize:13, marginBottom:8 }}>Cooking time available per meal</p>
+            <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
+              {[["quick","Quick — 15 mins"],["moderate","Moderate — 30 mins"],["enjoy","I enjoy cooking — 60 mins+"]].map(([v,l])=>(
+                <Chip key={v} color={C.green} active={data.cookingTime===v} onClick={()=>update("cookingTime",v)}>{l}</Chip>
+              ))}
+            </div>
+          </div>
+          <Btn onClick={()=>setStep(9)} style={{ width:"100%" }}>Next →</Btn>
+        </div>}
+
+        {/* Step 9 — Summary */}
+        {step===9&&<div style={{ textAlign:"center", paddingTop:30 }}>
+          <div style={{ marginBottom:16, display:"flex", justifyContent:"center" }}>
+            <div style={{ width:80, height:80, borderRadius:99, background:`${C.green}18`, border:`2px solid ${C.green}44`, display:"flex", alignItems:"center", justifyContent:"center" }}>
+              <Icon name="check" size={40} color={C.green} />
+            </div>
+          </div>
+          <h2 style={{ fontSize:28, fontWeight:700, color:C.text, marginBottom:8 }}>Your plan is ready{data.name?`, ${data.name}`:""}!</h2>
+          <p style={{ color:C.muted, fontSize:14, lineHeight:1.7, marginBottom:24 }}>Everything has been tailored to you. You can update any of these in Profile settings.</p>
           <Card style={{ textAlign:"left", marginBottom:24 }}>
-            {[["🎯","Goal",data.goal.replace("_"," ")],["⚖️","Target",`Lose ${data.targetLbs} lbs`],["📅","Pace",`${getPace(data.paceId).lbs} lbs/week`],["🏋️","Workouts",`${data.workoutsPerWeek}x/week`],["🚫","Allergies",data.allergies.length>0?data.allergies.join(", "):"None"],["😐","Dislikes",data.dislikes.length>0?`${data.dislikes.length} foods`:"None"]].map(([ico,k,v])=>(
+            {[
+              ["🎯", "Goal", data.goal.replace("_"," ")],
+              ["💪", "Fitness", data.fitnessLevel],
+              ["🥗", "Diet", `${data.dietType}${data.dairyPref==="dairy_free"?" · dairy-free":""}${data.glutenPref==="gluten_free"?" · GF":""}`],
+              ["🏋️", "Equipment", data.equipment.length>0?`${data.equipment.length} selected`:"None"],
+              ["📅", "Workouts", `${data.workoutsPerWeek}x/week`],
+              ["🚫", "Allergies", data.allergies.length>0?data.allergies.join(", "):"None"],
+              ["😐", "Dislikes", data.dislikes.length>0?`${data.dislikes.length} foods`:"None"],
+            ].map(([ico,k,v])=>(
               <div key={k} style={{ display:"flex", gap:12, padding:"8px 0", borderBottom:`1px solid ${C.border}` }}>
-                <span>{ico}</span><span style={{ color:C.muted, fontSize:14, minWidth:70 }}>{k}</span><span style={{ color:C.text, fontSize:14, textTransform:"capitalize" }}>{v}</span>
+                <span>{ico}</span>
+                <span style={{ color:C.muted, fontSize:14, minWidth:80 }}>{k}</span>
+                <span style={{ color:C.text, fontSize:14, textTransform:"capitalize", flex:1 }}>{v}</span>
               </div>
             ))}
           </Card>
-          <Btn onClick={finish} style={{ width:"100%" }}>Start My Journey 🚀</Btn>
+          <Btn onClick={finish} color={C.accent} style={{ width:"100%", fontSize:17, padding:"15px 0" }}>Start My Journey 🚀</Btn>
         </div>}
 
-        {step>0&&step<5&&<button onClick={()=>setStep(s=>s-1)} style={{ background:"none", border:"none", color:C.muted, fontSize:15, cursor:"pointer", marginTop:16, fontFamily:FONT }}>← Back</button>}
+        {step>0&&step<9&&<button onClick={()=>setStep(s=>s-1)} style={{ background:"none", border:"none", color:C.muted, fontSize:15, cursor:"pointer", marginTop:16, fontFamily:FONT }}>← Back</button>}
       </div>
     </div>
   );
@@ -1228,7 +1386,7 @@ const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDar
       <div style={{ textAlign:"center", padding:"24px 0 20px" }}>
         <div style={{ width:80, height:80, borderRadius:99, background:`linear-gradient(135deg, ${C.accent}, ${C.green})`, margin:"0 auto 12px", display:"flex", alignItems:"center", justifyContent:"center", overflow:"hidden" }}><img src="/leanplan_app_icon.png" alt="LeanPlan" style={{ width:"100%", height:"100%", objectFit:"cover" }} /></div>
         <h2 style={{ color:C.text, fontSize:22, fontWeight:700, margin:0 }}>{profile.name||"Your Profile"}</h2>
-        <p style={{ color:C.muted, fontSize:14, margin:"4px 0 0" }}>Age {profile.age||53} · LeanPlan</p>
+        <p style={{ color:C.muted, fontSize:14, margin:"4px 0 0" }}>Age {profile.age||"—"} · LeanPlan</p>
         {tdee&&<p style={{ color:C.accent, fontSize:14, margin:"4px 0 0", fontWeight:600 }}>TDEE: {tdee} cal · BMI: {bmi}</p>}
       </div>
 
@@ -1244,10 +1402,18 @@ const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDar
         <Row label="Workouts/week" value={`${profile.workoutsPerWeek}x`} onClick={()=>startEdit("details")} last />
       </Section>
 
+      <Section title="Fitness">
+        <Row label="Fitness level" value={profile.fitnessLevel||"Not set"} onClick={()=>startEdit("fitness")} />
+        <Row label="Injuries / limitations" value={profile.injuries?.length>0?profile.injuries.join(", "):"None"} onClick={()=>startEdit("fitness")} />
+        <Row label="Equipment" value={profile.equipment?.length>0?`${profile.equipment.length} items`:"Not set"} onClick={()=>startEdit("fitness")} last />
+      </Section>
+
       <Section title="Diet">
-        <Row label="Allergies / intolerances" value={profile.allergies?.length>0?`${profile.allergies.length} selected`:"None"} onClick={()=>startEdit("allergies")} />
-        <Row label="Foods I dislike" value={profile.dislikes?.length>0?`${profile.dislikes.length} selected`:"None"} onClick={()=>startEdit("dislikes")} />
-        <Row label="Always excluded" value="Fish · Oats · Cow's milk" last />
+        <Row label="Diet type" value={profile.dietType||"omnivore"} onClick={()=>startEdit("diet")} />
+        <Row label="Dairy" value={profile.dairyPref?.replace("_"," ")||"Not set"} onClick={()=>startEdit("diet")} />
+        <Row label="Gluten" value={profile.glutenPref?.replace("_"," ")||"Not set"} onClick={()=>startEdit("diet")} />
+        <Row label="Allergies" value={profile.allergies?.length>0?`${profile.allergies.length} selected`:"None"} onClick={()=>startEdit("allergies")} />
+        <Row label="Dislikes" value={profile.dislikes?.length>0?`${profile.dislikes.length} foods`:"None"} onClick={()=>startEdit("dislikes")} last />
       </Section>
 
       <Section title="Appearance">

@@ -132,28 +132,46 @@ app.post("/api/chat", async (req, res) => {
   const { messages, profile } = req.body;
   if (!messages || !Array.isArray(messages)) return res.status(400).json({ error: "Invalid request" });
 
+  const injuries = profile?.injuries?.filter(i=>i!=="none")?.join(", ") || "none";
+  const equipment = profile?.equipment?.join(", ") || "not specified";
+  const dietNotes = [
+    profile?.dietType || "omnivore",
+    profile?.dairyPref === "dairy_free" ? "dairy-free" : profile?.dairyPref === "lactose_free" ? "lactose-free" : "full dairy ok",
+    profile?.glutenPref === "gluten_free" ? "gluten-free" : "gluten ok",
+    profile?.milkAlt ? `prefers ${profile.milkAlt} milk` : "",
+  ].filter(Boolean).join(", ");
+
   const systemPrompt = `You are a friendly, knowledgeable personal health coach built into LeanPlan, a fitness and nutrition app.
 
 The user's profile:
-- Name: ${profile?.name || "Friend"}
-- Age: ${profile?.age || 53}
-- Goal: ${profile?.goal?.replace("_", " ") || "lose weight"}
+- Name: ${profile?.name || "there"}
+- Age: ${profile?.age || "unknown"}
+- Sex: ${profile?.sex || "not specified"}
+- Goal: ${profile?.goal?.replace(/_/g, " ") || "lose weight"}
 - Target: Lose ${profile?.targetLbs || 14} lbs at ${profile?.paceId || "moderate"} pace
+- Fitness level: ${profile?.fitnessLevel || "beginner"}
 - Workouts/week: ${profile?.workoutsPerWeek || 3}
-- Allergies: ${profile?.allergies?.join(", ") || "none declared"}
-- Dislikes: ${profile?.dislikes?.join(", ") || "none declared"}
-- Equipment: rowing machine, cross trainer, dumbbells, cable machines
-- Constraints: back problems, soft knees — no HIIT, no running, no jumping
-- Diet: gluten-free, dairy-free, no fish, no oats, no cow's milk
+- Workout style: ${profile?.workoutStyle || "mixed"}
+- Equipment available: ${equipment}
+- Injuries/limitations: ${injuries}
+- Diet: ${dietNotes}
+- Allergies: ${profile?.allergies?.join(", ") || "none"}
+- Dislikes: ${profile?.dislikes?.join(", ") || "none"}
+- Sleep: ${profile?.sleepQuality || "not specified"}
+- Activity level: ${profile?.activityLevel || "moderate"}
+- Cooking time: ${profile?.cookingTime || "moderate"}
+- Known pains: ${profile?.pains?.map(p=>p.desc).join(", ") || "none logged"}
+- TDEE: ${profile?.heightCm && profile?.age ? "calculable from profile" : "unknown"}
 
 Your role:
 1. Answer health, fitness, nutrition and wellbeing questions helpfully and specifically to this person
-2. When the user mentions a NEW food dislike, include: ACTION:{"type":"add_dislike","value":"food name"}
-3. When they mention a NEW pain or injury, include: ACTION:{"type":"add_pain","value":"description"}
-4. When they mention an allergy, include: ACTION:{"type":"add_allergy","value":"allergen name"}
-5. When they want to remove a dislike, include: ACTION:{"type":"remove_dislike","value":"food name"}
+2. Tailor advice to their equipment, injuries, diet type and fitness level
+3. When the user mentions a NEW food dislike, include: ACTION:{"type":"add_dislike","value":"food name"}
+4. When they mention a NEW pain or injury, include: ACTION:{"type":"add_pain","value":"description"}
+5. When they mention an allergy, include: ACTION:{"type":"add_allergy","value":"allergen name"}
+6. When they want to remove a dislike, include: ACTION:{"type":"remove_dislike","value":"food name"}
 
-Keep responses warm, concise and practical. Only include an ACTION line if there's a genuine profile update to make.`;
+Keep responses warm, concise and practical — 2-4 sentences. Only include an ACTION line if there's a genuine profile update to make.`;
 
   try {
     const response = await client.messages.create({
