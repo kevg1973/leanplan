@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 
 const FONT = "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif";
 
-const C = {
+const LIGHT = {
   bg:"#f2f2f7", surface:"#ffffff", card:"#ffffff",
   accent:"#007aff", green:"#34c759", red:"#ff3b30",
   orange:"#ff9500", purple:"#af52de", teal:"#5ac8fa",
@@ -10,6 +10,18 @@ const C = {
   text:"#000000", textSec:"#3c3c43", muted:"#8e8e93",
   border:"#e5e5ea", divider:"#c6c6c8", sectionBg:"#f2f2f7",
 };
+
+const DARK = {
+  bg:"#000000", surface:"#1c1c1e", card:"#2c2c2e",
+  accent:"#0a84ff", green:"#30d158", red:"#ff453a",
+  orange:"#ff9f0a", purple:"#bf5af2", teal:"#5ac8fa",
+  pink:"#ff375f", yellow:"#ffd60a", indigo:"#5e5ce6",
+  text:"#ffffff", textSec:"#ebebf5", muted:"#8e8e93",
+  border:"#3a3a3c", divider:"#48484a", sectionBg:"#1c1c1e",
+};
+
+// C is set dynamically in the App — components read it via the global
+let C = LIGHT;
 
 const TABS = ["Today","Meals","Train","Track","Coach","Profile"];
 
@@ -432,6 +444,10 @@ const TodayTab = ({ profile, entries, mealLog, workoutLog, water, setWater, jour
   const [tipIdx, setTipIdx] = useState(()=>Math.floor(Math.random()*DAILY_TIPS.length));
   const [showJournal, setShowJournal] = useState(false);
   const today = todayKey();
+  // Apply theme
+  const isDark = darkOverride !== null ? darkOverride : systemDark;
+  C = isDark ? DARK : LIGHT;
+
   const cur = entries.length>0?entries[entries.length-1].weight:profile.startWeightLbs;
   const lost = Math.max(0,profile.startWeightLbs-cur);
   const pace = getPace(profile.paceId||"normal");
@@ -951,6 +967,10 @@ const TrackTab = ({ profile, entries, setEntries, measurements, setMeasurements 
   const [activeSection, setActiveSection] = useState("weight");
   const [newMeasure, setNewMeasure] = useState({ waist:"", hips:"", chest:"", leftArm:"", rightArm:"" });
 
+  // Apply theme
+  const isDark = darkOverride !== null ? darkOverride : systemDark;
+  C = isDark ? DARK : LIGHT;
+
   const cur = entries.length>0?entries[entries.length-1].weight:profile.startWeightLbs;
   const lost = Math.max(0,profile.startWeightLbs-cur);
   const pace = getPace(profile.paceId||"normal");
@@ -1100,7 +1120,7 @@ const TrackTab = ({ profile, entries, setEntries, measurements, setMeasurements 
 };
 
 // ── PROFILE TAB ───────────────────────────────────────────────────────────────
-const ProfileTab = ({ profile, setProfile, onReset }) => {
+const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDarkOverride }) => {
   const [editing, setEditing] = useState(null);
   const [tempData, setTempData] = useState({});
   const toggleArr = (k,v) => setTempData(d=>({...d,[k]:d[k].includes(v)?d[k].filter(x=>x!==v):[...d[k],v]}));
@@ -1203,6 +1223,34 @@ const ProfileTab = ({ profile, setProfile, onReset }) => {
         <Row label="Allergies / intolerances" value={profile.allergies?.length>0?`${profile.allergies.length} selected`:"None"} onClick={()=>startEdit("allergies")} />
         <Row label="Foods I dislike" value={profile.dislikes?.length>0?`${profile.dislikes.length} selected`:"None"} onClick={()=>startEdit("dislikes")} />
         <Row label="Always excluded" value="Fish · Oats · Cow's milk" last />
+      </Section>
+
+      <Section title="Appearance">
+        <div style={{ padding:"14px 16px", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+          <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+            <span style={{ fontSize:20 }}>{isDark ? "🌙" : "☀️"}</span>
+            <div>
+              <p style={{ color:C.text, fontSize:15, margin:0 }}>Dark Mode</p>
+              <p style={{ color:C.muted, fontSize:12, margin:"2px 0 0" }}>{darkOverride===null?"Following system":darkOverride?"Always on":"Always off"}</p>
+            </div>
+          </div>
+          <Toggle value={isDark} onChange={v => setDarkOverride(v)} />
+        </div>
+        <div style={{ padding:"0 16px 14px", display:"flex", gap:8 }}>
+          {[["📱","Auto",null],["☀️","Light",false],["🌙","Dark",true]].map(([ico, label, val]) => {
+            const isActive = darkOverride === val;
+            return (
+              <div key={label} onClick={() => setDarkOverride(val)}
+                style={{ flex:1, textAlign:"center", padding:"10px 4px", borderRadius:12,
+                  background: isActive ? C.accent : C.sectionBg,
+                  border: `1.5px solid ${isActive ? C.accent : C.border}`,
+                  cursor:"pointer", transition:"all 0.2s" }}>
+                <div style={{ fontSize:16, marginBottom:4 }}>{ico}</div>
+                <div style={{ color: isActive ? "#fff" : C.text, fontSize:12, fontWeight: isActive ? 700 : 400 }}>{label}</div>
+              </div>
+            );
+          })}
+        </div>
       </Section>
 
       <div style={{ marginTop:8 }}>
@@ -1420,6 +1468,16 @@ export default function App() {
   const [journal, setJournal] = useState({});
   const [measurements, setMeasurements] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [darkOverride, setDarkOverride] = useState(null); // null=system, true=force dark, false=force light
+  const [systemDark, setSystemDark] = useState(() => window.matchMedia("(prefers-color-scheme: dark)").matches);
+
+  // Listen to system dark mode changes
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    const handler = e => setSystemDark(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
 
   useEffect(()=>{
     try {
@@ -1435,6 +1493,7 @@ export default function App() {
         if (d.water) setWater(d.water);
         if (d.journal) setJournal(d.journal);
         if (d.measurements) setMeasurements(d.measurements);
+        if (d.darkOverride !== undefined) setDarkOverride(d.darkOverride);
       }
     } catch(e){}
     setLoading(false);
@@ -1442,12 +1501,18 @@ export default function App() {
 
   useEffect(()=>{
     if (loading) return;
-    try { localStorage.setItem("leanplan_v4", JSON.stringify({profile,entries,favourites,removed,mealLog,workoutLog,water,journal,measurements})); } catch(e){}
-  },[profile,entries,favourites,removed,mealLog,workoutLog,water,journal,measurements,loading]);
+    try { localStorage.setItem("leanplan_v4", JSON.stringify({profile,entries,favourites,removed,mealLog,workoutLog,water,journal,measurements,darkOverride})); } catch(e){}
+  },[profile,entries,favourites,removed,mealLog,workoutLog,water,journal,measurements,darkOverride,loading]);
 
-  if (loading) return <div style={{ minHeight:"100vh", background:C.bg, display:"flex", alignItems:"center", justifyContent:"center", fontFamily:FONT }}><div style={{ textAlign:"center" }}><div style={{ fontSize:48, marginBottom:12 }}>🏃</div><p style={{ color:C.muted }}>Loading...</p></div></div>;
+  const loadBg = systemDark ? "#000" : "#f2f2f7";
+  const loadText = systemDark ? "#8e8e93" : "#8e8e93";
+  if (loading) return <div style={{ minHeight:"100vh", background:loadBg, display:"flex", alignItems:"center", justifyContent:"center", fontFamily:FONT }}><div style={{ textAlign:"center" }}><div style={{ fontSize:48, marginBottom:12 }}>🏃</div><p style={{ color:loadText }}>Loading...</p></div></div>;
 
   if (!profile) return <Onboarding onDone={p=>setProfile(p)} />;
+
+  // Apply theme
+  const isDark = darkOverride !== null ? darkOverride : systemDark;
+  C = isDark ? DARK : LIGHT;
 
   const cur = entries.length>0?entries[entries.length-1].weight:profile.startWeightLbs;
   const lost = Math.max(0,profile.startWeightLbs-cur);
@@ -1465,9 +1530,9 @@ export default function App() {
 
   return (
     <div style={{ background:C.bg, minHeight:"100vh", fontFamily:FONT, color:C.text, width:"100%", overflowX:"hidden" }}>
-      <style>{`* { box-sizing:border-box; margin:0; padding:0; } input,select,textarea { outline:none; } html,body { width:100%; overflow-x:hidden; background:${C.bg}; font-family:${FONT}; } #root { width:100%; } ::-webkit-scrollbar { width:4px; } ::-webkit-scrollbar-thumb { background:${C.divider}; border-radius:4px; }`}</style>
+      <style>{`* { box-sizing:border-box; margin:0; padding:0; } input,select,textarea { outline:none; } html,body { width:100%; overflow-x:hidden; background:${C.bg}; font-family:${FONT}; color-scheme:${isDark?"dark":"light"}; } #root { width:100%; } ::-webkit-scrollbar { width:4px; } ::-webkit-scrollbar-thumb { background:${C.divider}; border-radius:4px; } ::placeholder { color:${C.muted}; }`}</style>
 
-      <div style={{ padding:"52px 18px 12px", background:"rgba(242,242,247,0.95)", backdropFilter:"blur(20px)", WebkitBackdropFilter:"blur(20px)", borderBottom:`1px solid ${C.border}`, position:"sticky", top:0, zIndex:10, width:"100%" }}>
+      <div style={{ padding:"52px 18px 12px", background:isDark?"rgba(0,0,0,0.85)":"rgba(242,242,247,0.95)", backdropFilter:"blur(20px)", WebkitBackdropFilter:"blur(20px)", borderBottom:`1px solid ${C.border}`, position:"sticky", top:0, zIndex:10, width:"100%" }}>
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
           <div>
             <h1 style={{ fontSize:20, fontWeight:700, color:C.text, margin:0 }}>🏃 LeanPlan</h1>
@@ -1488,10 +1553,10 @@ export default function App() {
         {tab==="Train"&&<TrainTab profile={profile} workoutLog={workoutLog} setWorkoutLog={setWorkoutLog} />}
         {tab==="Track"&&<TrackTab profile={profile} entries={entries} setEntries={fn=>setEntries(typeof fn==="function"?fn(entries):fn)} measurements={measurements} setMeasurements={setMeasurements} />}
         {tab==="Coach"&&<CoachTab profile={profile} setProfile={setProfile} />}
-        {tab==="Profile"&&<ProfileTab profile={profile} setProfile={setProfile} onReset={handleReset} />}
+        {tab==="Profile"&&<ProfileTab profile={profile} setProfile={setProfile} onReset={handleReset} isDark={isDark} darkOverride={darkOverride} setDarkOverride={setDarkOverride} />}
       </div>
 
-      <div style={{ position:"fixed", bottom:0, left:0, right:0, width:"100%", background:"rgba(242,242,247,0.95)", backdropFilter:"blur(20px)", WebkitBackdropFilter:"blur(20px)", borderTop:`1px solid ${C.border}`, display:"flex", padding:"8px 0 20px" }}>
+      <div style={{ position:"fixed", bottom:0, left:0, right:0, width:"100%", background:isDark?"rgba(0,0,0,0.85)":"rgba(242,242,247,0.95)", backdropFilter:"blur(20px)", WebkitBackdropFilter:"blur(20px)", borderTop:`1px solid ${C.border}`, display:"flex", padding:"8px 0 20px" }}>
         {TABS.map(t=>{
           const col=TAB_COLORS[t]; const active=tab===t;
           return <div key={t} onClick={()=>setTab(t)} style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"center", cursor:"pointer", gap:3 }}>
