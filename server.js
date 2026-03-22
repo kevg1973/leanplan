@@ -11,10 +11,18 @@ const PORT = process.env.PORT || 3000;
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-const PRICES = {
+// ── Test / Live mode switching ───────────────────────────────────────────────
+const IS_TEST = process.env.STRIPE_MODE === "test";
+
+const PRICES = IS_TEST ? {
+  monthly: "price_1TDuIWBlEueyqAyRLgOGydQV",
+  annual:  "price_1TDuItBlEueyqAyRcwY269HK",
+} : {
   monthly: "price_1TDtInPfNxGIwDvC72uuu6ZE",
   annual:  "price_1TDtJPPfNxGIwDvCffCwzs3j",
 };
+
+console.log("Stripe mode:", IS_TEST ? "TEST" : "LIVE");
 
 const APP_URL = process.env.APP_URL || "https://www.leanplan.uk";
 
