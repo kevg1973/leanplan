@@ -1538,10 +1538,12 @@ export default function App() {
       <div style={{ padding:"52px 18px 12px", background:isDark?"rgba(0,0,0,0.85)":"rgba(242,242,247,0.95)", backdropFilter:"blur(20px)", WebkitBackdropFilter:"blur(20px)", borderBottom:`1px solid ${C.border}`, position:"sticky", top:0, zIndex:10, width:"100%" }}>
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
           <div>
-            <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-              <span style={{ fontSize:22, fontWeight:800, letterSpacing:"-0.02em", fontFamily:FONT }}>
-                <span style={{ color:C.text }}>Lean</span><span style={{ color:C.accent }}>Plan</span>
-              </span>
+            <div style={{ display:"flex", alignItems:"center" }}>
+              <img
+                src={isDark ? "/leanplan_logo_dark.png" : "/leanplan_logo_light.png"}
+                alt="LeanPlan"
+                style={{ height:34, width:"auto", maxWidth:160, objectFit:"contain" }}
+              />
             </div>
             <p style={{ fontSize:11, color:C.muted, margin:0 }}>{profile.name?.toUpperCase()||"YOUR PLAN"}</p>
           </div>
