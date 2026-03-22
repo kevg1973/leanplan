@@ -566,7 +566,7 @@ const TodayTab = ({ profile, entries, mealLog, workoutLog, water, setWater, jour
 };
 
 // ── MEALS TAB ─────────────────────────────────────────────────────────────────
-const MealsTab = ({ profile, favourites, setFavourites, removed, setRemoved, mealLog, setMealLog }) => {
+const MealsTab = ({ profile, favourites, setFavourites, removed, setRemoved, mealLog, setMealLog, isPro, onUpgrade }) => {
   const [style, setStyle] = useState("all");
   const [shown, setShown] = useState(null);
   const [expanded, setExpanded] = useState(null);
@@ -648,7 +648,10 @@ const MealsTab = ({ profile, favourites, setFavourites, removed, setRemoved, mea
           <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:14 }}>
             {["all","balanced","high-protein","mediterranean","budget-friendly"].map(s=><Chip key={s} color={C.accent} active={style===s} onClick={()=>setStyle(s)}>{s}</Chip>)}
           </div>
-          <Btn onClick={generate} style={{ width:"100%" }}>✦ Generate Today's Meals</Btn>
+          {isPro
+            ? <Btn onClick={generate} style={{ width:"100%" }}>✦ Generate Today's Meals</Btn>
+            : <Btn onClick={onUpgrade} color={C.indigo} style={{ width:"100%" }}>🔒 Unlock Meal Generation — Pro</Btn>
+          }
         </Card>
 
         {shown&&<>
@@ -698,7 +701,10 @@ const MealsTab = ({ profile, favourites, setFavourites, removed, setRemoved, mea
             <span style={{ color:C.muted }}>For</span>
             {[3,5,7].map(d=><Chip key={d} color={C.green} active={shoppingDays===d} onClick={()=>setShoppingDays(d)}>{d} days</Chip>)}
           </div>
-          <Btn onClick={()=>{setShoppingList(SHOPPING[shoppingDays]);setChecked({});}} color={C.green} style={{ width:"100%" }}>✦ Generate List</Btn>
+          {isPro
+            ? <Btn onClick={()=>{setShoppingList(SHOPPING[shoppingDays]);setChecked({});}} color={C.green} style={{ width:"100%" }}>✦ Generate List</Btn>
+            : <Btn onClick={onUpgrade} color={C.indigo} style={{ width:"100%" }}>🔒 Unlock Shopping Lists — Pro</Btn>
+          }
         </Card>
         {shoppingList&&<>
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12, padding:"0 4px" }}>
@@ -1117,7 +1123,7 @@ const TrackTab = ({ profile, entries, setEntries, measurements, setMeasurements 
 };
 
 // ── PROFILE TAB ───────────────────────────────────────────────────────────────
-const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDarkOverride }) => {
+const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDarkOverride, isPro, proData, onUpgrade }) => {
   const [editing, setEditing] = useState(null);
   const [tempData, setTempData] = useState({});
   const toggleArr = (k,v) => setTempData(d=>({...d,[k]:d[k].includes(v)?d[k].filter(x=>x!==v):[...d[k],v]}));
@@ -1249,6 +1255,26 @@ const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDar
           })}
         </div>
       </Section>
+
+      {/* Pro status */}
+      {isPro ? (
+        <div style={{ background:`${C.green}10`, border:`1px solid ${C.green}33`, borderRadius:14, padding:"14px 16px", marginBottom:16 }}>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+            <div>
+              <p style={{ color:C.green, fontWeight:700, fontSize:15, margin:0 }}>✓ LeanPlan Pro</p>
+              <p style={{ color:C.muted, fontSize:12, margin:"2px 0 0" }}>{proData?.plan === "annual" ? "Annual plan" : "Monthly plan"}</p>
+            </div>
+            <Btn small outline color={C.green} onClick={async()=>{
+              if (!proData?.customerId) return;
+              const res = await fetch("/api/stripe/portal",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({customerId:proData.customerId})});
+              const data = await res.json();
+              if (data.url) window.location.href = data.url;
+            }}>Manage</Btn>
+          </div>
+        </div>
+      ) : (
+        <Btn onClick={onUpgrade} color={C.accent} style={{ width:"100%", marginBottom:16 }}>✦ Upgrade to Pro from £4.99/mo</Btn>
+      )}
 
       <div style={{ marginTop:8 }}>
         <Btn onClick={onReset} outline color={C.red} style={{ width:"100%" }}>Reset All Data</Btn>
@@ -1452,10 +1478,159 @@ For example:
   );
 };
 
+
+// ── PRO BANNER ────────────────────────────────────────────────────────────────
+const ProBanner = ({ onUpgrade }) => (
+  <div onClick={onUpgrade} style={{ background:`linear-gradient(135deg, ${C.accent}, ${C.indigo})`, borderRadius:14, padding:"12px 16px", marginBottom:14, cursor:"pointer", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+    <div>
+      <p style={{ color:"#fff", fontWeight:700, fontSize:14, margin:0 }}>✦ Unlock LeanPlan Pro</p>
+      <p style={{ color:"rgba(255,255,255,0.8)", fontSize:12, margin:"2px 0 0" }}>AI coach, workouts, tracking & more from £4.99/mo</p>
+    </div>
+    <div style={{ background:"rgba(255,255,255,0.2)", borderRadius:99, padding:"6px 14px" }}>
+      <span style={{ color:"#fff", fontWeight:700, fontSize:13 }}>Upgrade →</span>
+    </div>
+  </div>
+);
+
+// ── LOCKED TAB ────────────────────────────────────────────────────────────────
+const LockedTab = ({ feature, onUpgrade }) => (
+  <div style={{ textAlign:"center", padding:"60px 20px" }}>
+    <div style={{ width:72, height:72, borderRadius:99, background:`${C.accent}15`, border:`2px solid ${C.accent}33`, display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 20px" }}>
+      <Icon name="target" size={32} color={C.accent} />
+    </div>
+    <h2 style={{ color:C.text, fontSize:22, fontWeight:700, marginBottom:10 }}>Pro Feature</h2>
+    <p style={{ color:C.muted, fontSize:15, lineHeight:1.7, marginBottom:28, maxWidth:280, margin:"0 auto 28px" }}>{feature} is available on LeanPlan Pro.</p>
+    <Btn onClick={onUpgrade} color={C.accent} style={{ width:"100%", maxWidth:280 }}>✦ Unlock Pro from £4.99/mo</Btn>
+    <p style={{ color:C.muted, fontSize:12, marginTop:14 }}>Cancel anytime. No commitment.</p>
+  </div>
+);
+
+// ── PAYWALL MODAL ─────────────────────────────────────────────────────────────
+const PaywallModal = ({ onClose }) => {
+  const [selectedPlan, setSelectedPlan] = useState("annual");
+  const [loading, setLoading] = useState(false);
+
+  const plans = [
+    {
+      id: "annual",
+      label: "Annual",
+      price: "£39.99",
+      per: "/ year",
+      monthly: "£3.33/mo",
+      badge: "SAVE 33%",
+      badgeColor: C.green,
+      desc: "Best value"
+    },
+    {
+      id: "monthly",
+      label: "Monthly",
+      price: "£4.99",
+      per: "/ month",
+      monthly: null,
+      badge: null,
+      desc: "Flexible"
+    }
+  ];
+
+  const proFeatures = [
+    { icon:"meals", text:"AI meal plan generation — tailored to your diet" },
+    { icon:"tip", text:"Personal AI health coach — available 24/7" },
+    { icon:"train", text:"Full workout tracking & lift progression" },
+    { icon:"track", text:"Body measurements, BMI & progress charts" },
+    { icon:"bag", text:"Smart shopping lists with supermarket links" },
+    { icon:"water", text:"Water tracker, journal & daily streaks" },
+  ];
+
+  const checkout = async () => {
+    setLoading(true);
+    const deviceId = localStorage.getItem("leanplan_device_id") || (() => {
+      const id = Math.random().toString(36).slice(2);
+      localStorage.setItem("leanplan_device_id", id);
+      return id;
+    })();
+
+    try {
+      const res = await fetch("/api/stripe/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan: selectedPlan, deviceId }),
+      });
+      const data = await res.json();
+      if (data.url) window.location.href = data.url;
+      else setLoading(false);
+    } catch(err) {
+      console.error(err);
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div style={{ position:"fixed", inset:0, zIndex:1000, display:"flex", flexDirection:"column", justifyContent:"flex-end" }}>
+      {/* Backdrop */}
+      <div onClick={onClose} style={{ position:"absolute", inset:0, background:"rgba(0,0,0,0.6)", backdropFilter:"blur(4px)" }} />
+
+      {/* Sheet */}
+      <div style={{ position:"relative", background:C.bg, borderRadius:"24px 24px 0 0", padding:"24px 20px 40px", maxHeight:"90vh", overflowY:"auto" }}>
+        {/* Handle */}
+        <div style={{ width:36, height:4, background:C.divider, borderRadius:99, margin:"0 auto 20px" }} />
+
+        {/* Close */}
+        <button onClick={onClose} style={{ position:"absolute", top:20, right:20, background:C.sectionBg, border:"none", borderRadius:99, width:32, height:32, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}>
+          <Icon name="close" size={16} color={C.muted} />
+        </button>
+
+        {/* Header */}
+        <div style={{ textAlign:"center", marginBottom:24 }}>
+          <div style={{ fontSize:40, marginBottom:8 }}>💪</div>
+          <h2 style={{ color:C.text, fontSize:24, fontWeight:800, margin:"0 0 6px" }}>LeanPlan <span style={{ color:C.accent }}>Pro</span></h2>
+          <p style={{ color:C.muted, fontSize:14, margin:0 }}>Everything you need to reach your goal</p>
+        </div>
+
+        {/* Features */}
+        <div style={{ marginBottom:24 }}>
+          {proFeatures.map((f,i) => (
+            <div key={i} style={{ display:"flex", alignItems:"center", gap:12, padding:"8px 0", borderBottom:i<proFeatures.length-1?`1px solid ${C.border}`:"none" }}>
+              <div style={{ width:32, height:32, borderRadius:10, background:`${C.accent}15`, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+                <Icon name={f.icon} size={16} color={C.accent} />
+              </div>
+              <span style={{ color:C.text, fontSize:14 }}>{f.text}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* Plan picker */}
+        <div style={{ display:"flex", gap:10, marginBottom:20 }}>
+          {plans.map(p => (
+            <div key={p.id} onClick={()=>setSelectedPlan(p.id)} style={{ flex:1, border:`2px solid ${selectedPlan===p.id?C.accent:C.border}`, borderRadius:16, padding:"14px 12px", cursor:"pointer", background:selectedPlan===p.id?`${C.accent}08`:C.card, transition:"all 0.2s", position:"relative", textAlign:"center" }}>
+              {p.badge && <div style={{ position:"absolute", top:-10, left:"50%", transform:"translateX(-50%)", background:p.badgeColor, color:"#fff", borderRadius:99, padding:"2px 10px", fontSize:11, fontWeight:700, whiteSpace:"nowrap" }}>{p.badge}</div>}
+              <div style={{ color:selectedPlan===p.id?C.accent:C.muted, fontSize:12, fontWeight:600, marginBottom:4 }}>{p.label}</div>
+              <div style={{ color:C.text, fontSize:22, fontWeight:800 }}>{p.price}</div>
+              <div style={{ color:C.muted, fontSize:12 }}>{p.per}</div>
+              {p.monthly && <div style={{ color:C.green, fontSize:11, fontWeight:600, marginTop:4 }}>{p.monthly}</div>}
+            </div>
+          ))}
+        </div>
+
+        {/* CTA */}
+        <Btn onClick={checkout} disabled={loading} color={C.accent} style={{ width:"100%", fontSize:17, padding:"16px 0", marginBottom:12 }}>
+          {loading ? "Loading..." : `Start Pro — ${selectedPlan==="annual"?"£39.99/year":"£4.99/month"}`}
+        </Btn>
+
+        <p style={{ color:C.muted, fontSize:12, textAlign:"center", lineHeight:1.6 }}>
+          Cancel anytime in your account settings. Secure payment by Stripe. By subscribing you agree to our terms.
+        </p>
+      </div>
+    </div>
+  );
+};
+
 // ── MAIN ──────────────────────────────────────────────────────────────────────
 export default function App() {
   const [profile, setProfile] = useState(null);
   const [tab, setTab] = useState("Today");
+  const [isPro, setIsPro] = useState(false);
+  const [proData, setProData] = useState(null); // {customerId, subscriptionId, plan}
+  const [showPaywall, setShowPaywall] = useState(false);
   const [entries, setEntries] = useState([]);
   const [favourites, setFavourites] = useState([]);
   const [removed, setRemoved] = useState([]);
@@ -1474,6 +1649,34 @@ export default function App() {
     const handler = e => setSystemDark(e.matches);
     mq.addEventListener("change", handler);
     return () => mq.removeEventListener("change", handler);
+  }, []);
+
+  // Check for Stripe return
+  useEffect(()=>{
+    const params = new URLSearchParams(window.location.search);
+    const proStatus = params.get("pro");
+    const sessionId = params.get("session_id");
+    if (proStatus === "success" && sessionId) {
+      fetch(`/api/stripe/verify?session_id=${sessionId}`)
+        .then(r => r.json())
+        .then(data => {
+          if (data.pro) {
+            setIsPro(true);
+            setProData({ customerId: data.customerId, subscriptionId: data.subscriptionId, plan: data.plan });
+            localStorage.setItem("leanplan_pro", JSON.stringify({ isPro: true, customerId: data.customerId, subscriptionId: data.subscriptionId, plan: data.plan }));
+          }
+        })
+        .catch(()=>{});
+      window.history.replaceState({}, "", "/");
+    }
+    // Load saved pro status
+    try {
+      const savedPro = localStorage.getItem("leanplan_pro");
+      if (savedPro) {
+        const pd = JSON.parse(savedPro);
+        if (pd.isPro) { setIsPro(true); setProData(pd); }
+      }
+    } catch(e){}
   }, []);
 
   useEffect(()=>{
@@ -1555,12 +1758,18 @@ export default function App() {
       </div>
 
       <div style={{ padding:"16px 14px 100px" }}>
+        {/* Pro upgrade banner for free users */}
+        {!isPro && <ProBanner onUpgrade={()=>setShowPaywall(true)} />}
+
         {tab==="Today"&&<TodayTab profile={profile} entries={entries} mealLog={mealLog} workoutLog={workoutLog} water={water} setWater={setWater} journal={journal} setJournal={setJournal} measurements={measurements} />}
-        {tab==="Meals"&&<MealsTab profile={profile} favourites={favourites} setFavourites={setFavourites} removed={removed} setRemoved={setRemoved} mealLog={mealLog} setMealLog={setMealLog} />}
-        {tab==="Train"&&<TrainTab profile={profile} workoutLog={workoutLog} setWorkoutLog={setWorkoutLog} />}
-        {tab==="Track"&&<TrackTab profile={profile} entries={entries} setEntries={fn=>setEntries(typeof fn==="function"?fn(entries):fn)} measurements={measurements} setMeasurements={setMeasurements} />}
-        {tab==="Coach"&&<CoachTab profile={profile} setProfile={setProfile} />}
-        {tab==="Profile"&&<ProfileTab profile={profile} setProfile={setProfile} onReset={handleReset} isDark={isDark} darkOverride={darkOverride} setDarkOverride={setDarkOverride} />}
+        {tab==="Meals"&&<MealsTab profile={profile} favourites={favourites} setFavourites={setFavourites} removed={removed} setRemoved={setRemoved} mealLog={mealLog} setMealLog={setMealLog} isPro={isPro} onUpgrade={()=>setShowPaywall(true)} />}
+        {tab==="Train"&&(isPro ? <TrainTab profile={profile} workoutLog={workoutLog} setWorkoutLog={setWorkoutLog} /> : <LockedTab feature="Workout tracking, lift tracker and rest day planner" onUpgrade={()=>setShowPaywall(true)} />)}
+        {tab==="Track"&&(isPro ? <TrackTab profile={profile} entries={entries} setEntries={fn=>setEntries(typeof fn==="function"?fn(entries):fn)} measurements={measurements} setMeasurements={setMeasurements} /> : <LockedTab feature="Progress tracking, measurements and body stats" onUpgrade={()=>setShowPaywall(true)} />)}
+        {tab==="Coach"&&(isPro ? <CoachTab profile={profile} setProfile={setProfile} /> : <LockedTab feature="AI personal coach" onUpgrade={()=>setShowPaywall(true)} />)}
+        {tab==="Profile"&&<ProfileTab profile={profile} setProfile={setProfile} onReset={handleReset} isDark={isDark} darkOverride={darkOverride} setDarkOverride={setDarkOverride} isPro={isPro} proData={proData} onUpgrade={()=>setShowPaywall(true)} />}
+
+        {/* Paywall modal */}
+        {showPaywall && <PaywallModal onClose={()=>setShowPaywall(false)} />}
       </div>
 
       <div style={{ position:"fixed", bottom:0, left:0, right:0, width:"100%", background:isDark?"rgba(0,0,0,0.85)":"rgba(242,242,247,0.95)", backdropFilter:"blur(20px)", WebkitBackdropFilter:"blur(20px)", borderTop:`1px solid ${C.border}`, display:"flex", padding:"8px 0 20px" }}>
