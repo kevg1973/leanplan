@@ -268,7 +268,7 @@ const PacePicker = ({ value, onChange, targetLbs }) => {
 };
 
 // ── Onboarding ────────────────────────────────────────────────────────────────
-const TOTAL_STEPS = 9;
+const TOTAL_STEPS = 10;
 
 const Onboarding = ({ onDone }) => {
   const [step, setStep] = useState(0);
@@ -288,6 +288,8 @@ const Onboarding = ({ onDone }) => {
     cookingTime:"moderate",         // quick (15min), moderate (30min), enjoy (60min+)
     sleepQuality:"average",         // good, average, poor
     activityLevel:"moderate",       // sedentary, light, moderate, active, very_active
+    supplementsOpen:"maybe",        // yes, maybe, no
+    supplementsInterested:[],       // list of supplements
   });
 
   const update = (k,v) => setData(d=>({...d,[k]:v}));
@@ -496,7 +498,7 @@ const Onboarding = ({ onDone }) => {
 
         {/* Step 8 — Lifestyle */}
         {step===8&&<div>
-          <p style={{ color:C.accent, fontSize:12, fontWeight:800, letterSpacing:"0.08em", marginBottom:6 }}>STEP 8 OF 8</p>
+          <p style={{ color:C.accent, fontSize:12, fontWeight:800, letterSpacing:"0.08em", marginBottom:6 }}>STEP 8 OF 9</p>
           <h2 style={{ fontSize:24, fontWeight:700, color:C.text, marginBottom:6 }}>Your lifestyle</h2>
           <p style={{ color:C.muted, fontSize:14, marginBottom:20 }}>Helps us give the right advice for your situation.</p>
           <div style={{ marginBottom:16 }}>
@@ -526,8 +528,45 @@ const Onboarding = ({ onDone }) => {
           <Btn onClick={()=>setStep(9)} style={{ width:"100%" }}>Next →</Btn>
         </div>}
 
-        {/* Step 9 — Summary */}
-        {step===9&&<div style={{ textAlign:"center", paddingTop:30 }}>
+        {/* Step 9 — Supplements */}
+        {step===9&&<div>
+          <p style={{ color:C.accent, fontSize:12, fontWeight:800, letterSpacing:"0.08em", marginBottom:6 }}>STEP 9 OF 9</p>
+          <h2 style={{ fontSize:24, fontWeight:700, color:C.text, marginBottom:6 }}>Supplements</h2>
+          <p style={{ color:C.muted, fontSize:14, marginBottom:20 }}>Supplements can significantly support your goals — especially if you're over 40. We'll only recommend what's relevant to you.</p>
+          <div style={{ marginBottom:20 }}>
+            <p style={{ color:C.textSec, fontSize:13, fontWeight:500, marginBottom:10 }}>Are you open to taking supplements?</p>
+            <OptionCard value="yes" current={data.supplementsOpen} onClick={()=>update("supplementsOpen","yes")} icon="✅" title="Yes — I'm open to them" desc="Show me what's relevant to my goals" color={C.green} />
+            <OptionCard value="maybe" current={data.supplementsOpen} onClick={()=>update("supplementsOpen","maybe")} icon="🤔" title="Maybe — tell me more" desc="I'd like to learn before deciding" color={C.orange} />
+            <OptionCard value="no" current={data.supplementsOpen} onClick={()=>update("supplementsOpen","no")} icon="❌" title="No thanks — food only" desc="I prefer to get everything from diet" color={C.red} />
+          </div>
+          {(data.supplementsOpen==="yes"||data.supplementsOpen==="maybe")&&<div style={{ marginBottom:20 }}>
+            <p style={{ color:C.textSec, fontSize:13, fontWeight:500, marginBottom:10 }}>Which are you already taking or interested in?</p>
+            <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
+              {[
+                ["creatine","Creatine monohydrate"],
+                ["protein","Protein powder"],
+                ["vitd","Vitamin D3 + K2"],
+                ["omega3","Omega-3"],
+                ["magnesium","Magnesium glycinate"],
+                ["caffeine","Caffeine / pre-workout"],
+                ["multivitamin","Multivitamin"],
+                ["collagen","Collagen"],
+                ["probiotics","Probiotics"],
+                ["none","None yet — open to suggestions"],
+              ].map(([v,l])=>(
+                <Chip key={v} color={C.purple} active={data.supplementsInterested.includes(v)} onClick={()=>toggleArr("supplementsInterested",v)}>{l}</Chip>
+              ))}
+            </div>
+            {parseInt(data.age)>=40&&<div style={{ background:`${C.purple}10`, border:`1px solid ${C.purple}33`, borderRadius:12, padding:"12px 14px", marginTop:14 }}>
+              <p style={{ color:C.purple, fontSize:12, fontWeight:700, marginBottom:4 }}>💡 ESPECIALLY RELEVANT FOR YOU</p>
+              <p style={{ color:C.textSec, fontSize:13, lineHeight:1.6, margin:0 }}>Over 40? Creatine preserves muscle during weight loss, Vitamin D3 supports mood and bone density, and Magnesium glycinate improves sleep quality — all highly recommended.</p>
+            </div>}
+          </div>}
+          <Btn onClick={()=>setStep(10)} style={{ width:"100%" }}>Next →</Btn>
+        </div>}
+
+        {/* Step 10 — Summary */}
+        {step===10&&<div style={{ textAlign:"center", paddingTop:30 }}>
           <div style={{ marginBottom:16, display:"flex", justifyContent:"center" }}>
             <div style={{ width:80, height:80, borderRadius:99, background:`${C.green}18`, border:`2px solid ${C.green}44`, display:"flex", alignItems:"center", justifyContent:"center" }}>
               <Icon name="check" size={40} color={C.green} />
@@ -544,6 +583,7 @@ const Onboarding = ({ onDone }) => {
               ["📅", "Workouts", `${data.workoutsPerWeek}x/week`],
               ["🚫", "Allergies", data.allergies.length>0?data.allergies.join(", "):"None"],
               ["😐", "Dislikes", data.dislikes.length>0?`${data.dislikes.length} foods`:"None"],
+              ["💊", "Supplements", data.supplementsOpen==="no"?"Food only":data.supplementsInterested.length>0?`${data.supplementsInterested.length} selected`:"Open to suggestions"],
             ].map(([ico,k,v])=>(
               <div key={k} style={{ display:"flex", gap:12, padding:"8px 0", borderBottom:`1px solid ${C.border}` }}>
                 <span>{ico}</span>
@@ -555,7 +595,7 @@ const Onboarding = ({ onDone }) => {
           <Btn onClick={finish} color={C.accent} style={{ width:"100%", fontSize:17, padding:"15px 0" }}>Start My Journey 🚀</Btn>
         </div>}
 
-        {step>0&&step<9&&<button onClick={()=>setStep(s=>s-1)} style={{ background:"none", border:"none", color:C.muted, fontSize:15, cursor:"pointer", marginTop:16, fontFamily:FONT }}>← Back</button>}
+        {step>0&&step<10&&<button onClick={()=>setStep(s=>s-1)} style={{ background:"none", border:"none", color:C.muted, fontSize:15, cursor:"pointer", marginTop:16, fontFamily:FONT }}>← Back</button>}
       </div>
     </div>
   );
@@ -734,6 +774,15 @@ const MealsTab = ({ profile, favourites, setFavourites, removed, setRemoved, mea
   const [checked, setChecked] = useState({});
   const [section, setSection] = useState("meals");
   const [suppOpen, setSuppOpen] = useState(null);
+  const [generating, setGenerating] = useState(false);
+  const [generateError, setGenerateError] = useState(null);
+  const [dislikedMeals, setDislikedMeals] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("leanplan_disliked_meals") || "[]"); } catch { return []; }
+  });
+  const [likedMeals, setLikedMeals] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("leanplan_liked_meals") || "[]"); } catch { return []; }
+  });
+
   const today = todayKey();
   const tdee = calcTDEE(profile);
   const pace = getPace(profile.paceId||"normal");
@@ -746,35 +795,69 @@ const MealsTab = ({ profile, favourites, setFavourites, removed, setRemoved, mea
   const todayCals = todayLogged.reduce((a,m)=>a+m.cals,0);
   const todayProt = todayLogged.reduce((a,m)=>a+m.protein,0);
 
-  const MEAL_ORDER = ["breakfast","snack","lunch","snack2","dinner"];
-  const getMealType = m => m.tags.find(t=>["breakfast","lunch","dinner","snack"].includes(t))||"snack";
+  const getMealType = m => m.type || m.tags?.find(t=>["breakfast","lunch","dinner","snack"].includes(t)) || "snack";
 
-  const generate = () => {
+  const saveLikedMeals = (meals) => {
+    setLikedMeals(meals);
+    localStorage.setItem("leanplan_liked_meals", JSON.stringify(meals));
+  };
+  const saveDislikedMeals = (meals) => {
+    setDislikedMeals(meals);
+    localStorage.setItem("leanplan_disliked_meals", JSON.stringify(meals));
+  };
+
+  const likeMeal = (m) => {
+    if (!likedMeals.find(l=>l.name===m.name)) {
+      saveLikedMeals([...likedMeals, {name:m.name, id:m.id}]);
+    }
+    setFavourites(f=>f.includes(m.id)?f:[...f,m.id]);
+  };
+
+  const dislikeMeal = (m) => {
+    saveDislikedMeals([...dislikedMeals.filter(d=>d!==m.name), m.name]);
+    setShown(s=>s?s.filter(x=>x.id!==m.id):s);
+  };
+
+  // AI generation for Pro users
+  const generateAI = async () => {
+    setGenerating(true);
+    setGenerateError(null);
+    try {
+      const res = await fetch("/api/generate-meals", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          profile,
+          dislikedMealNames: dislikedMeals,
+          style,
+        }),
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      setShown(data.meals);
+      setExpanded(null);
+    } catch(err) {
+      setGenerateError("Could not generate meals. Please try again.");
+      console.error(err);
+    }
+    setGenerating(false);
+  };
+
+  // Fallback generation for free users (from hardcoded library)
+  const generateLocal = () => {
     const pool=filtered.length>0?filtered:available;
-    const favPool=pool.filter(m=>favourites.includes(m.id));
-    const usePool=favPool.length>=3?favPool:pool;
-
-    // Pick one of each type in order: breakfast, snack, lunch, dinner
     const byType = {
-      breakfast: [...usePool].filter(m=>getMealType(m)==="breakfast").sort(()=>Math.random()-0.5),
-      snack:     [...usePool].filter(m=>getMealType(m)==="snack").sort(()=>Math.random()-0.5),
-      lunch:     [...usePool].filter(m=>getMealType(m)==="lunch").sort(()=>Math.random()-0.5),
-      dinner:    [...usePool].filter(m=>getMealType(m)==="dinner").sort(()=>Math.random()-0.5),
+      breakfast: [...pool].filter(m=>getMealType(m)==="breakfast").sort(()=>Math.random()-0.5),
+      snack:     [...pool].filter(m=>getMealType(m)==="snack").sort(()=>Math.random()-0.5),
+      lunch:     [...pool].filter(m=>getMealType(m)==="lunch").sort(()=>Math.random()-0.5),
+      dinner:    [...pool].filter(m=>getMealType(m)==="dinner").sort(()=>Math.random()-0.5),
     };
-
-    const ordered = [
-      byType.breakfast[0],
-      byType.snack[0],
-      byType.lunch[0],
-      byType.snack[1] || byType.snack[0],
-      byType.dinner[0],
-    ].filter(Boolean);
-
-    // Fallback if not enough variety
-    const result = ordered.length >= 3 ? ordered : [...usePool].sort(()=>Math.random()-0.5).slice(0,4);
-    setShown(result);
+    const ordered = [byType.breakfast[0],byType.snack[0],byType.lunch[0],byType.snack[1]||byType.snack[0],byType.dinner[0]].filter(Boolean);
+    setShown(ordered.length>=3?ordered:[...pool].sort(()=>Math.random()-0.5).slice(0,4));
     setExpanded(null);
   };
+
+  const generate = isPro ? generateAI : generateLocal;
 
   const toggleFav = id => setFavourites(f=>f.includes(id)?f.filter(x=>x!==id):[...f,id]);
   const removeM = id => { setRemoved(r=>[...r,id]); setShown(s=>s?s.filter(m=>m.id!==id):s); };
@@ -828,10 +911,21 @@ const MealsTab = ({ profile, favourites, setFavourites, removed, setRemoved, mea
           <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:14 }}>
             {["all","balanced","high-protein","mediterranean","budget-friendly"].map(s=><Chip key={s} color={C.accent} active={style===s} onClick={()=>setStyle(s)}>{s}</Chip>)}
           </div>
-          {isPro
-            ? <Btn onClick={generate} style={{ width:"100%" }}>✦ Generate Today's Meals</Btn>
-            : <Btn onClick={onUpgrade} color="#5856d6" style={{ width:"100%" }}>✦ Unlock Meal Generation — Pro</Btn>
-          }
+          {isPro ? (
+            <div>
+              <Btn onClick={generate} disabled={generating} style={{ width:"100%", marginBottom:8 }}>
+                {generating ? "✦ Generating your meals..." : "✦ Generate Today's Meals with AI"}
+              </Btn>
+              {generating && <p style={{ color:C.muted, fontSize:12, textAlign:"center" }}>Crafting personalised meals just for you...</p>}
+              {generateError && <p style={{ color:C.red, fontSize:13, textAlign:"center", marginTop:6 }}>{generateError}</p>}
+              {dislikedMeals.length>0&&<p style={{ color:C.muted, fontSize:11, textAlign:"center" }}>Avoiding {dislikedMeals.length} disliked meal{dislikedMeals.length!==1?"s":""} · <span onClick={()=>saveDislikedMeals([])} style={{ color:C.accent, cursor:"pointer" }}>Reset</span></p>}
+            </div>
+          ) : (
+            <div>
+              <Btn onClick={generate} style={{ width:"100%", marginBottom:8 }}>✦ Generate from our meal library</Btn>
+              <Btn onClick={onUpgrade} color="#5856d6" style={{ width:"100%" }}>✦ Unlock AI Meal Generation — Pro</Btn>
+            </div>
+          )}
         </Card>
 
         {shown&&<>
@@ -848,7 +942,7 @@ const MealsTab = ({ profile, favourites, setFavourites, removed, setRemoved, mea
               <div onClick={()=>setExpanded(isExp?null:m.id)} style={{ cursor:"pointer" }}>
                 <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:8 }}>
                   <div style={{ flex:1 }}>
-                    <span style={{ color:C.muted, fontSize:11, fontWeight:600 }}>{m.tags.find(t=>["breakfast","lunch","dinner","snack"].includes(t))?.toUpperCase()}</span>
+                    <span style={{ color:C.muted, fontSize:11, fontWeight:600 }}>{(m.type||m.tags?.find(t=>["breakfast","lunch","dinner","snack"].includes(t)))?.toUpperCase()}</span>
                     <p style={{ color:C.text, fontWeight:600, fontSize:16, margin:"2px 0 0" }}>{m.name}</p>
                   </div>
                   <div style={{ textAlign:"right", marginLeft:10 }}>
@@ -863,10 +957,10 @@ const MealsTab = ({ profile, favourites, setFavourites, removed, setRemoved, mea
                 <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:8 }}><Icon name="note" size={13} color={C.muted} /><p style={{ color:C.muted, fontSize:11, fontWeight:700, letterSpacing:"0.06em", margin:0 }}>METHOD</p></div>
                 {m.method.split("\n").map((step,i)=><p key={i} style={{ color:C.text, fontSize:13, lineHeight:1.7, margin:"0 0 6px" }}>{step}</p>)}
               </div>}
-              <div style={{ display:"flex", gap:8, marginTop:12 }}>
-                <button onClick={()=>toggleFav(m.id)} style={{ flex:1, background:isFav?`${C.yellow}20`:"none", border:`1px solid ${isFav?C.yellow:C.border}`, borderRadius:10, padding:"7px 0", color:isFav?C.orange:C.muted, fontSize:13, cursor:"pointer", fontFamily:FONT, fontWeight:600 }}>{isFav?"★ Saved":"☆ Fav"}</button>
-                <button onClick={()=>{if(!isLogged)logMeal(m);}} style={{ flex:2, background:isLogged?`${C.green}15`:"none", border:`1px solid ${isLogged?C.green:C.border}`, borderRadius:10, padding:"7px 0", color:isLogged?C.green:C.muted, fontSize:13, cursor:isLogged?"default":"pointer", fontFamily:FONT, fontWeight:600 }}>{isLogged?"✓ Logged":"+ Log meal"}</button>
-                <button onClick={()=>removeM(m.id)} style={{ background:"none", border:`1px solid ${C.border}`, borderRadius:10, padding:"7px 12px", color:C.red, fontSize:13, cursor:"pointer", fontFamily:FONT }}>✕</button>
+              <div style={{ display:"flex", gap:6, marginTop:12 }}>
+                <button onClick={()=>likeMeal(m)} title="I like this — show again" style={{ width:38, height:36, background:likedMeals.find(l=>l.name===m.name)?`${C.green}20`:"none", border:`1px solid ${likedMeals.find(l=>l.name===m.name)?C.green:C.border}`, borderRadius:10, color:C.green, fontSize:16, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}>👍</button>
+                <button onClick={()=>dislikeMeal(m)} title="Never show this meal again" style={{ width:38, height:36, background:"none", border:`1px solid ${C.border}`, borderRadius:10, color:C.red, fontSize:16, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}>👎</button>
+                <button onClick={()=>{if(!isLogged)logMeal(m);}} style={{ flex:1, background:isLogged?`${C.green}15`:"none", border:`1px solid ${isLogged?C.green:C.border}`, borderRadius:10, padding:"7px 0", color:isLogged?C.green:C.muted, fontSize:13, cursor:isLogged?"default":"pointer", fontFamily:FONT, fontWeight:600 }}>{isLogged?"✓ Logged":"+ Log meal"}</button>
               </div>
             </Card>;
           })}

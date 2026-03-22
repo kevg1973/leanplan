@@ -127,12 +127,92 @@ app.get("/api/pro-status", (req, res) => {
   res.json({ bypass });
 });
 
+// ── AI Recipe Generation ─────────────────────────────────────────────────────
+app.post("/api/generate-meals", async (req, res) => {
+  const { profile, dislikedMealNames = [], style = "all" } = req.body;
+
+  const dietNotes = [
+    profile?.dietType || "omnivore",
+    profile?.dairyPref === "dairy_free" ? "strictly dairy-free (use coconut yoghurt, soya milk, dairy-free alternatives)" : 
+    profile?.dairyPref === "lactose_free" ? "lactose-free dairy only" : "dairy ok",
+    profile?.glutenPref === "gluten_free" ? "strictly gluten-free (use tamari not soy sauce, GF oats, rice/corn alternatives)" : "gluten ok",
+  ].filter(Boolean).join(", ");
+
+  const cookTime = { quick:"15 minutes max", moderate:"30 minutes", enjoy:"up to 60 minutes" }[profile?.cookingTime] || "30 minutes";
+  const styleFilter = style !== "all" ? `Meal style: ${style}.` : "";
+
+  const prompt = `Generate exactly 5 meals for one day for this person. Return ONLY valid JSON, no other text.
+
+User profile:
+- Diet: ${dietNotes}
+- Allergies: ${profile?.allergies?.join(", ") || "none"}
+- Dislikes: ${profile?.dislikes?.join(", ") || "none"}
+- Cooking time: ${cookTime} per meal
+- Goal: ${profile?.goal?.replace(/_/g," ") || "lose weight"}
+- Age: ${profile?.age || "adult"}
+${styleFilter}
+
+CRITICAL RULES:
+1. ALL ingredients must be available in standard UK supermarkets (Tesco, Sainsbury's, Asda, Ocado)
+2. No exotic or hard-to-find ingredients
+3. No ingredients the user dislikes or is allergic to
+4. Meals must be in order: breakfast, morning snack, lunch, afternoon snack, dinner
+5. Do NOT generate any of these meals (user has disliked them): ${dislikedMealNames.length > 0 ? dislikedMealNames.join(", ") : "none"}
+6. Each meal should be high protein (20g+ for main meals, 10g+ for snacks)
+7. Use simple whole foods — chicken, eggs, rice, oats, vegetables, legumes etc
+
+Return this exact JSON structure:
+{
+  "meals": [
+    {
+      "id": "ai_[unique_6_char_id]",
+      "name": "Meal Name",
+      "type": "breakfast|snack|lunch|dinner",
+      "time": "8:00 AM",
+      "cals": 400,
+      "protein": 30,
+      "carbs": 35,
+      "fat": 12,
+      "items": ["ingredient 1 (amount)", "ingredient 2 (amount)"],
+      "method": "Step by step cooking instructions",
+      "tags": ["balanced", "gf", "df"]
+    }
+  ]
+}`;
+
+  try {
+    const response = await client.messages.create({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 2000,
+      messages: [{ role: "user", content: prompt }],
+    });
+
+    const text = response.content[0]?.text || "";
+    const clean = text.replace(/```json|```/g, "").trim();
+    const parsed = JSON.parse(clean);
+
+    if (!parsed.meals || !Array.isArray(parsed.meals)) {
+      throw new Error("Invalid meal structure returned");
+    }
+
+    res.json({ meals: parsed.meals });
+  } catch (err) {
+    console.error("Recipe generation error:", err.message);
+    res.status(500).json({ error: "Failed to generate meals" });
+  }
+});
+
 // ── Chat endpoint ─────────────────────────────────────────────────────────────
 app.post("/api/chat", async (req, res) => {
   const { messages, profile } = req.body;
   if (!messages || !Array.isArray(messages)) return res.status(400).json({ error: "Invalid request" });
 
   const injuries = profile?.injuries?.filter(i=>i!=="none")?.join(", ") || "none";
+  const suppNote = profile?.supplementsOpen === "no"
+    ? "User prefers food only — do NOT suggest supplements"
+    : profile?.supplementsInterested?.length > 0
+    ? `Open to supplements. Interested in: ${profile.supplementsInterested.join(", ")}`
+    : "Open to supplements — suggest relevant ones";
   const equipment = profile?.equipment?.join(", ") || "not specified";
   const dietNotes = [
     profile?.dietType || "omnivore",
@@ -161,6 +241,7 @@ The user's profile:
 - Activity level: ${profile?.activityLevel || "moderate"}
 - Cooking time: ${profile?.cookingTime || "moderate"}
 - Known pains: ${profile?.pains?.map(p=>p.desc).join(", ") || "none logged"}
+- Supplements: ${suppNote}
 - TDEE: ${profile?.heightCm && profile?.age ? "calculable from profile" : "unknown"}
 
 Your role:
