@@ -1555,11 +1555,24 @@ const PaywallModal = ({ onClose }) => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ plan: selectedPlan, deviceId }),
       });
+      if (!res.ok) {
+        const err = await res.text();
+        console.error("Checkout error:", err);
+        alert("Payment setup failed. Please try again.");
+        setLoading(false);
+        return;
+      }
       const data = await res.json();
-      if (data.url) window.location.href = data.url;
-      else setLoading(false);
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        console.error("No URL in response:", data);
+        alert("Payment setup failed. Please try again.");
+        setLoading(false);
+      }
     } catch(err) {
-      console.error(err);
+      console.error("Checkout fetch error:", err);
+      alert("Could not connect to payment server. Please try again.");
       setLoading(false);
     }
   };
@@ -1768,9 +1781,10 @@ export default function App() {
         {tab==="Coach"&&(isPro ? <CoachTab profile={profile} setProfile={setProfile} /> : <LockedTab feature="AI personal coach" onUpgrade={()=>setShowPaywall(true)} />)}
         {tab==="Profile"&&<ProfileTab profile={profile} setProfile={setProfile} onReset={handleReset} isDark={isDark} darkOverride={darkOverride} setDarkOverride={setDarkOverride} isPro={isPro} proData={proData} onUpgrade={()=>setShowPaywall(true)} />}
 
-        {/* Paywall modal */}
-        {showPaywall && <PaywallModal onClose={()=>setShowPaywall(false)} />}
       </div>
+
+      {/* Paywall modal — outside scroll container */}
+      {showPaywall && <PaywallModal onClose={()=>setShowPaywall(false)} />}
 
       <div style={{ position:"fixed", bottom:0, left:0, right:0, width:"100%", background:isDark?"rgba(0,0,0,0.85)":"rgba(242,242,247,0.95)", backdropFilter:"blur(20px)", WebkitBackdropFilter:"blur(20px)", borderTop:`1px solid ${C.border}`, display:"flex", padding:"8px 0 20px" }}>
         {TABS.map(t=>{
