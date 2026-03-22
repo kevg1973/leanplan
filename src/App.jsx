@@ -1539,8 +1539,7 @@ export default function App() {
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
           <div>
             <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-              {isDark && <img src="/leanplan_mark.png" alt="" style={{ height:32, width:32, objectFit:"contain" }} />}
-              <span style={{ fontSize:20, fontWeight:800, letterSpacing:"-0.02em", fontFamily:FONT }}>
+              <span style={{ fontSize:22, fontWeight:800, letterSpacing:"-0.02em", fontFamily:FONT }}>
                 <span style={{ color:C.text }}>Lean</span><span style={{ color:C.accent }}>Plan</span>
               </span>
             </div>
