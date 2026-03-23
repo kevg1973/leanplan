@@ -1028,7 +1028,60 @@ const TodayTab = ({ profile, entries, mealLog, workoutLog, water, setWater, jour
 };
 
 // ── MEALS TAB ─────────────────────────────────────────────────────────────────
-const MealsTab = ({ profile, favourites, setFavourites, removed, setRemoved, mealLog, setMealLog, isPro, onUpgrade }) => {
+// ── Meal Loading Indicator ────────────────────────────────────────────────────
+const MEAL_LOADING_MESSAGES = [
+  "Checking your dietary preferences...",
+  "Selecting fresh ingredients...",
+  "Balancing your macros...",
+  "Building your breakfast...",
+  "Planning your snacks...",
+  "Crafting your lunch...",
+  "Finalising your dinner...",
+  "Almost ready...",
+];
+
+const MealLoadingIndicator = () => {
+  const [msgIndex, setMsgIndex] = useState(0);
+  const [dots, setDots] = useState(1);
+
+  useEffect(() => {
+    const msgTimer = setInterval(() => {
+      setMsgIndex(i => (i + 1) % MEAL_LOADING_MESSAGES.length);
+    }, 1800);
+    const dotTimer = setInterval(() => {
+      setDots(d => d === 3 ? 1 : d + 1);
+    }, 400);
+    return () => { clearInterval(msgTimer); clearInterval(dotTimer); };
+  }, []);
+
+  return (
+    <div>
+      <div style={{ display:"flex", justifyContent:"center", gap:6, marginBottom:14 }}>
+        {[0,1,2,3,4].map(i => (
+          <div key={i} style={{
+            width:8, height:8, borderRadius:99, background:C.accent,
+            opacity: 0.3,
+            animation: `pulse ${0.8}s ease-in-out ${i * 0.15}s infinite alternate`,
+          }} />
+        ))}
+      </div>
+      <style>{`
+        @keyframes pulse {
+          from { opacity: 0.2; transform: scale(0.8); }
+          to { opacity: 1; transform: scale(1.2); }
+        }
+      `}</style>
+      <p style={{ color:C.text, fontSize:14, fontWeight:600, margin:"0 0 4px" }}>
+        {MEAL_LOADING_MESSAGES[msgIndex]}{"·".repeat(dots)}
+      </p>
+      <p style={{ color:C.muted, fontSize:12, margin:0 }}>
+        AI is building your personalised meal plan
+      </p>
+    </div>
+  );
+};
+
+const MealsTab =({ profile, favourites, setFavourites, removed, setRemoved, mealLog, setMealLog, isPro, onUpgrade }) => {
   const [style, setStyle] = useState("all");
   const [shown, setShown] = useState(null);
   const [expanded, setExpanded] = useState(null);
@@ -1180,7 +1233,11 @@ const MealsTab = ({ profile, favourites, setFavourites, removed, setRemoved, mea
               <Btn onClick={generate} disabled={generating} style={{ width:"100%", marginBottom:8 }}>
                 {generating ? "✦ Generating your meals..." : "✦ Generate Today's Meals with AI"}
               </Btn>
-              {generating && <p style={{ color:C.muted, fontSize:12, textAlign:"center" }}>Crafting personalised meals just for you...</p>}
+              {generating && (
+                <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:14, padding:"16px", marginTop:8, textAlign:"center" }}>
+                  <MealLoadingIndicator />
+                </div>
+              )}
               {generateError && <p style={{ color:C.red, fontSize:13, textAlign:"center", marginTop:6 }}>{generateError}</p>}
               {dislikedMeals.length>0&&<p style={{ color:C.muted, fontSize:11, textAlign:"center" }}>Avoiding {dislikedMeals.length} disliked meal{dislikedMeals.length!==1?"s":""} · <span onClick={()=>saveDislikedMeals([])} style={{ color:C.accent, cursor:"pointer" }}>Reset</span></p>}
             </div>
