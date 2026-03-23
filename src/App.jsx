@@ -2207,6 +2207,10 @@ const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDar
         ) : (
           <div>
             <Row label="Account" value="Not signed in" color={C.muted} last />
+            <div style={{ padding:"12px 16px" }}>
+              <Btn color={C.accent} onClick={onShowAuth} style={{ width:"100%", marginBottom:8 }}>Sign In / Create Account</Btn>
+              <p style={{ color:C.muted, fontSize:12, textAlign:"center", margin:0 }}>Sync your data across devices</p>
+            </div>
           </div>
         )}
       </Section>
@@ -2618,6 +2622,32 @@ class ErrorBoundary extends React.Component {
 }
 
 
+
+// ── Welcome Screen ────────────────────────────────────────────────────────────
+const WelcomeScreen = ({ onNew, onSignIn }) => (
+  <div style={{ minHeight:"100vh", background:C.bg, fontFamily:FONT, display:"flex", flexDirection:"column", justifyContent:"center", padding:"0 20px" }}>
+    <div style={{ maxWidth:400, margin:"0 auto", width:"100%", textAlign:"center" }}>
+      <img src="/leanplan_app_icon.png" alt="" style={{ height:88, width:88, borderRadius:22, marginBottom:24 }} />
+      <h1 style={{ fontSize:32, fontWeight:800, color:C.text, margin:"0 0 10px" }}>
+        <span style={{ color:C.text }}>Lean</span><span style={{ color:C.accent }}>Plan</span>
+      </h1>
+      <p style={{ color:C.muted, fontSize:16, lineHeight:1.7, marginBottom:48 }}>Your personal AI health & fitness coach</p>
+
+      <Btn onClick={onNew} color={C.accent} style={{ width:"100%", fontSize:17, padding:"16px 0", marginBottom:14 }}>
+        Get Started →
+      </Btn>
+
+      <button onClick={onSignIn} style={{ width:"100%", background:"none", border:`1.5px solid ${C.border}`, borderRadius:14, padding:"15px 0", color:C.text, fontSize:16, fontWeight:600, cursor:"pointer", fontFamily:FONT }}>
+        I already have an account
+      </button>
+
+      <p style={{ color:C.muted, fontSize:12, marginTop:24, lineHeight:1.6 }}>
+        Takes 3 minutes · Fully personalised to you
+      </p>
+    </div>
+  </div>
+);
+
 // ── Auth Screen ───────────────────────────────────────────────────────────────
 const AuthScreen = ({ onAuth, onSkip }) => {
   const [mode, setMode] = useState("login"); // login, signup, forgot
@@ -2671,7 +2701,7 @@ const AuthScreen = ({ onAuth, onSkip }) => {
           <h1 style={{ fontSize:32, fontWeight:800, color:C.text, margin:"0 0 8px" }}>
             <span style={{ color:C.text }}>Lean</span><span style={{ color:C.accent }}>Plan</span>
           </h1>
-          <p style={{ color:C.muted, fontSize:15 }}>Your AI health coach</p>
+          <p style={{ color:C.muted, fontSize:15 }}>Create an account to save your plan</p>
         </div>
 
         {/* Mode tabs */}
@@ -2715,8 +2745,16 @@ const AuthScreen = ({ onAuth, onSkip }) => {
         {mode === "login" && <p onClick={()=>{setMode("forgot");setError(null);}} style={{ color:C.accent, fontSize:13, textAlign:"center", cursor:"pointer", marginBottom:16 }}>Forgot password?</p>}
         {mode === "forgot" && <p onClick={()=>{setMode("login");setError(null);}} style={{ color:C.accent, fontSize:13, textAlign:"center", cursor:"pointer", marginBottom:16 }}>← Back to sign in</p>}
 
-        <p style={{ color:C.muted, fontSize:11, textAlign:"center", marginTop:16, lineHeight:1.6 }}>
-          Your data is securely synced across all your devices. We never share your information.
+        <div style={{ display:"flex", alignItems:"center", gap:12, margin:"16px 0" }}>
+          <div style={{ flex:1, height:1, background:C.border }} />
+          <span style={{ color:C.muted, fontSize:13 }}>or</span>
+          <div style={{ flex:1, height:1, background:C.border }} />
+        </div>
+        <button onClick={onSkip} style={{ width:"100%", background:"none", border:`1px solid ${C.border}`, borderRadius:14, padding:"14px 0", color:C.muted, fontSize:15, cursor:"pointer", fontFamily:FONT }}>
+          Maybe later
+        </button>
+        <p style={{ color:C.muted, fontSize:11, textAlign:"center", marginTop:10, lineHeight:1.6 }}>
+          Without an account your data is only saved on this device.
         </p>
       </div>
     </div>
@@ -2747,6 +2785,7 @@ function AppInner() {
   const [user, setUser] = useState(null); // Supabase user
   const [authChecked, setAuthChecked] = useState(false); // has auth been checked
   const [showAuth, setShowAuth] = useState(false); // show auth screen
+  const [showWelcome, setShowWelcome] = useState(false); // show welcome screen
   const [syncing, setSyncing] = useState(false);
 
   // Listen to system dark mode changes
@@ -2957,25 +2996,38 @@ function AppInner() {
 
 
 
-  if (!user) return <AuthScreen
+  if (showWelcome) return <WelcomeScreen
+    onNew={()=>setShowWelcome(false)}
+    onSignIn={()=>{ setShowWelcome(false); setShowAuth(true); }}
+  />;
+
+  if (showAuth) return <AuthScreen
     onAuth={async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
         setUser(session.user);
+        setShowAuth(false);
         setSyncing(true);
         try {
           const { data } = await supabase.from("profiles").select("profile_data").eq("id", session.user.id).single();
           if (!data?.profile_data || Object.keys(data.profile_data).length === 0) {
+            // New account — no data yet, push local if available
             const local = JSON.parse(localStorage.getItem("leanplan_v4") || "{}");
             if (local.profile) await saveToSupabase(session.user.id, local);
           } else {
+            // Existing account — load their data (handles new phone scenario)
             await loadFromSupabase(session.user.id);
           }
         } catch(e){}
         setSyncing(false);
       }
     }}
-    onSkip={null}
+    onSkip={() => setShowAuth(false)}
+  />;
+
+  if (!profile && !user) return <WelcomeScreen
+    onNew={()=>{}}
+    onSignIn={()=>setShowAuth(true)}
   />;
 
   if (!profile) return <Onboarding onDone={async p=>{ 
@@ -2985,10 +3037,12 @@ function AppInner() {
       const current = JSON.parse(localStorage.getItem("leanplan_v4") || "{}");
       localStorage.setItem("leanplan_v4", JSON.stringify({...current, profile:p}));
     } catch(e){}
-    // Save to Supabase immediately
+    // Save to Supabase if already logged in, otherwise show auth
     const { data: { session } } = await supabase.auth.getSession();
     if (session?.user) {
       await saveToSupabase(session.user.id, { profile:p, entries:[], favourites:[], removed:[], mealLog:{}, workoutLog:{}, water:{}, journal:{}, measurements:[], darkOverride:null });
+    } else {
+      setShowAuth(true);
     }
   }} />;
 
