@@ -2914,7 +2914,21 @@ function AppInner() {
         if (session?.user) {
           setUser(session.user);
           loadFromLocal();
-          try { await loadFromSupabase(session.user.id); } catch(e){ console.error("Supabase load failed:", e); }
+          try {
+            // Check if Supabase has profile data
+            const { data } = await supabase.from("profiles").select("profile_data").eq("id", session.user.id).single();
+            if (!data?.profile_data || Object.keys(data.profile_data).length === 0) {
+              // Profile is empty — push local data up immediately
+              const local = JSON.parse(localStorage.getItem("leanplan_v4") || "{}");
+              if (local.profile) {
+                console.log("Pushing local profile to Supabase...");
+                await saveToSupabase(session.user.id, local);
+                setProfile(local.profile);
+              }
+            } else {
+              await loadFromSupabase(session.user.id);
+            }
+          } catch(e){ console.error("Supabase sync failed:", e); }
           clearTimeout(safetyTimer);
           finishLoading();
         }
