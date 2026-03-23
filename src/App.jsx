@@ -2887,39 +2887,49 @@ function AppInner() {
 
   // Check auth on mount
   useEffect(()=>{
+    let loadingDone = false;
+
+    const finishLoading = () => {
+      if (!loadingDone) {
+        loadingDone = true;
+        // Clean up URL hash
+        if (window.location.hash?.includes("access_token")) {
+          window.history.replaceState({}, "", "/");
+        }
+        setLoading(false);
+        setAuthChecked(true);
+      }
+    };
+
+    // Safety timeout — never get stuck on loading screen
+    const safetyTimer = setTimeout(() => {
+      console.warn("Auth timeout — forcing load");
+      loadFromLocal();
+      finishLoading();
+    }, 5000);
+
     // onAuthStateChange catches ALL auth events including email confirmation
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED" || event === "USER_UPDATED") {
         if (session?.user) {
           setUser(session.user);
-          // Clean up URL if it has tokens in hash
-          if (window.location.hash?.includes("access_token")) {
-            window.history.replaceState({}, "", "/");
-          }
           loadFromLocal();
-          await loadFromSupabase(session.user.id);
-          setLoading(false);
-          setAuthChecked(true);
+          try { await loadFromSupabase(session.user.id); } catch(e){ console.error("Supabase load failed:", e); }
+          clearTimeout(safetyTimer);
+          finishLoading();
         }
       } else if (event === "SIGNED_OUT") {
         setUser(null);
+      } else if (event === "INITIAL_SESSION") {
+        if (!session?.user) {
+          loadFromLocal();
+          clearTimeout(safetyTimer);
+          finishLoading();
+        }
       }
     });
 
-    // Also check existing session on mount
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        setUser(session.user);
-        loadFromLocal();
-        loadFromSupabase(session.user.id).then(()=>{ setLoading(false); setAuthChecked(true); });
-      } else {
-        loadFromLocal();
-        setLoading(false);
-        setAuthChecked(true);
-      }
-    });
-
-    return () => subscription.unsubscribe();
+    return () => { subscription.unsubscribe(); clearTimeout(safetyTimer); };
   }, []);
 
   // Save to both localStorage and Supabase when data changes
