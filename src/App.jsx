@@ -145,80 +145,272 @@ const ALL_MEALS = [
 ];
 
 // ── Exercise Database ─────────────────────────────────────────────────────────
-// Each exercise tagged with: equipment needed, muscle groups, injuries to avoid
 const EXERCISE_DB = [
   // CHEST
-  {name:"Dumbbell Bench Press",muscle:"chest",equip:["dumbbells"],avoid:[],tip:"Lower slowly over 3 seconds. Full range of motion."},
-  {name:"Dumbbell Incline Press",muscle:"chest",equip:["dumbbells"],avoid:["shoulders"],tip:"30-45° incline. Targets upper chest."},
-  {name:"Dumbbell Flyes",muscle:"chest",equip:["dumbbells"],avoid:["shoulders"],tip:"Slight bend in elbow. Feel the stretch at the bottom."},
-  {name:"Cable Chest Flye",muscle:"chest",equip:["cables"],avoid:[],tip:"Keep chest up. Squeeze hard at the top."},
-  {name:"Push Up",muscle:"chest",equip:["bodyweight"],avoid:["wrists"],tip:"Body straight as a plank. Go to the floor."},
-  {name:"Close-Grip Push Up",muscle:"chest",equip:["bodyweight"],avoid:["wrists","shoulders"],tip:"Hands shoulder-width. Works triceps hard too."},
+  {name:"Dumbbell Bench Press",muscle:"chest",equip:["dumbbells"],avoid:[],tip:"Lower slowly over 3 seconds. Full range of motion.",
+   steps:["Lie flat on a bench holding dumbbells at chest height, palms facing forward","Plant feet flat on the floor, arch your lower back slightly","Press the dumbbells up and slightly inward until arms are fully extended","Lower slowly over 3 seconds back to chest height","Keep shoulder blades squeezed together throughout"],
+   mistakes:["Flaring elbows out too wide — keep at 45-75°","Bouncing the weight off your chest","Not lowering to full depth"],
+   muscles:"Pectorals (primary) · Triceps · Front deltoids"},
+  {name:"Dumbbell Incline Press",muscle:"chest",equip:["dumbbells"],avoid:["shoulders"],tip:"30-45° incline. Targets upper chest.",
+   steps:["Set bench to 30-45° incline — higher angle shifts work to shoulders","Sit back with dumbbells resting on thighs, kick up to starting position","Press up and slightly inward, keeping wrists straight","Lower slowly with control, feeling a stretch in the upper chest","Don't let dumbbells drift too wide at the bottom"],
+   mistakes:["Setting bench too steep (turns it into a shoulder press)","Losing the arch in your back","Rushing the descent"],
+   muscles:"Upper pectorals (primary) · Triceps · Front deltoids"},
+  {name:"Dumbbell Flyes",muscle:"chest",equip:["dumbbells"],avoid:["shoulders"],tip:"Slight bend in elbow. Feel the stretch at the bottom.",
+   steps:["Lie flat, hold dumbbells above chest with a slight bend in elbows","Open arms wide in a wide arc, like hugging a barrel","Feel a deep stretch in the chest at the bottom","Squeeze chest to bring dumbbells back together at the top","Keep the same elbow angle throughout — don't let it change"],
+   mistakes:["Straightening arms completely (stresses elbow joints)","Going too heavy — this is an isolation move","Not feeling the stretch at the bottom"],
+   muscles:"Pectorals (primary) · Front deltoids"},
+  {name:"Cable Chest Flye",muscle:"chest",equip:["cables"],avoid:[],tip:"Keep chest up. Squeeze hard at the top.",
+   steps:["Set pulleys to chest height, stand in the middle","Hold handles with arms wide, slight bend in elbows","Step forward slightly to feel tension at the start","Bring handles together in front of chest in a wide arc","Squeeze chest hard for 1 second at the top, return with control"],
+   mistakes:["Letting the cables pull you back too fast","Standing too upright — lean forward slightly","Using too much arm instead of chest"],
+   muscles:"Pectorals (primary) · Front deltoids"},
+  {name:"Push Up",muscle:"chest",equip:["bodyweight"],avoid:["wrists"],tip:"Body straight as a plank. Go to the floor.",
+   steps:["Start in plank position, hands slightly wider than shoulder-width","Keep body in a straight line from head to heels","Lower chest to the floor, keeping elbows at 45-75°","Push through palms to return to start","Squeeze glutes and core throughout"],
+   mistakes:["Hips sagging or piking up","Head dropping forward","Not going to full depth"],
+   muscles:"Pectorals (primary) · Triceps · Core"},
+  {name:"Close-Grip Push Up",muscle:"chest",equip:["bodyweight"],avoid:["wrists","shoulders"],tip:"Hands shoulder-width. Works triceps hard too.",
+   steps:["Set up in push up position with hands directly under shoulders","Keep elbows tucked close to your body as you lower","Lower chest between your hands to the floor","Push back up explosively","Keep body rigid throughout"],
+   mistakes:["Letting elbows flare outward","Losing core tension","Partial range of motion"],
+   muscles:"Triceps (primary) · Inner pectorals · Shoulders"},
   // BACK
-  {name:"Seated Cable Row",muscle:"back",equip:["cables"],avoid:[],tip:"Drive elbows back. Squeeze shoulder blades together."},
-  {name:"Lat Pulldown",muscle:"back",equip:["cables"],avoid:[],tip:"Pull to upper chest. Lean back slightly."},
-  {name:"Single-Arm Dumbbell Row",muscle:"back",equip:["dumbbells"],avoid:["back"],tip:"Support on bench. Elbow close to body."},
-  {name:"Dumbbell Bent-Over Row",muscle:"back",equip:["dumbbells"],avoid:["back"],tip:"Hinge at hips, back flat. Pull to hip."},
-  {name:"Face Pulls",muscle:"back",equip:["cables"],avoid:[],tip:"Elbows high and wide. Essential for shoulder health."},
-  {name:"Straight-Arm Pulldown",muscle:"back",equip:["cables"],avoid:[],tip:"Arms straight, pull to hips. Great lat isolation."},
-  {name:"Pull Up",muscle:"back",equip:["bodyweight"],avoid:["shoulders"],tip:"Full hang to chin over bar. Control the descent."},
-  {name:"Inverted Row",muscle:"back",equip:["bodyweight"],avoid:[],tip:"Body rigid. Pull chest to bar."},
+  {name:"Seated Cable Row",muscle:"back",equip:["cables"],avoid:[],tip:"Drive elbows back. Squeeze shoulder blades together.",
+   steps:["Sit at the cable row station with feet on pads, knees slightly bent","Hold the handle with both hands, sit upright with chest up","Pull the handle to your lower abdomen, driving elbows back","Squeeze shoulder blades together hard at the end","Return slowly, allowing shoulders to protract forward slightly"],
+   mistakes:["Rounding the lower back","Using momentum to jerk the weight","Not squeezing at the end of the movement"],
+   muscles:"Latissimus dorsi · Rhomboids · Rear deltoids · Biceps"},
+  {name:"Lat Pulldown",muscle:"back",equip:["cables"],avoid:[],tip:"Pull to upper chest. Lean back slightly.",
+   steps:["Sit at lat pulldown station, secure thighs under pads","Grip bar wider than shoulder-width, lean back 10-15°","Pull bar down to upper chest, driving elbows down and back","Squeeze lats hard at the bottom position","Return slowly over 2-3 seconds, feeling the stretch overhead"],
+   mistakes:["Pulling bar behind the neck (neck injury risk)","Using too much momentum","Not leaning back enough to clear the bar"],
+   muscles:"Latissimus dorsi (primary) · Biceps · Rear deltoids"},
+  {name:"Single-Arm Dumbbell Row",muscle:"back",equip:["dumbbells"],avoid:["back"],tip:"Support on bench. Elbow close to body.",
+   steps:["Place one knee and hand on a bench for support","Hold dumbbell in opposite hand, let it hang straight down","Pull dumbbell up to hip height, keeping elbow close to body","Squeeze the lat hard at the top, hold 1 second","Lower with full control, getting a stretch at the bottom"],
+   mistakes:["Rotating the torso to get the weight up","Pulling with the bicep rather than the back","Not getting a full stretch at the bottom"],
+   muscles:"Latissimus dorsi · Rhomboids · Rear deltoids · Biceps"},
+  {name:"Dumbbell Bent-Over Row",muscle:"back",equip:["dumbbells"],avoid:["back"],tip:"Hinge at hips, back flat. Pull to hip.",
+   steps:["Stand with feet hip-width, hinge forward at hips to 45°","Keep back flat, core braced, slight bend in knees","Hold dumbbells hanging straight down","Pull both dumbbells to hip height simultaneously","Lower with control, maintaining the hip hinge position"],
+   mistakes:["Rounding the lower back — always keep it neutral","Using momentum to swing the weight up","Standing too upright"],
+   muscles:"Latissimus dorsi · Rhomboids · Rear deltoids · Biceps"},
+  {name:"Face Pulls",muscle:"back",equip:["cables"],avoid:[],tip:"Elbows high and wide. Essential for shoulder health.",
+   steps:["Set cable pulley to face height, attach rope handle","Stand back, hold rope with overhand grip, thumbs facing you","Pull rope to face level, keeping elbows high and out to the sides","At the end position, externally rotate — hands go back past ears","Return with control, keeping tension on the cable"],
+   mistakes:["Dropping elbows — they must stay high throughout","Going too heavy — this is a corrective exercise","Pulling to the neck rather than face level"],
+   muscles:"Rear deltoids · Rotator cuff · Rhomboids"},
+  {name:"Straight-Arm Pulldown",muscle:"back",equip:["cables"],avoid:[],tip:"Arms straight, pull to hips. Great lat isolation.",
+   steps:["Stand at high cable pulley, hold bar with arms extended overhead","Keep arms straight with a very slight elbow bend","Pull bar down in a wide arc to your thighs","Feel lats contracting hard at the bottom","Return slowly, feeling a stretch in the lats overhead"],
+   mistakes:["Bending elbows — turns it into a pulldown","Leaning back excessively","Not getting a full stretch at the top"],
+   muscles:"Latissimus dorsi (primary) · Triceps (long head)"},
+  {name:"Pull Up",muscle:"back",equip:["bodyweight"],avoid:["shoulders"],tip:"Full hang to chin over bar. Control the descent.",
+   steps:["Hang from bar with hands slightly wider than shoulders, overhand grip","Depress shoulder blades (pull shoulders away from ears) before pulling","Drive elbows down toward hips as you pull up","Get chin above the bar — don't strain neck forward","Lower with full control over 3 seconds to a dead hang"],
+   mistakes:["Kipping or swinging — use strict form","Not going to a full dead hang between reps","Crossing feet — keep body straight"],
+   muscles:"Latissimus dorsi (primary) · Biceps · Rear deltoids"},
+  {name:"Inverted Row",muscle:"back",equip:["bodyweight"],avoid:[],tip:"Body rigid. Pull chest to bar.",
+   steps:["Set bar at waist height in a rack or use a sturdy table","Hang underneath with straight body, heels on floor","Keep body rigid like a plank throughout","Pull chest to bar, squeezing shoulder blades together","Lower with full control"],
+   mistakes:["Letting hips sag to make it easier","Not pulling all the way to the bar","Too easy? Elevate feet to increase difficulty"],
+   muscles:"Rhomboids · Rear deltoids · Biceps · Core"},
   // LEGS
-  {name:"Goblet Squat",muscle:"legs",equip:["dumbbells"],avoid:[],tip:"Sit back into heels. Knees track over toes."},
-  {name:"Dumbbell Squat",muscle:"legs",equip:["dumbbells"],avoid:[],tip:"Feet shoulder-width. Chest up throughout."},
-  {name:"Leg Press",muscle:"legs",equip:["gym_machines"],avoid:[],tip:"Feet high on plate reduces knee stress."},
-  {name:"Romanian Deadlift",muscle:"legs",equip:["dumbbells"],avoid:["back"],tip:"Hinge at hips, soft knees, back flat."},
-  {name:"Dumbbell Lunge",muscle:"legs",equip:["dumbbells"],avoid:["knees"],tip:"Long stride. Front knee stays over ankle."},
-  {name:"Bulgarian Split Squat",muscle:"legs",equip:["dumbbells"],avoid:["knees"],tip:"Rear foot elevated. Most knee-friendly split squat."},
-  {name:"Seated Leg Curl",muscle:"legs",equip:["gym_machines"],avoid:[],tip:"Curl slowly, control the return."},
-  {name:"Leg Extension",muscle:"legs",equip:["gym_machines"],avoid:["knees"],tip:"Full extension. Pause at top."},
-  {name:"Hip Thrust",muscle:"legs",equip:["dumbbells","barbell"],avoid:["back"],tip:"Drive through heels. Hard squeeze at the top."},
-  {name:"Weighted Glute Bridge",muscle:"legs",equip:["dumbbells","bodyweight"],avoid:[],tip:"Weight on hips. Squeeze glutes hard at top."},
-  {name:"Standing Calf Raise",muscle:"legs",equip:["bodyweight","dumbbells"],avoid:[],tip:"Full range. Pause at top and bottom."},
-  {name:"Seated Calf Raise",muscle:"legs",equip:["gym_machines","dumbbells"],avoid:[],tip:"Weight on knees. Slow and controlled."},
-  {name:"Wall Sit",muscle:"legs",equip:["bodyweight"],avoid:["knees"],tip:"90 degrees. Hold as long as possible."},
-  {name:"Step Up",muscle:"legs",equip:["bodyweight","dumbbells"],avoid:["knees"],tip:"Drive through the heel. Full extension at top."},
+  {name:"Goblet Squat",muscle:"legs",equip:["dumbbells"],avoid:[],tip:"Sit back into heels. Knees track over toes.",
+   steps:["Hold one dumbbell vertically at chest height with both hands","Stand with feet shoulder-width, toes turned out slightly","Push hips back and down, keeping chest upright","Lower until thighs are parallel or below — sit into it","Drive through heels to stand, squeezing glutes at the top"],
+   mistakes:["Heels lifting off the floor — work on ankle mobility","Chest falling forward","Knees caving inward — push them out over toes"],
+   muscles:"Quadriceps · Glutes · Hamstrings · Core"},
+  {name:"Dumbbell Squat",muscle:"legs",equip:["dumbbells"],avoid:[],tip:"Feet shoulder-width. Chest up throughout.",
+   steps:["Hold dumbbells at sides, stand with feet shoulder-width","Brace core, keep chest tall throughout","Push hips back as you lower, knees tracking over toes","Descend to parallel or just below","Drive through the whole foot to return to standing"],
+   mistakes:["Leaning too far forward","Knees caving inward","Partial range of motion"],
+   muscles:"Quadriceps · Glutes · Hamstrings"},
+  {name:"Leg Press",muscle:"legs",equip:["gym_machines"],avoid:[],tip:"Feet high on plate reduces knee stress.",
+   steps:["Sit in the machine with back and head against the pad","Place feet high on the platform, shoulder-width apart","Release the safety handles and lower the platform","Lower until knees reach 90° or slightly below","Press through the whole foot back to start — don't lock knees out"],
+   mistakes:["Feet too low — increases knee strain significantly","Letting knees cave inward","Locking knees out at the top"],
+   muscles:"Quadriceps (primary) · Glutes · Hamstrings"},
+  {name:"Romanian Deadlift",muscle:"legs",equip:["dumbbells"],avoid:["back"],tip:"Hinge at hips, soft knees, back flat.",
+   steps:["Stand holding dumbbells in front of thighs","Soft bend in knees — this stays constant throughout","Push hips back as you lower the dumbbells down your legs","Lower until you feel a strong hamstring stretch (usually mid-shin)","Drive hips forward to return to standing, squeezing glutes"],
+   mistakes:["Rounding the lower back — fatal error on this exercise","Bending knees like a regular squat","Not feeling it in the hamstrings"],
+   muscles:"Hamstrings (primary) · Glutes · Lower back"},
+  {name:"Dumbbell Lunge",muscle:"legs",equip:["dumbbells"],avoid:["knees"],tip:"Long stride. Front knee stays over ankle.",
+   steps:["Stand holding dumbbells at your sides","Take a long stride forward with one foot","Lower back knee toward the floor, keeping front shin vertical","Push through front heel to return to standing","Alternate legs or complete all reps on one side"],
+   mistakes:["Front knee shooting forward past the toes","Short stride — makes it much harder on knees","Leaning trunk forward"],
+   muscles:"Quadriceps · Glutes · Hamstrings · Core"},
+  {name:"Bulgarian Split Squat",muscle:"legs",equip:["dumbbells"],avoid:["knees"],tip:"Rear foot elevated. Most knee-friendly split squat.",
+   steps:["Stand 2 feet in front of a bench, rest rear foot on it","Hold dumbbells at sides, keep torso upright","Lower straight down until front thigh is parallel to floor","Drive through front heel to return to start","Keep front shin as vertical as possible"],
+   mistakes:["Standing too close to the bench — causes knee stress","Leaning forward excessively","Moving front knee inward"],
+   muscles:"Quadriceps · Glutes · Hamstrings"},
+  {name:"Seated Leg Curl",muscle:"legs",equip:["gym_machines"],avoid:[],tip:"Curl slowly, control the return.",
+   steps:["Sit in the machine with the pad resting on your lower shins","Adjust so knees align with the machine's pivot point","Curl legs downward, squeezing hamstrings hard","Hold the contracted position for 1 second","Return slowly over 3 seconds — don't let the weight crash"],
+   mistakes:["Lifting hips off the seat to use momentum","Too fast on the return — the eccentric is where growth happens","Incomplete range of motion"],
+   muscles:"Hamstrings (primary) · Calves"},
+  {name:"Leg Extension",muscle:"legs",equip:["gym_machines"],avoid:["knees"],tip:"Full extension. Pause at top.",
+   steps:["Sit in machine with the pad on your lower shins, just above the ankle","Adjust back pad so knees align with the pivot point","Extend legs to full lockout, squeezing quads hard","Hold for 1 second at the top","Lower slowly over 3 seconds"],
+   mistakes:["Using momentum to swing the weight up","Not reaching full extension","Going too heavy — this is an isolation exercise"],
+   muscles:"Quadriceps (primary)"},
+  {name:"Hip Thrust",muscle:"legs",equip:["dumbbells","barbell"],avoid:["back"],tip:"Drive through heels. Hard squeeze at the top.",
+   steps:["Sit with upper back against a bench, weight resting on hips","Plant feet flat on the floor, hip-width apart","Drive hips upward by squeezing glutes hard","At the top, body should be parallel to the floor","Lower with control and repeat — don't let hips touch the floor"],
+   mistakes:["Pushing through toes instead of heels","Not reaching full hip extension","Hyperextending the lower back at the top"],
+   muscles:"Glutes (primary) · Hamstrings"},
+  {name:"Weighted Glute Bridge",muscle:"legs",equip:["dumbbells","bodyweight"],avoid:[],tip:"Weight on hips. Squeeze glutes hard at top.",
+   steps:["Lie on your back, knees bent, feet flat on floor","Place dumbbell or weight on your hips, hold it in place","Drive hips up by squeezing glutes — not pushing with lower back","At the top, thighs and torso should form a straight line","Lower slowly and repeat"],
+   mistakes:["Using lower back instead of glutes to push up","Feet too far or too close to body","Not fully squeezing at the top"],
+   muscles:"Glutes (primary) · Hamstrings · Core"},
+  {name:"Standing Calf Raise",muscle:"legs",equip:["bodyweight","dumbbells"],avoid:[],tip:"Full range. Pause at top and bottom.",
+   steps:["Stand on the edge of a step or flat floor, holding dumbbells","Rise up onto the balls of your feet as high as possible","Pause for 1 second at the top — really squeeze the calves","Lower slowly below the starting point for a full stretch","Pause at the bottom before the next rep"],
+   mistakes:["Partial range of motion — calves respond to full stretch","Going too fast — slow controlled reps work best","Not pausing at top or bottom"],
+   muscles:"Gastrocnemius · Soleus"},
+  {name:"Seated Calf Raise",muscle:"legs",equip:["gym_machines","dumbbells"],avoid:[],tip:"Slow and controlled. Full range.",
+   steps:["Sit with knees at 90°, place weight or machine pad on thighs","Place balls of feet on a step or platform","Drive up onto the balls of feet as high as possible","Pause and squeeze at the top","Lower slowly for a full stretch"],
+   mistakes:["Bouncing at the bottom","Not getting a full stretch","Too heavy — reduces range of motion"],
+   muscles:"Soleus (primary) · Gastrocnemius"},
+  {name:"Wall Sit",muscle:"legs",equip:["bodyweight"],avoid:["knees"],tip:"90 degrees. Hold as long as possible.",
+   steps:["Stand with back against a smooth wall","Slide down until thighs are parallel to the floor","Feet should be directly below knees — not in front","Keep back flat against the wall throughout","Arms can rest on thighs or extended forward — don't use them to push"],
+   mistakes:["Thighs not reaching parallel","Feet too far forward — reduces muscle work","Using hands to push off thighs"],
+   muscles:"Quadriceps (primary) · Glutes"},
+  {name:"Step Up",muscle:"legs",equip:["bodyweight","dumbbells"],avoid:["knees"],tip:"Drive through the heel. Full extension at top.",
+   steps:["Stand in front of a sturdy box or bench","Step up with one foot, placing the whole foot on the surface","Drive through that heel to lift your body up","Bring the trailing leg up to stand fully on the box","Step back down with control and repeat"],
+   mistakes:["Pushing off the back foot — defeats the purpose","Leaning forward excessively","Box too high for current strength level"],
+   muscles:"Quadriceps · Glutes · Hamstrings"},
   // SHOULDERS
-  {name:"Seated Dumbbell Shoulder Press",muscle:"shoulders",equip:["dumbbells"],avoid:["shoulders"],tip:"Seated protects the back. Full range overhead."},
-  {name:"Standing Dumbbell Shoulder Press",muscle:"shoulders",equip:["dumbbells"],avoid:["shoulders","back"],tip:"Core tight. Don't arch back."},
-  {name:"Lateral Raise",muscle:"shoulders",equip:["dumbbells"],avoid:["shoulders"],tip:"Slight bend in elbow. Lead with the elbow."},
-  {name:"Cable Lateral Raise",muscle:"shoulders",equip:["cables"],avoid:["shoulders"],tip:"Cable gives constant tension. Slow and controlled."},
-  {name:"Front Raise",muscle:"shoulders",equip:["dumbbells"],avoid:["shoulders"],tip:"Alternate arms. No swinging."},
-  {name:"Reverse Fly",muscle:"shoulders",equip:["dumbbells"],avoid:[],tip:"Hinge forward. Arms out to sides."},
-  {name:"Upright Row",muscle:"shoulders",equip:["dumbbells","cables"],avoid:["shoulders"],tip:"Elbows high. Pull to chin level."},
-  {name:"Arnold Press",muscle:"shoulders",equip:["dumbbells"],avoid:["shoulders"],tip:"Rotate palms as you press. Great range of motion."},
+  {name:"Seated Dumbbell Shoulder Press",muscle:"shoulders",equip:["dumbbells"],avoid:["shoulders"],tip:"Seated protects the back. Full range overhead.",
+   steps:["Sit on a bench with back support, hold dumbbells at shoulder height","Palms facing forward, elbows at 90° to start","Press dumbbells directly overhead until arms are almost fully extended","Lower with control back to shoulder height","Keep core braced and back against the pad"],
+   mistakes:["Arching lower back excessively","Not reaching full extension overhead","Elbows flaring too far forward"],
+   muscles:"Deltoids (primary) · Triceps · Upper trapezius"},
+  {name:"Standing Dumbbell Shoulder Press",muscle:"shoulders",equip:["dumbbells"],avoid:["shoulders","back"],tip:"Core tight. Don't arch back.",
+   steps:["Stand with feet shoulder-width, core braced throughout","Hold dumbbells at shoulder height, palms facing forward","Press overhead until arms are almost fully extended","Lower with control — don't let dumbbells drift forward","Squeeze core to prevent lower back arching"],
+   mistakes:["Leaning back to press — lower back injury risk","Using leg drive to push the weight up","Dropping elbows too low between reps"],
+   muscles:"Deltoids (primary) · Triceps · Core"},
+  {name:"Lateral Raise",muscle:"shoulders",equip:["dumbbells"],avoid:["shoulders"],tip:"Slight bend in elbow. Lead with the elbow.",
+   steps:["Stand holding light dumbbells at sides, slight bend in elbows","Raise arms out to the sides, leading with the elbows not the hands","Stop when arms reach shoulder height — parallel to floor","Pause briefly, then lower slowly over 3 seconds","Keep a slight forward lean to better target the middle delt"],
+   mistakes:["Going too heavy — ruins form completely","Raising arms above shoulder height","Shrugging shoulders up as you raise"],
+   muscles:"Medial deltoids (primary) · Supraspinatus"},
+  {name:"Cable Lateral Raise",muscle:"shoulders",equip:["cables"],avoid:["shoulders"],tip:"Slow and controlled. Constant tension.",
+   steps:["Stand sideways to a low cable pulley","Hold the handle with the far hand across your body","Raise arm out to the side up to shoulder height","Keep a slight bend in the elbow throughout","Lower slowly — the cable keeps tension even at the bottom"],
+   mistakes:["Swinging the cable up with momentum","Letting the cable crash back down","Standing too far from the machine"],
+   muscles:"Medial deltoids (primary)"},
+  {name:"Front Raise",muscle:"shoulders",equip:["dumbbells"],avoid:["shoulders"],tip:"Alternate arms. No swinging.",
+   steps:["Stand holding dumbbells in front of thighs, palms facing back","Raise one arm straight forward to shoulder height","Pause briefly at the top, then lower slowly","Alternate arms with each rep","Keep a very slight bend in the elbow"],
+   mistakes:["Swinging the body to generate momentum","Going above shoulder height","Using too much weight"],
+   muscles:"Front deltoids (primary) · Upper pectorals"},
+  {name:"Reverse Fly",muscle:"shoulders",equip:["dumbbells"],avoid:[],tip:"Hinge forward. Arms out to sides.",
+   steps:["Hold dumbbells, hinge forward at hips to roughly parallel to floor","Let dumbbells hang beneath you, palms facing each other","Raise arms out to the sides in a wide arc","Squeeze rear deltoids hard at the top","Lower slowly — don't let the weight pull you down"],
+   mistakes:["Standing too upright — reduces rear delt activation","Going too heavy","Bending elbows to compensate for weight"],
+   muscles:"Rear deltoids (primary) · Rhomboids · Trapezius"},
+  {name:"Upright Row",muscle:"shoulders",equip:["dumbbells","cables"],avoid:["shoulders"],tip:"Elbows high. Pull to chin level.",
+   steps:["Hold dumbbells in front of thighs, overhand grip","Pull straight up, leading with elbows — they go high and wide","Raise until dumbbells reach chin height","Elbows should be above wrist level at the top","Lower slowly back to starting position"],
+   mistakes:["Pulling too narrow — stresses shoulder joint","Pulling above chin height","Going too heavy"],
+   muscles:"Medial deltoids · Upper trapezius · Biceps"},
+  {name:"Arnold Press",muscle:"shoulders",equip:["dumbbells"],avoid:["shoulders"],tip:"Rotate palms as you press. Great range of motion.",
+   steps:["Sit holding dumbbells in front of face, palms facing you (like a curl finish)","As you press up, rotate palms to face forward","Finish with arms extended overhead, palms facing away","Reverse the rotation as you lower","This rotation hits all three heads of the deltoid"],
+   mistakes:["Doing it too fast — the rotation is the point","Not sitting supported — use a bench with back rest","Going too heavy"],
+   muscles:"All three deltoid heads · Triceps"},
   // ARMS
-  {name:"Dumbbell Bicep Curl",muscle:"arms",equip:["dumbbells"],avoid:[],tip:"Elbows pinned to sides. Squeeze at top."},
-  {name:"Hammer Curl",muscle:"arms",equip:["dumbbells"],avoid:[],tip:"Neutral grip. Works brachialis too."},
-  {name:"Cable Bicep Curl",muscle:"arms",equip:["cables"],avoid:[],tip:"Constant tension. Keep elbows still."},
-  {name:"Incline Dumbbell Curl",muscle:"arms",equip:["dumbbells"],avoid:[],tip:"Incline gives full stretch. Great peak contraction."},
-  {name:"Tricep Rope Pushdown",muscle:"arms",equip:["cables"],avoid:[],tip:"Flare the rope at the bottom. Full extension."},
-  {name:"Overhead Tricep Extension",muscle:"arms",equip:["dumbbells","cables"],avoid:["shoulders","elbows"],tip:"Keep elbows close to head."},
-  {name:"Tricep Dip",muscle:"arms",equip:["bodyweight"],avoid:["shoulders","wrists"],tip:"Body close to bench. Go until upper arms are parallel."},
-  {name:"Skull Crusher",muscle:"arms",equip:["dumbbells","barbell"],avoid:["elbows"],tip:"Lower slowly to forehead. Elbows stay fixed."},
-  {name:"Close-Grip Bench Press",muscle:"arms",equip:["dumbbells","barbell"],avoid:[],tip:"Shoulder-width grip. Tuck elbows."},
+  {name:"Dumbbell Bicep Curl",muscle:"arms",equip:["dumbbells"],avoid:[],tip:"Elbows pinned to sides. Squeeze at top.",
+   steps:["Stand holding dumbbells at sides, palms facing forward","Keep upper arms completely still throughout","Curl the weight up toward your shoulders","Squeeze biceps hard at the top for 1 second","Lower slowly over 3 seconds — this is where growth happens"],
+   mistakes:["Elbows swinging forward — massively reduces effectiveness","Using momentum to swing the weight up","Dropping the weight on the way down"],
+   muscles:"Biceps brachii (primary) · Brachialis"},
+  {name:"Hammer Curl",muscle:"arms",equip:["dumbbells"],avoid:[],tip:"Neutral grip. Works brachialis too.",
+   steps:["Hold dumbbells at sides with palms facing your body (neutral grip)","Keep upper arms still, curl weights up","The neutral grip targets the brachialis and brachioradialis too","Squeeze at the top, lower slowly","Can be done alternating or both arms simultaneously"],
+   mistakes:["Rotating to a supinated grip midway through","Elbows drifting forward","Rushing through reps"],
+   muscles:"Brachialis · Biceps brachii · Brachioradialis"},
+  {name:"Cable Bicep Curl",muscle:"arms",equip:["cables"],avoid:[],tip:"Constant tension. Keep elbows still.",
+   steps:["Stand at a low cable pulley, hold the bar with underhand grip","Keep elbows pinned at sides throughout","Curl the bar up toward your chin","Squeeze hard at the top — cables keep tension here unlike dumbbells","Lower slowly, the cable provides resistance all the way down"],
+   mistakes:["Stepping too close so cable goes slack at top","Swinging elbows forward","Not going to full extension at the bottom"],
+   muscles:"Biceps brachii (primary) · Brachialis"},
+  {name:"Incline Dumbbell Curl",muscle:"arms",equip:["dumbbells"],avoid:[],tip:"Full stretch. Great for peak contraction.",
+   steps:["Set bench to 45-60° incline, sit back with arms hanging","The incline puts biceps in a fully stretched position","Curl both dumbbells up, keeping upper arms vertical","Squeeze hard at the top","Lower very slowly — this stretched position is where it's most effective"],
+   mistakes:["Not letting arms hang fully at the bottom","Going too heavy — ruins the stretch","Sitting the bench too upright"],
+   muscles:"Biceps brachii (primary — long head emphasis)"},
+  {name:"Tricep Rope Pushdown",muscle:"arms",equip:["cables"],avoid:[],tip:"Flare the rope at the bottom. Full extension.",
+   steps:["Stand at high cable, hold rope with palms facing each other","Tuck elbows at sides — they don't move at all during the exercise","Push rope down until arms are fully extended","At the bottom, flare rope ends out to the sides","Squeeze triceps hard, return slowly"],
+   mistakes:["Elbows drifting away from the body","Leaning forward too much","Not reaching full extension"],
+   muscles:"Triceps brachii (all three heads)"},
+  {name:"Overhead Tricep Extension",muscle:"arms",equip:["dumbbells","cables"],avoid:["shoulders","elbows"],tip:"Keep elbows close to head.",
+   steps:["Hold one dumbbell with both hands overhead, arms extended","Lower the dumbbell behind your head by bending elbows","Keep elbows pointing straight up — don't let them flare","Feel a deep stretch in the triceps at the bottom","Press back up to full extension"],
+   mistakes:["Elbows flaring out to the sides","Not getting a full stretch","Using too much weight — elbows won't stay up"],
+   muscles:"Triceps brachii (long head primary)"},
+  {name:"Tricep Dip",muscle:"arms",equip:["bodyweight"],avoid:["shoulders","wrists"],tip:"Body close to bench. Go until upper arms are parallel.",
+   steps:["Sit on edge of a bench, hands gripping the edge beside hips","Slide off the bench, supporting weight on hands","Lower by bending elbows, keeping body close to the bench","Lower until upper arms are parallel to floor","Press back up to start"],
+   mistakes:["Dipping too deep — stresses shoulder joint","Body drifting away from the bench","Partial range of motion"],
+   muscles:"Triceps brachii (primary) · Front deltoids"},
+  {name:"Skull Crusher",muscle:"arms",equip:["dumbbells","barbell"],avoid:["elbows"],tip:"Lower slowly to forehead. Elbows stay fixed.",
+   steps:["Lie flat on bench holding dumbbells or barbell above chest","Upper arms should be perpendicular to the floor throughout","Lower the weight toward your forehead by bending elbows only","Stop just above your forehead — don't actually hit it","Extend arms back to the starting position"],
+   mistakes:["Elbows flaring outward","Moving upper arms — turns it into a press","Going too heavy"],
+   muscles:"Triceps brachii (primary)"},
+  {name:"Close-Grip Bench Press",muscle:"arms",equip:["dumbbells","barbell"],avoid:[],tip:"Shoulder-width grip. Tuck elbows.",
+   steps:["Lie on bench, grip bar just inside shoulder-width","Unrack the bar, lower to lower chest area","Keep elbows tucked at about 45° — don't flare","Press back up, squeezing triceps at the top","The closer grip shifts emphasis from chest to triceps"],
+   mistakes:["Grip too narrow — stresses wrists","Elbows flaring like a regular bench press","Touching bar too high on chest"],
+   muscles:"Triceps brachii (primary) · Inner pectorals"},
   // CORE
-  {name:"Dead Bug",muscle:"core",equip:["bodyweight"],avoid:[],tip:"Press lower back into floor. Move slowly."},
-  {name:"Plank",muscle:"core",equip:["bodyweight"],avoid:["wrists","shoulders"],tip:"Body rigid. Breathe steadily. Don't drop hips."},
-  {name:"Side Plank",muscle:"core",equip:["bodyweight"],avoid:["wrists","shoulders"],tip:"Stack feet. Hold or add hip dips."},
-  {name:"Pallof Press",muscle:"core",equip:["cables","resistance_bands"],avoid:[],tip:"Anti-rotation. Brace hard. Don't let band pull you."},
-  {name:"Cable Crunch",muscle:"core",equip:["cables"],avoid:["back"],tip:"Round the spine. Pull with abs, not arms."},
-  {name:"Hanging Knee Raise",muscle:"core",equip:["bodyweight"],avoid:["shoulders"],tip:"Control the swing. Pull knees to chest."},
-  {name:"Ab Wheel Rollout",muscle:"core",equip:["bodyweight"],avoid:["back","shoulders"],tip:"Start small. Engage core before rolling out."},
-  {name:"Mountain Climber",muscle:"core",equip:["bodyweight"],avoid:["wrists","shoulders"],tip:"Hips level. Drive knees fast for cardio effect."},
-  {name:"Bird Dog",muscle:"core",equip:["bodyweight"],avoid:[],tip:"Opposite arm and leg. Keep hips level. Back friendly."},
-  {name:"Russian Twist",muscle:"core",equip:["bodyweight","dumbbells"],avoid:["back"],tip:"Lean back slightly. Rotate with control."},
+  {name:"Dead Bug",muscle:"core",equip:["bodyweight"],avoid:[],tip:"Press lower back into floor. Move slowly.",
+   steps:["Lie on back with arms pointing straight up toward ceiling","Bring knees up to 90°, shins parallel to floor","Press lower back firmly into the floor — maintain this throughout","Slowly lower opposite arm and leg toward the floor","Return to start and repeat on the other side"],
+   mistakes:["Lower back arching off the floor — the whole point is preventing this","Moving too fast","Holding your breath — breathe throughout"],
+   muscles:"Transverse abdominis · Rectus abdominis · Hip flexors"},
+  {name:"Plank",muscle:"core",equip:["bodyweight"],avoid:["wrists","shoulders"],tip:"Body rigid. Breathe steadily.",
+   steps:["Start in push up position or on forearms","Keep body in a perfectly straight line from head to heels","Squeeze glutes, brace abs, don't let hips sag or pike","Look at the floor, keeping neck neutral","Breathe steadily — don't hold your breath"],
+   mistakes:["Hips sagging — most common error","Hips too high (piking)","Holding breath"],
+   muscles:"Transverse abdominis · Rectus abdominis · Glutes · Shoulders"},
+  {name:"Side Plank",muscle:"core",equip:["bodyweight"],avoid:["wrists","shoulders"],tip:"Stack feet. Hold or add hip dips.",
+   steps:["Lie on your side, prop yourself on one forearm","Stack feet on top of each other","Lift hips until body is in a straight line from head to feet","Hold the position, breathing steadily","For more difficulty: add hip dips or raise the top leg"],
+   mistakes:["Hips sagging toward the floor","Top hip rotating forward or backward","Neck straining"],
+   muscles:"Obliques (primary) · Core · Glutes"},
+  {name:"Pallof Press",muscle:"core",equip:["cables","resistance_bands"],avoid:[],tip:"Anti-rotation. Brace hard. Don't let band pull you.",
+   steps:["Stand sideways to a cable or band anchored at chest height","Hold the handle at your chest with both hands","Brace your core hard — this is an anti-rotation exercise","Press hands straight out in front, resisting the rotation","Hold for 2 seconds extended, then return to chest"],
+   mistakes:["Rotating toward the cable — you're supposed to resist this","Standing too close — reduces the challenge","Going too heavy"],
+   muscles:"Obliques (primary) · Transverse abdominis"},
+  {name:"Cable Crunch",muscle:"core",equip:["cables"],avoid:["back"],tip:"Round the spine. Pull with abs not arms.",
+   steps:["Kneel at a high cable pulley holding a rope behind your head","Hinge at the hips slightly, then crunch down by rounding the spine","Pull elbows toward knees — the movement comes from the abs","Squeeze hard at the bottom position","Return slowly, maintaining tension"],
+   mistakes:["Pulling with your arms instead of contracting abs","Not rounding the spine — defeats the purpose","Going too heavy"],
+   muscles:"Rectus abdominis (primary) · Obliques"},
+  {name:"Hanging Knee Raise",muscle:"core",equip:["bodyweight"],avoid:["shoulders"],tip:"Control the swing. Pull knees to chest.",
+   steps:["Hang from a pull up bar with both hands, shoulder-width","Let legs hang fully, then pull knees up toward chest","Round your lower back as you pull up — this targets abs properly","Lower with full control — don't swing","For more difficulty: raise straight legs instead"],
+   mistakes:["Swinging with momentum","Not rounding the lower back — reduces ab activation","Partial range of motion"],
+   muscles:"Rectus abdominis · Hip flexors"},
+  {name:"Ab Wheel Rollout",muscle:"core",equip:["bodyweight"],avoid:["back","shoulders"],tip:"Start small. Engage core before rolling.",
+   steps:["Kneel on the floor holding an ab wheel or barbell with plates","Start with the wheel directly under your shoulders","Brace core hard, then roll forward slowly","Go only as far as you can control — don't let hips sag","Pull back to starting position using your abs"],
+   mistakes:["Going too far too soon — lower back injury risk","Not bracing core before starting","Hips sinking during the movement"],
+   muscles:"Transverse abdominis (primary) · Rectus abdominis · Lats"},
+  {name:"Mountain Climber",muscle:"core",equip:["bodyweight"],avoid:["wrists","shoulders"],tip:"Hips level. Drive knees fast for cardio effect.",
+   steps:["Start in a push up position, body in a straight line","Drive one knee toward the chest while keeping hips level","Quickly switch legs — like running in place in a plank","Keep hips from bouncing up and down","The faster you go, the more cardiovascular it becomes"],
+   mistakes:["Hips bouncing up with each knee drive","Hands too close to feet","Looking up instead of down"],
+   muscles:"Core · Hip flexors · Shoulders · Cardiovascular"},
+  {name:"Bird Dog",muscle:"core",equip:["bodyweight"],avoid:[],tip:"Opposite arm and leg. Keep hips level.",
+   steps:["Start on hands and knees — hands under shoulders, knees under hips","Brace core and keep back flat — don't let it sag","Extend one arm forward and opposite leg back simultaneously","Hold for 2-3 seconds, focusing on keeping hips level","Return to start and repeat on the other side"],
+   mistakes:["Hips rotating — the goal is preventing this","Raising leg too high — causes lower back arch","Moving too fast"],
+   muscles:"Erector spinae · Glutes · Transverse abdominis"},
+  {name:"Russian Twist",muscle:"core",equip:["bodyweight","dumbbells"],avoid:["back"],tip:"Lean back slightly. Rotate with control.",
+   steps:["Sit on floor with knees bent, feet either on floor or elevated","Lean back slightly to about 45°, keeping back straight","Hold a dumbbell or clasp hands in front of you","Rotate torso to one side, touching weight to the floor","Rotate to the other side — keep the movement controlled"],
+   mistakes:["Rounding the back","Moving arms instead of rotating the torso","Going too fast — control is everything here"],
+   muscles:"Obliques (primary) · Rectus abdominis"},
   // CARDIO
-  {name:"Rowing Machine — Steady",muscle:"cardio",equip:["rowing"],avoid:[],tip:"60% legs / 20% core / 20% arms. 22-24 strokes/min."},
-  {name:"Rowing Machine — Intervals",muscle:"cardio",equip:["rowing"],avoid:[],tip:"2 min moderate, 1 min hard. Repeat 5-6 times."},
-  {name:"Cross Trainer — Steady",muscle:"cardio",equip:["crosstrainer"],avoid:[],tip:"Stand upright. Don't lean on handles — use your core."},
-  {name:"Cross Trainer — Intervals",muscle:"cardio",equip:["crosstrainer"],avoid:[],tip:"2 min easy / 1 min resistance up. Repeat 5 times."},
-  {name:"Treadmill Walk — Incline",muscle:"cardio",equip:["treadmill"],avoid:[],tip:"10-15% incline, 3-4 mph. Burns as many calories as running."},
-  {name:"Treadmill Jog",muscle:"cardio",equip:["treadmill"],avoid:["knees","hips","ankles"],tip:"Easy conversational pace. Land midfoot."},
-  {name:"Exercise Bike — Steady",muscle:"cardio",equip:["bike"],avoid:[],tip:"RPM 80-90. Resistance moderate. Joint-friendly."},
-  {name:"Exercise Bike — Intervals",muscle:"cardio",equip:["bike"],avoid:[],tip:"20 sec sprint / 40 sec easy. 10 rounds."},
-  {name:"Bodyweight Circuit",muscle:"cardio",equip:["bodyweight"],avoid:[],tip:"Squats, push ups, lunges, plank. 40 sec on / 20 sec rest."},
+  {name:"Rowing Machine — Steady",muscle:"cardio",equip:["rowing"],avoid:[],tip:"60% legs, 20% core, 20% arms. 22-24 strokes/min.",
+   steps:["Strap feet in, grip handle with overhand grip","Start with legs bent, arms extended, leaning forward slightly","Drive legs first — push through the whole foot","As legs straighten, lean back slightly and pull handle to lower chest","Return in reverse order: arms forward, lean forward, bend legs"],
+   mistakes:["Pulling with arms before legs are extended","Rounding the back — keep chest tall","Stroke rate too high — slow down and add power"],
+   muscles:"Legs · Core · Back · Arms — Full body"},
+  {name:"Rowing Machine — Intervals",muscle:"cardio",equip:["rowing"],avoid:[],tip:"2 min moderate, 1 min hard. Repeat 5-6 times.",
+   steps:["Warm up for 3-5 minutes at easy pace","Settle into moderate pace for 2 minutes (rate 22-24)","Increase power and rate for 1 minute push (rate 26-28)","Return to moderate for recovery","Repeat the 2:1 cycle 5-6 times, then cool down"],
+   mistakes:["Going too hard on the easy intervals","Poor technique when tired — it'll break down, watch it","Starting too fast on the first interval"],
+   muscles:"Full body cardiovascular"},
+  {name:"Cross Trainer — Steady",muscle:"cardio",equip:["crosstrainer"],avoid:[],tip:"Stand upright. Don't lean on handles — use your core.",
+   steps:["Set resistance to a moderate level","Stand tall, don't lean on the handles — use them lightly for balance only","Maintain a smooth, consistent cadence — aim for 60-80 RPM","Engage your core, keep shoulders relaxed","Breathe rhythmically — in through nose, out through mouth"],
+   mistakes:["Leaning on the handles — reduces calorie burn significantly","Stride too short — use the full range of motion","Hunching forward"],
+   muscles:"Legs · Glutes · Cardiovascular"},
+  {name:"Cross Trainer — Intervals",muscle:"cardio",equip:["crosstrainer"],avoid:[],tip:"2 min easy, 1 min resistance up. Repeat 5 times.",
+   steps:["Warm up for 3 minutes at easy resistance","Maintain easy pace for 2 minutes","Increase resistance by 3-4 levels for 1 minute of hard effort","Drop back to easy resistance for recovery","Repeat 5 times, cool down for 3-5 minutes"],
+   mistakes:["Not increasing resistance enough on hard intervals","Leaning on handles during the hard sections","Cadence dropping too much on higher resistance"],
+   muscles:"Legs · Glutes · Cardiovascular"},
+  {name:"Treadmill Walk — Incline",muscle:"cardio",equip:["treadmill"],avoid:[],tip:"10-15% incline, 3-4 mph. Burns as many calories as running.",
+   steps:["Set incline to 10-15% and speed to 3-4 mph","Walk naturally — don't hold the handrails","Keep posture upright, lean slightly into the incline","Swing arms naturally to engage upper body","Maintain pace for 20-45 minutes"],
+   mistakes:["Holding handrails — eliminates most of the benefit","Incline too low — won't get the calorie burn effect","Speed too fast — this is a walking exercise"],
+   muscles:"Glutes · Hamstrings · Calves · Cardiovascular"},
+  {name:"Treadmill Jog",muscle:"cardio",equip:["treadmill"],avoid:["knees","hips","ankles"],tip:"Easy conversational pace. Land midfoot.",
+   steps:["Start at a walking pace and gradually increase speed","Aim for a pace where you can hold a conversation","Land on midfoot, not heel — reduces impact","Keep arms at 90° and relaxed","Breathe through your nose if possible — controls pace naturally"],
+   mistakes:["Starting too fast","Heel striking — increases joint stress","Holding the handrails"],
+   muscles:"Legs · Cardiovascular"},
+  {name:"Exercise Bike — Steady",muscle:"cardio",equip:["bike"],avoid:[],tip:"RPM 80-90. Resistance moderate. Joint-friendly.",
+   steps:["Adjust seat so leg has slight bend at bottom of pedal stroke","Set resistance to a level where you can maintain 80-90 RPM","Sit tall, hands light on bars","Maintain steady cadence for 20-45 minutes","Increase resistance to make it harder rather than pedalling faster"],
+   mistakes:["Seat too low — causes knee strain","Bouncing on the saddle — resistance too high","Hunching forward over the bars"],
+   muscles:"Quadriceps · Hamstrings · Glutes · Cardiovascular"},
+  {name:"Exercise Bike — Intervals",muscle:"cardio",equip:["bike"],avoid:[],tip:"20 sec sprint, 40 sec easy. 10 rounds.",
+   steps:["Warm up for 3-5 minutes at easy pace","Sprint at maximum effort for 20 seconds — really push","Recover at easy pace for 40 seconds","Repeat for 10 rounds (10 minutes total)","Cool down for 3-5 minutes"],
+   mistakes:["Not going hard enough on the sprint intervals","Resistance too low — you need to feel it","Starting too fast and fading"],
+   muscles:"Full cardiovascular · Legs"},
+  {name:"Bodyweight Circuit",muscle:"cardio",equip:["bodyweight"],avoid:[],tip:"Squats, push ups, lunges, plank. 40 sec on, 20 sec rest.",
+   steps:["Perform each exercise for 40 seconds with 20 seconds rest","Exercise 1: Squats — full range, controlled pace","Exercise 2: Push ups — to the floor if possible","Exercise 3: Alternating lunges — long stride","Exercise 4: Plank — hold rigid","Repeat the circuit 3-4 times"],
+   mistakes:["Rushing through exercises with poor form","Not resting enough between circuits","Skipping the plank — it's essential for core"],
+   muscles:"Full body · Cardiovascular"},
 ];
+
 
 // ── Periodisation Blocks ───────────────────────────────────────────────────────
 // 4-week blocks rotating through different training focuses
@@ -1418,6 +1610,7 @@ const TrainTab = ({ profile, workoutLog, setWorkoutLog, setProfile, savedWorkout
   const setActiveWorkout = (w) => setSavedWorkout(w ? { workout:w, exercises:savedWorkout?.exercises||[] } : null);
   const setActiveExercises = (e) => setSavedWorkout(prev => prev ? { ...prev, exercises:e } : null);
   const [view, setView] = useState("calendar");
+  const [expandedEx, setExpandedEx] = useState(null);
   const today = todayKey();
 
   const days = Array.from({length:7},(_,i)=>{ const d=new Date(); d.setDate(d.getDate()-d.getDay()+1+i); return d; });
@@ -1557,19 +1750,45 @@ const TrainTab = ({ profile, workoutLog, setWorkoutLog, setProfile, savedWorkout
           <Section title={<div style={{display:"flex",alignItems:"center",gap:6}}><Icon name="flame" size={13} color={C.orange} /><span>Warm Up</span></div>}>
             {activeWorkout.warmup.map((x,i)=><Row key={i} label={x} last={i===activeWorkout.warmup.length-1} />)}
           </Section>
-          {activeExercises.map((ex,i)=><Card key={i} style={{ borderLeft:`3px solid ${activeWorkout.color}` }}>
-            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:8 }}>
-              <div>
-                <p style={{ color:activeWorkout.color, fontWeight:700, fontSize:16, margin:0 }}>{i+1}. {ex.name}</p>
-                <span style={{ color:C.muted, fontSize:12 }}>{ex.equipment} · {ex.muscle}</span>
+          {activeExercises.map((ex,i)=>{
+            const isExp = expandedEx === i;
+            const fullEx = EXERCISE_DB.find(e=>e.name===ex.name);
+            return <Card key={i} style={{ borderLeft:`3px solid ${activeWorkout.color}` }}>
+              <div onClick={()=>setExpandedEx(isExp?null:i)} style={{ cursor:"pointer" }}>
+                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:8 }}>
+                  <div style={{ flex:1 }}>
+                    <p style={{ color:activeWorkout.color, fontWeight:700, fontSize:16, margin:0 }}>{i+1}. {ex.name}</p>
+                    <span style={{ color:C.muted, fontSize:12 }}>{ex.equipment} · {ex.muscle}</span>
+                    {fullEx?.muscles&&<p style={{ color:C.muted, fontSize:11, margin:"2px 0 0" }}>🎯 {fullEx.muscles}</p>}
+                  </div>
+                  <div style={{ background:`${activeWorkout.color}15`, borderRadius:10, padding:"8px 12px", textAlign:"right", flexShrink:0 }}>
+                    <div style={{ color:C.text, fontSize:16, fontWeight:700 }}>{ex.sets} × {ex.reps}</div>
+                    <div style={{ color:C.muted, fontSize:11 }}>Rest: {ex.rest}</div>
+                  </div>
+                </div>
+                {ex.tip&&<div style={{ background:C.sectionBg, borderRadius:8, padding:"8px 12px", fontSize:12, color:C.textSec, borderLeft:`3px solid ${C.yellow}`, marginBottom:6 }}>💬 {ex.tip}</div>}
+                <p style={{ color:C.accent, fontSize:12, fontWeight:600, margin:0 }}>{isExp?"▲ Hide instructions":"▼ How to do this exercise"}</p>
               </div>
-              <div style={{ background:`${activeWorkout.color}15`, borderRadius:10, padding:"8px 12px", textAlign:"right" }}>
-                <div style={{ color:C.text, fontSize:16, fontWeight:700 }}>{ex.sets} × {ex.reps}</div>
-                <div style={{ color:C.muted, fontSize:11 }}>Rest: {ex.rest}</div>
-              </div>
-            </div>
-            {ex.tip&&<div style={{ background:C.sectionBg, borderRadius:8, padding:"8px 12px", fontSize:12, color:C.textSec, borderLeft:`3px solid ${C.yellow}` }}>💬 {ex.tip}</div>}
-          </Card>)}
+              {isExp&&fullEx&&<div style={{ marginTop:12 }}>
+                <div style={{ background:C.sectionBg, borderRadius:10, padding:"12px 14px", marginBottom:8 }}>
+                  <p style={{ color:C.muted, fontSize:11, fontWeight:700, letterSpacing:"0.06em", marginBottom:8 }}>STEP-BY-STEP</p>
+                  {fullEx.steps.map((s,j)=><div key={j} style={{ display:"flex", gap:10, marginBottom:6 }}>
+                    <div style={{ width:20, height:20, borderRadius:99, background:activeWorkout.color, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, marginTop:1 }}>
+                      <span style={{ color:"#fff", fontSize:10, fontWeight:700 }}>{j+1}</span>
+                    </div>
+                    <p style={{ color:C.text, fontSize:13, lineHeight:1.6, margin:0 }}>{s}</p>
+                  </div>)}
+                </div>
+                {fullEx.mistakes&&<div style={{ background:`${C.red}08`, border:`1px solid ${C.red}22`, borderRadius:10, padding:"12px 14px", marginBottom:8 }}>
+                  <p style={{ color:C.red, fontSize:11, fontWeight:700, letterSpacing:"0.06em", marginBottom:6 }}>⚠️ COMMON MISTAKES</p>
+                  {fullEx.mistakes.map((m,j)=><p key={j} style={{ color:C.textSec, fontSize:13, lineHeight:1.5, margin:"0 0 4px" }}>· {m}</p>)}
+                </div>}
+                <a href={`https://www.youtube.com/results?search_query=${encodeURIComponent(ex.name+" exercise technique")}`} target="_blank" rel="noopener noreferrer" style={{ display:"block", background:C.sectionBg, borderRadius:10, padding:"10px 14px", textDecoration:"none", textAlign:"center" }}>
+                  <span style={{ color:C.accent, fontSize:13, fontWeight:600 }}>▶ Watch technique on YouTube</span>
+                </a>
+              </div>}
+            </Card>;
+          })}
           {activeExercises.length===0&&<Card><p style={{ color:C.muted, textAlign:"center", fontSize:14 }}>No exercises match your equipment. Try selecting more equipment in Profile → Fitness.</p></Card>}
           <Section title={<div style={{display:"flex",alignItems:"center",gap:6}}><Icon name="snowflake" size={13} color={C.teal} /><span>Cool Down</span></div>}>
             {activeWorkout.cooldown.map((x,i)=><Row key={i} label={x} last={i===activeWorkout.cooldown.length-1} />)}
