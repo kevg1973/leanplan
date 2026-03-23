@@ -3006,6 +3006,8 @@ function AppInner() {
 
 
 
+  // ── Render sequence ──────────────────────────────────────────────────────────
+  // 1. Auth screen (highest priority — shown after onboarding or sign in request)
   if (showAuth) return <AuthScreen
     onAuth={async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -3014,54 +3016,45 @@ function AppInner() {
         setShowAuth(false);
         setSyncing(true);
         try {
-          // Check for pending profile from onboarding
           const pending = localStorage.getItem("leanplan_pending_profile");
           if (pending) {
+            // Coming from onboarding — save profile
             const p = JSON.parse(pending);
             localStorage.removeItem("leanplan_pending_profile");
-            localStorage.setItem("leanplan_v4", JSON.stringify({profile:p, entries:[], favourites:[], removed:[], mealLog:{}, workoutLog:{}, water:{}, journal:{}, measurements:[], darkOverride:null}));
             await saveToSupabase(session.user.id, { profile:p, entries:[], favourites:[], removed:[], mealLog:{}, workoutLog:{}, water:{}, journal:{}, measurements:[], darkOverride:null });
             setProfile(p);
           } else {
-            const { data } = await supabase.from("profiles").select("profile_data").eq("id", session.user.id).single();
-            if (!data?.profile_data || Object.keys(data.profile_data).length === 0) {
-              const local = JSON.parse(localStorage.getItem("leanplan_v4") || "{}");
-              if (local.profile) await saveToSupabase(session.user.id, local);
-              loadFromLocal();
-            } else {
-              await loadFromSupabase(session.user.id);
-            }
+            // Returning user — load from Supabase
+            await loadFromSupabase(session.user.id);
           }
-        } catch(e){ console.error("Auth completion error:", e); }
+        } catch(e){ console.error("Auth error:", e); loadFromLocal(); }
         setSyncing(false);
       }
     }}
     onSkip={null}
   />;
 
+  // 2. Loading screen while auth check runs (new device, no cache)
   if (authLoading && !profile) return <div style={{ minHeight:"100vh", background:loadBg, display:"flex", alignItems:"center", justifyContent:"center", fontFamily:FONT }}><div style={{ textAlign:"center" }}><div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:16 }}><img src="/leanplan_app_icon.png" alt="" style={{ height:52, width:52, objectFit:"contain", borderRadius:12 }} /><span style={{ fontSize:28, fontWeight:800, letterSpacing:"-0.02em", fontFamily:FONT }}><span style={{ color:loadBg==="#000"?"#fff":"#000" }}>Lean</span><span style={{ color:"#0a84ff" }}>Plan</span></span></div><p style={{ color:loadText }}>Loading...</p></div></div>;
 
+  // 3. Welcome screen (no profile, no user, not in onboarding)
   if (!profile && !user && !showOnboarding) return <WelcomeScreen
     onNew={()=>setShowOnboarding(true)}
     onSignIn={()=>setShowAuth(true)}
   />;
 
-  if (!profile && !showAuth) return <Onboarding onDone={async p=>{ 
-    // Save to localStorage first
+  // 4. Onboarding (new user, has clicked Get Started)
+  if (!profile) return <Onboarding onDone={async p=>{ 
     try {
-      localStorage.setItem("leanplan_v4", JSON.stringify({profile:p, entries:[], favourites:[], removed:[], mealLog:{}, workoutLog:{}, water:{}, journal:{}, measurements:{}, darkOverride:null}));
+      localStorage.setItem("leanplan_pending_profile", JSON.stringify(p));
     } catch(e){}
-    // Check if already logged in
     const { data: { session } } = await supabase.auth.getSession();
     if (session?.user) {
-      // Already has account — save and go straight to app
+      localStorage.removeItem("leanplan_pending_profile");
       await saveToSupabase(session.user.id, { profile:p, entries:[], favourites:[], removed:[], mealLog:{}, workoutLog:{}, water:{}, journal:{}, measurements:[], darkOverride:null });
       setProfile(p);
     } else {
-      // No account yet — show auth before setting profile
-      // Store profile in a ref so auth screen can access it
-      localStorage.setItem("leanplan_pending_profile", JSON.stringify(p));
-      setShowAuth(true);
+      setShowAuth(true); // Show auth — profile set after signup
     }
   }} />;
 
