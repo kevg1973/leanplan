@@ -1081,9 +1081,10 @@ const MealLoadingIndicator = () => {
   );
 };
 
-const MealsTab =({ profile, favourites, setFavourites, removed, setRemoved, mealLog, setMealLog, isPro, onUpgrade }) => {
+const MealsTab =({ profile, favourites, setFavourites, removed, setRemoved, mealLog, setMealLog, isPro, onUpgrade, shownMeals, setShownMeals }) => {
   const [style, setStyle] = useState("all");
-  const [shown, setShown] = useState(null);
+  const shown = shownMeals;
+  const setShown = setShownMeals;
   const [expanded, setExpanded] = useState(null);
   const [viewFavs, setViewFavs] = useState(false);
   const [shoppingDays, setShoppingDays] = useState(7);
@@ -1250,10 +1251,18 @@ const MealsTab =({ profile, favourites, setFavourites, removed, setRemoved, meal
         </Card>
 
         {shown&&<>
-          <div style={{ display:"flex", gap:8, marginBottom:12 }}>
+          <div style={{ display:"flex", gap:8, marginBottom:8 }}>
             <StatBox label="Calories" val={shown.reduce((a,m)=>a+m.cals,0)} color={C.accent} />
             <StatBox label="Protein" val={`${shown.reduce((a,m)=>a+m.protein,0)}g`} color={C.green} />
             <StatBox label="Carbs" val={`${shown.reduce((a,m)=>a+m.carbs,0)}g`} color={C.orange} />
+          </div>
+          <div style={{ display:"flex", gap:8, marginBottom:12 }}>
+            <button onClick={generate} disabled={generating} style={{ flex:1, background:"none", border:`1px solid ${C.border}`, borderRadius:10, padding:"8px 0", color:generating?C.muted:C.accent, fontSize:13, fontWeight:600, cursor:generating?"default":"pointer", fontFamily:FONT }}>
+              {generating ? "Generating..." : "↻ Regenerate meals"}
+            </button>
+            <button onClick={()=>setShown(null)} style={{ background:"none", border:`1px solid ${C.border}`, borderRadius:10, padding:"8px 14px", color:C.muted, fontSize:13, cursor:"pointer", fontFamily:FONT }}>
+              ✕ Clear
+            </button>
           </div>
           {shown.map(m=>{
             const isFav=favourites.includes(m.id);
@@ -1355,10 +1364,12 @@ const MealsTab =({ profile, favourites, setFavourites, removed, setRemoved, meal
 };
 
 // ── TRAIN TAB ─────────────────────────────────────────────────────────────────
-const TrainTab = ({ profile, workoutLog, setWorkoutLog, setProfile }) => {
+const TrainTab = ({ profile, workoutLog, setWorkoutLog, setProfile, savedWorkout, setSavedWorkout }) => {
   const [selectedType, setSelectedType] = useState("full-body");
-  const [activeWorkout, setActiveWorkout] = useState(null);
-  const [activeExercises, setActiveExercises] = useState([]);
+  const activeWorkout = savedWorkout?.workout || null;
+  const activeExercises = savedWorkout?.exercises || [];
+  const setActiveWorkout = (w) => setSavedWorkout(w ? { workout:w, exercises:savedWorkout?.exercises||[] } : null);
+  const setActiveExercises = (e) => setSavedWorkout(prev => prev ? { ...prev, exercises:e } : null);
   const [view, setView] = useState("calendar");
   const today = todayKey();
 
@@ -1381,8 +1392,7 @@ const TrainTab = ({ profile, workoutLog, setWorkoutLog, setProfile }) => {
   const buildAndShowWorkout = (type) => {
     const w = WORKOUTS[type];
     const exercises = buildWorkout(type, profile, isDeload ? {...block, sets: Math.max(2, block.sets-1), reps:"12-15", rest:"60 sec"} : block);
-    setActiveWorkout(w);
-    setActiveExercises(exercises);
+    setSavedWorkout({ workout:w, exercises });
     setView("workout");
   };
 
@@ -2329,6 +2339,8 @@ function AppInner() {
   const [isPro, setIsPro] = useState(false);
   const [proData, setProData] = useState(null); // {customerId, subscriptionId, plan}
   const [showPaywall, setShowPaywall] = useState(false);
+  const [todaysMeals, setTodaysMeals] = useState(null); // persists across tab switches
+  const [todaysWorkout, setTodaysWorkout] = useState(null); // {workout, exercises}
   const [entries, setEntries] = useState([]);
   const [favourites, setFavourites] = useState([]);
   const [removed, setRemoved] = useState([]);
@@ -2350,6 +2362,21 @@ function AppInner() {
   }, []);
 
   // Check for dev bypass and Stripe return
+  // Reset daily state at midnight
+  useEffect(()=>{
+    const msUntilMidnight = () => {
+      const now = new Date();
+      const midnight = new Date(now);
+      midnight.setHours(24,0,0,0);
+      return midnight - now;
+    };
+    const timer = setTimeout(()=>{
+      setTodaysMeals(null);
+      setTodaysWorkout(null);
+    }, msUntilMidnight());
+    return () => clearTimeout(timer);
+  }, []);
+
   useEffect(()=>{
     // Check server-side bypass flag
     fetch("/api/pro-status")
@@ -2489,8 +2516,8 @@ function AppInner() {
         {!isPro && <ProBanner onUpgrade={()=>setShowPaywall(true)} />}
 
         {tab==="Today"&&<TodayTab profile={profile} entries={entries} mealLog={mealLog} workoutLog={workoutLog} water={water} setWater={setWater} journal={journal} setJournal={setJournal} measurements={measurements} />}
-        {tab==="Meals"&&<MealsTab profile={profile} favourites={favourites} setFavourites={setFavourites} removed={removed} setRemoved={setRemoved} mealLog={mealLog} setMealLog={setMealLog} isPro={isPro} onUpgrade={()=>setShowPaywall(true)} />}
-        {tab==="Train"&&(isPro ? <TrainTab profile={profile} workoutLog={workoutLog} setWorkoutLog={setWorkoutLog} setProfile={setProfile} /> : <LockedTab feature="Workout tracking, lift tracker and rest day planner" onUpgrade={()=>setShowPaywall(true)} />)}
+        {tab==="Meals"&&<MealsTab profile={profile} favourites={favourites} setFavourites={setFavourites} removed={removed} setRemoved={setRemoved} mealLog={mealLog} setMealLog={setMealLog} isPro={isPro} onUpgrade={()=>setShowPaywall(true)} shownMeals={todaysMeals} setShownMeals={setTodaysMeals} />}
+        {tab==="Train"&&(isPro ? <TrainTab profile={profile} workoutLog={workoutLog} setWorkoutLog={setWorkoutLog} setProfile={setProfile} savedWorkout={todaysWorkout} setSavedWorkout={setTodaysWorkout} /> : <LockedTab feature="Workout tracking, lift tracker and rest day planner" onUpgrade={()=>setShowPaywall(true)} />)}
         {tab==="Track"&&(isPro ? <TrackTab profile={profile} entries={entries} setEntries={fn=>setEntries(typeof fn==="function"?fn(entries):fn)} measurements={measurements} setMeasurements={setMeasurements} /> : <LockedTab feature="Progress tracking, measurements and body stats" onUpgrade={()=>setShowPaywall(true)} />)}
         {tab==="Coach"&&(isPro ? <CoachTab profile={profile} setProfile={setProfile} /> : <LockedTab feature="AI personal coach" onUpgrade={()=>setShowPaywall(true)} />)}
         {tab==="Profile"&&<ProfileTab profile={profile} setProfile={setProfile} onReset={handleReset} isDark={isDark} darkOverride={darkOverride} setDarkOverride={setDarkOverride} isPro={isPro} proData={proData} onUpgrade={()=>setShowPaywall(true)} />}
