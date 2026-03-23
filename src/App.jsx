@@ -2701,7 +2701,7 @@ const AuthScreen = ({ onAuth, onSkip }) => {
           <h1 style={{ fontSize:32, fontWeight:800, color:C.text, margin:"0 0 8px" }}>
             <span style={{ color:C.text }}>Lean</span><span style={{ color:C.accent }}>Plan</span>
           </h1>
-          <p style={{ color:C.muted, fontSize:15 }}>Create an account to save your plan</p>
+          <p style={{ color:C.muted, fontSize:15 }}>{onSkip ? 'Sign in to your account' : 'Create a free account to save your plan'}</p>
         </div>
 
         {/* Mode tabs */}
@@ -2745,17 +2745,22 @@ const AuthScreen = ({ onAuth, onSkip }) => {
         {mode === "login" && <p onClick={()=>{setMode("forgot");setError(null);}} style={{ color:C.accent, fontSize:13, textAlign:"center", cursor:"pointer", marginBottom:16 }}>Forgot password?</p>}
         {mode === "forgot" && <p onClick={()=>{setMode("login");setError(null);}} style={{ color:C.accent, fontSize:13, textAlign:"center", cursor:"pointer", marginBottom:16 }}>← Back to sign in</p>}
 
-        <div style={{ display:"flex", alignItems:"center", gap:12, margin:"16px 0" }}>
-          <div style={{ flex:1, height:1, background:C.border }} />
-          <span style={{ color:C.muted, fontSize:13 }}>or</span>
-          <div style={{ flex:1, height:1, background:C.border }} />
-        </div>
-        <button onClick={onSkip} style={{ width:"100%", background:"none", border:`1px solid ${C.border}`, borderRadius:14, padding:"14px 0", color:C.muted, fontSize:15, cursor:"pointer", fontFamily:FONT }}>
-          Maybe later
-        </button>
-        <p style={{ color:C.muted, fontSize:11, textAlign:"center", marginTop:10, lineHeight:1.6 }}>
-          Without an account your data is only saved on this device.
-        </p>
+        {onSkip && <>
+          <div style={{ display:"flex", alignItems:"center", gap:12, margin:"16px 0" }}>
+            <div style={{ flex:1, height:1, background:C.border }} />
+            <span style={{ color:C.muted, fontSize:13 }}>or</span>
+            <div style={{ flex:1, height:1, background:C.border }} />
+          </div>
+          <button onClick={onSkip} style={{ width:"100%", background:"none", border:`1px solid ${C.border}`, borderRadius:14, padding:"14px 0", color:C.muted, fontSize:15, cursor:"pointer", fontFamily:FONT }}>
+            Maybe later
+          </button>
+          <p style={{ color:C.muted, fontSize:11, textAlign:"center", marginTop:10, lineHeight:1.6 }}>
+            Without an account your data is only saved on this device.
+          </p>
+        </>}
+        {!onSkip && <p style={{ color:C.muted, fontSize:11, textAlign:"center", marginTop:16, lineHeight:1.6 }}>
+          An account is required to save your plan and take out a subscription.
+        </p>}
       </div>
     </div>
   );
@@ -2999,10 +3004,7 @@ function AppInner() {
 
 
 
-  if (showWelcome) return <WelcomeScreen
-    onNew={()=>{ setShowWelcome(false); setShowOnboarding(true); }}
-    onSignIn={()=>{ setShowWelcome(false); setShowAuth(true); }}
-  />;
+
 
   if (showAuth) return <AuthScreen
     onAuth={async () => {
@@ -3014,18 +3016,16 @@ function AppInner() {
         try {
           const { data } = await supabase.from("profiles").select("profile_data").eq("id", session.user.id).single();
           if (!data?.profile_data || Object.keys(data.profile_data).length === 0) {
-            // New account — no data yet, push local if available
             const local = JSON.parse(localStorage.getItem("leanplan_v4") || "{}");
             if (local.profile) await saveToSupabase(session.user.id, local);
           } else {
-            // Existing account — load their data (handles new phone scenario)
             await loadFromSupabase(session.user.id);
           }
         } catch(e){}
         setSyncing(false);
       }
     }}
-    onSkip={() => setShowAuth(false)}
+    onSkip={null}
   />;
 
   if (authLoading && !profile) return <div style={{ minHeight:"100vh", background:loadBg, display:"flex", alignItems:"center", justifyContent:"center", fontFamily:FONT }}><div style={{ textAlign:"center" }}><div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:16 }}><img src="/leanplan_app_icon.png" alt="" style={{ height:52, width:52, objectFit:"contain", borderRadius:12 }} /><span style={{ fontSize:28, fontWeight:800, letterSpacing:"-0.02em", fontFamily:FONT }}><span style={{ color:loadBg==="#000"?"#fff":"#000" }}>Lean</span><span style={{ color:"#0a84ff" }}>Plan</span></span></div><p style={{ color:loadText }}>Loading...</p></div></div>;
@@ -3042,12 +3042,12 @@ function AppInner() {
       const current = JSON.parse(localStorage.getItem("leanplan_v4") || "{}");
       localStorage.setItem("leanplan_v4", JSON.stringify({...current, profile:p}));
     } catch(e){}
-    // Save to Supabase if already logged in, otherwise show auth
+    // Save to Supabase if already logged in, otherwise show mandatory auth
     const { data: { session } } = await supabase.auth.getSession();
     if (session?.user) {
       await saveToSupabase(session.user.id, { profile:p, entries:[], favourites:[], removed:[], mealLog:{}, workoutLog:{}, water:{}, journal:{}, measurements:[], darkOverride:null });
     } else {
-      setShowAuth(true);
+      setShowAuth(true); // mandatory — no skip
     }
   }} />;
 
