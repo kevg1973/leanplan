@@ -667,9 +667,10 @@ const TodayTab = ({ profile, entries, mealLog, workoutLog, water, setWater, jour
   const today = todayKey();
   const cur = entries.length>0?entries[entries.length-1].weight:profile.startWeightLbs;
   const lost = Math.max(0,profile.startWeightLbs-cur);
+  const lostKg = parseFloat((lost*0.453592).toFixed(1));
   const pace = getPace(profile.paceId||"normal");
-  const pct = Math.min(100,Math.round((lost/profile.targetLbs)*100));
-  const eta = Math.ceil((profile.targetLbs-lost)/pace.lbs);
+  const pct = profile.targetLbs>0?Math.min(100,Math.round((lost/profile.targetLbs)*100)):0;
+  const eta = profile.targetLbs>0?Math.ceil((profile.targetLbs-lost)/pace.lbs):0;
   const tdee = calcTDEE(profile);
   const targetCals = tdee ? tdee - Math.round(pace.lbs*500) : null;
   const todayMeals = mealLog[today]||[];
@@ -696,13 +697,13 @@ const TodayTab = ({ profile, entries, mealLog, workoutLog, water, setWater, jour
       {/* Hero */}
       <div style={{ background:`linear-gradient(145deg, ${C.accent}, #5ac8fa)`, borderRadius:20, padding:"20px 18px", marginBottom:16, color:"#fff" }}>
         <p style={{ opacity:0.85, fontSize:14, margin:"0 0 4px" }}>Hello{profile.name?`, ${profile.name}`:""}  👋</p>
-        <h2 style={{ fontSize:26, fontWeight:700, margin:"0 0 4px" }}>Goal: {toKg(profile.startWeightLbs-profile.targetLbs)} kg loss</h2>
-        <p style={{ opacity:0.8, fontSize:13, margin:"0 0 14px" }}>{lostKg} kg lost · {(Math.max(0,profile.targetLbs-lost)*0.453592).toFixed(1)} to go · {pct}% · ~{eta>0?eta:0} wks · {pace.lbs} lb/wk</p>
+        <h2 style={{ fontSize:26, fontWeight:700, margin:"0 0 4px" }}>{profile.targetLbs>0?`Goal: ${toKg(profile.startWeightLbs-profile.targetLbs)} kg loss`:profile.goal?.replace(/_/g," ")||"Get Healthy"}</h2>
+        <p style={{ opacity:0.8, fontSize:13, margin:"0 0 14px" }}>{lostKg} kg lost{profile.targetLbs>0?` · ${(Math.max(0,profile.targetLbs-lost)*0.453592).toFixed(1)} to go · ${pct}% · ~${eta>0?eta:0} wks`:""} · {pace.lbs} lb/wk</p>
         <div style={{ background:"rgba(255,255,255,0.25)", borderRadius:99, height:8, overflow:"hidden" }}>
           <div style={{ width:`${pct}%`, height:"100%", background:"rgba(255,255,255,0.9)", borderRadius:99, transition:"width 0.6s" }} />
         </div>
         <div style={{ display:"flex", justifyContent:"space-between", marginTop:6, opacity:0.75, fontSize:11 }}>
-          <span>{toKg(profile.startWeightLbs)} kg start</span><span>{toKg(cur)} kg now</span>
+          <span>{profile.startWeightLbs?toKg(profile.startWeightLbs):"—"} kg start</span><span>{toKg(cur)} kg now</span>
         </div>
       </div>
 
@@ -1271,11 +1272,11 @@ const TrackTab = ({ profile, entries, setEntries, measurements, setMeasurements 
   const lostKg = parseFloat((lost*0.453592).toFixed(1));
   const pace = getPace(profile.paceId||"normal");
   const eta = Math.ceil((profile.targetLbs-lost)/pace.lbs);
-  const target = profile.startWeightLbs-profile.targetLbs;
+  const target = (profile.startWeightLbs||0)-(profile.targetLbs||0);
   const targetKg = parseFloat((target*0.453592).toFixed(1));
   const curKg = parseFloat((cur*0.453592).toFixed(1));
   const startKg = parseFloat((profile.startWeightLbs*0.453592).toFixed(1));
-  const pct = Math.min(100,Math.round((lost/profile.targetLbs)*100));
+  const pct = profile.targetLbs>0?Math.min(100,Math.round((lost/profile.targetLbs)*100)):0;
   const tdee = calcTDEE(profile);
   const bmi = calcBMI(profile);
   const bmiCat = bmi?bmiCategory(parseFloat(bmi)):null;
