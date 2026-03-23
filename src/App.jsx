@@ -2951,14 +2951,37 @@ function AppInner() {
         setUser(session.user);
         setShowAuth(false);
         setSyncing(true);
+        // Try to load from Supabase first
         await loadFromSupabase(session.user.id);
+        // If profile_data was empty, save current local profile immediately
+        const { data } = await supabase.from("profiles").select("profile_data").eq("id", session.user.id).single();
+        if (!data?.profile_data || Object.keys(data.profile_data).length === 0) {
+          const local = JSON.parse(localStorage.getItem("leanplan_v4") || "{}");
+          if (local.profile) {
+            await saveToSupabase(session.user.id, local);
+          }
+        }
         setSyncing(false);
       }
     }}
     onSkip={() => setShowAuth(false)}
   />;
 
-  if (!profile) return <Onboarding onDone={p=>{ setProfile(p); if (!user) setShowAuth(true); }} />;
+  if (!profile) return <Onboarding onDone={async p=>{ 
+    setProfile(p);
+    // Save immediately to localStorage
+    try {
+      const current = JSON.parse(localStorage.getItem("leanplan_v4") || "{}");
+      localStorage.setItem("leanplan_v4", JSON.stringify({...current, profile:p}));
+    } catch(e){}
+    // If user is already logged in, save to Supabase immediately
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user) {
+      await saveToSupabase(session.user.id, { profile:p, entries:[], favourites:[], removed:[], mealLog:{}, workoutLog:{}, water:{}, journal:{}, measurements:[], darkOverride:null });
+    } else {
+      setShowAuth(true);
+    }
+  }} />;
 
   // Apply theme
   const isDark = darkOverride !== null ? darkOverride : systemDark;
