@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { supabase } from "./supabase.js";
 
 const FONT = "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif";
 const toKg = lbs => (lbs * 0.453592).toFixed(1);
@@ -1430,6 +1431,7 @@ const MealsTab =({ profile, favourites, setFavourites, removed, setRemoved, meal
             <div key={i} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"5px 0", borderBottom:i<todayLogged.length-1?`1px solid ${C.border}`:"none" }}>
               <div><span style={{ color:C.text, fontSize:13 }}>{m.name}</span><span style={{ color:C.muted, fontSize:11, marginLeft:8 }}>{m.time}</span></div>
               <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+        {syncing && <div style={{ width:8, height:8, borderRadius:99, background:C.green, animation:"pulse 1s ease-in-out infinite" }} title="Syncing..." />}
                 <span style={{ color:C.muted, fontSize:12 }}>{m.cals}cal</span>
                 <button onClick={()=>removeMealLog(i)} style={{ background:"none", border:"none", color:C.red, cursor:"pointer", fontSize:14 }}>×</button>
               </div>
@@ -2051,7 +2053,7 @@ const TrackTab = ({ profile, entries, setEntries, measurements, setMeasurements 
 };
 
 // ── PROFILE TAB ───────────────────────────────────────────────────────────────
-const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDarkOverride, isPro, proData, onUpgrade }) => {
+const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDarkOverride, isPro, proData, onUpgrade, user, onShowAuth }) => {
   const [editing, setEditing] = useState(null);
   const [tempData, setTempData] = useState({});
   const toggleArr = (k,v) => setTempData(d=>({...d,[k]:d[k].includes(v)?d[k].filter(x=>x!==v):[...d[k],v]}));
@@ -2190,6 +2192,27 @@ const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDar
             );
           })}
         </div>
+      </Section>
+
+      {/* Account section */}
+      <Section title="Account">
+        {user ? (
+          <div>
+            <Row label="Signed in as" value={user.email} />
+            <Row label="Data sync" value="✓ Synced to cloud" color={C.green} last />
+            <div style={{ padding:"12px 16px" }}>
+              <Btn outline color={C.red} onClick={async()=>{ await supabase.auth.signOut(); }} style={{ width:"100%" }}>Sign Out</Btn>
+            </div>
+          </div>
+        ) : (
+          <div>
+            <Row label="Account" value="Not signed in" color={C.muted} last />
+            <div style={{ padding:"12px 16px" }}>
+              <Btn color={C.accent} onClick={onShowAuth} style={{ width:"100%", marginBottom:8 }}>Sign In / Create Account</Btn>
+              <p style={{ color:C.muted, fontSize:12, textAlign:"center", margin:0 }}>Sign in to sync your data across devices</p>
+            </div>
+          </div>
+        )}
       </Section>
 
       {/* Pro status */}
@@ -2598,15 +2621,126 @@ class ErrorBoundary extends React.Component {
   }
 }
 
+
+// ── Auth Screen ───────────────────────────────────────────────────────────────
+const AuthScreen = ({ onAuth, onSkip }) => {
+  const [mode, setMode] = useState("login"); // login, signup, forgot
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [message, setMessage] = useState(null);
+
+  const handleAuth = async () => {
+    if (!email || !password) { setError("Please enter your email and password"); return; }
+    setLoading(true); setError(null);
+    try {
+      if (mode === "signup") {
+        const { error } = await supabase.auth.signUp({ email, password });
+        if (error) throw error;
+        setMessage("Account created! Please check your email to verify, then log in.");
+        setMode("login");
+      } else {
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+        onAuth();
+      }
+    } catch(err) {
+      setError(err.message);
+    }
+    setLoading(false);
+  };
+
+  const handleForgot = async () => {
+    if (!email) { setError("Enter your email address first"); return; }
+    setLoading(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`
+    });
+    if (error) setError(error.message);
+    else setMessage("Password reset email sent! Check your inbox.");
+    setLoading(false);
+  };
+
+  return (
+    <div style={{ minHeight:"100vh", background:C.bg, fontFamily:FONT, display:"flex", flexDirection:"column", justifyContent:"center", padding:"0 20px" }}>
+      <div style={{ maxWidth:400, margin:"0 auto", width:"100%" }}>
+        {/* Logo */}
+        <div style={{ textAlign:"center", marginBottom:40 }}>
+          <img src="/leanplan_app_icon.png" alt="" style={{ height:72, width:72, borderRadius:18, marginBottom:16 }} />
+          <h1 style={{ fontSize:32, fontWeight:800, color:C.text, margin:"0 0 8px" }}>
+            <span style={{ color:C.text }}>Lean</span><span style={{ color:C.accent }}>Plan</span>
+          </h1>
+          <p style={{ color:C.muted, fontSize:15 }}>Your AI health coach</p>
+        </div>
+
+        {/* Mode tabs */}
+        {mode !== "forgot" && <div style={{ display:"flex", background:C.sectionBg, borderRadius:12, padding:4, marginBottom:24 }}>
+          {[["login","Sign In"],["signup","Create Account"]].map(([m,l])=>(
+            <div key={m} onClick={()=>{setMode(m);setError(null);setMessage(null);}} style={{ flex:1, textAlign:"center", padding:"10px 0", borderRadius:10, background:mode===m?C.card:"transparent", color:mode===m?C.text:C.muted, fontWeight:mode===m?700:400, fontSize:15, cursor:"pointer", transition:"all 0.2s" }}>{l}</div>
+          ))}
+        </div>}
+
+        {mode === "forgot" && <div style={{ marginBottom:24 }}>
+          <h2 style={{ color:C.text, fontSize:22, fontWeight:700, marginBottom:6 }}>Reset Password</h2>
+          <p style={{ color:C.muted, fontSize:14 }}>Enter your email and we'll send you a reset link.</p>
+        </div>}
+
+        {/* Form */}
+        <div style={{ marginBottom:14 }}>
+          <p style={{ color:C.textSec, fontSize:13, fontWeight:500, marginBottom:6 }}>Email</p>
+          <TInput value={email} onChange={e=>setEmail(e.target.value)} placeholder="your@email.com" type="email" />
+        </div>
+        {mode !== "forgot" && <div style={{ marginBottom:20 }}>
+          <p style={{ color:C.textSec, fontSize:13, fontWeight:500, marginBottom:6 }}>Password</p>
+          <TInput value={password} onChange={e=>setPassword(e.target.value)} placeholder={mode==="signup"?"Min 6 characters":"Password"} type="password" />
+        </div>}
+
+        {error && <div style={{ background:`${C.red}10`, border:`1px solid ${C.red}33`, borderRadius:10, padding:"10px 14px", marginBottom:14 }}>
+          <p style={{ color:C.red, fontSize:13, margin:0 }}>{error}</p>
+        </div>}
+        {message && <div style={{ background:`${C.green}10`, border:`1px solid ${C.green}33`, borderRadius:10, padding:"10px 14px", marginBottom:14 }}>
+          <p style={{ color:C.green, fontSize:13, margin:0 }}>{message}</p>
+        </div>}
+
+        {mode !== "forgot"
+          ? <Btn onClick={handleAuth} disabled={loading} color={C.accent} style={{ width:"100%", marginBottom:12 }}>
+              {loading ? "Please wait..." : mode==="signup" ? "Create Account" : "Sign In"}
+            </Btn>
+          : <Btn onClick={handleForgot} disabled={loading} color={C.accent} style={{ width:"100%", marginBottom:12 }}>
+              {loading ? "Sending..." : "Send Reset Email"}
+            </Btn>
+        }
+
+        {mode === "login" && <p onClick={()=>{setMode("forgot");setError(null);}} style={{ color:C.accent, fontSize:13, textAlign:"center", cursor:"pointer", marginBottom:16 }}>Forgot password?</p>}
+        {mode === "forgot" && <p onClick={()=>{setMode("login");setError(null);}} style={{ color:C.accent, fontSize:13, textAlign:"center", cursor:"pointer", marginBottom:16 }}>← Back to sign in</p>}
+
+        <div style={{ display:"flex", alignItems:"center", gap:12, margin:"16px 0" }}>
+          <div style={{ flex:1, height:1, background:C.border }} />
+          <span style={{ color:C.muted, fontSize:13 }}>or</span>
+          <div style={{ flex:1, height:1, background:C.border }} />
+        </div>
+
+        <button onClick={onSkip} style={{ width:"100%", background:"none", border:`1px solid ${C.border}`, borderRadius:14, padding:"14px 0", color:C.muted, fontSize:15, cursor:"pointer", fontFamily:FONT }}>
+          Continue without account
+        </button>
+        <p style={{ color:C.muted, fontSize:11, textAlign:"center", marginTop:10, lineHeight:1.6 }}>
+          Without an account your data is saved locally only. Create an account to sync across devices and never lose your progress.
+        </p>
+      </div>
+    </div>
+  );
+};
+
 // ── MAIN ──────────────────────────────────────────────────────────────────────
 function AppInner() {
   const [profile, setProfile] = useState(null);
   const [tab, setTab] = useState("Today");
   const [isPro, setIsPro] = useState(false);
-  const [proData, setProData] = useState(null); // {customerId, subscriptionId, plan}
+  const [proData, setProData] = useState(null);
   const [showPaywall, setShowPaywall] = useState(false);
-  const [todaysMeals, setTodaysMeals] = useState(null); // persists across tab switches
-  const [todaysWorkout, setTodaysWorkout] = useState(null); // {workout, exercises}
+  const [todaysMeals, setTodaysMeals] = useState(null);
+  const [todaysWorkout, setTodaysWorkout] = useState(null);
   const [entries, setEntries] = useState([]);
   const [favourites, setFavourites] = useState([]);
   const [removed, setRemoved] = useState([]);
@@ -2616,8 +2750,13 @@ function AppInner() {
   const [journal, setJournal] = useState({});
   const [measurements, setMeasurements] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [darkOverride, setDarkOverride] = useState(null); // null=system, true=force dark, false=force light
+  const [darkOverride, setDarkOverride] = useState(null);
   const [systemDark, setSystemDark] = useState(() => window.matchMedia("(prefers-color-scheme: dark)").matches);
+  // Auth state
+  const [user, setUser] = useState(null); // Supabase user
+  const [authChecked, setAuthChecked] = useState(false); // has auth been checked
+  const [showAuth, setShowAuth] = useState(false); // show auth screen
+  const [syncing, setSyncing] = useState(false);
 
   // Listen to system dark mode changes
   useEffect(() => {
@@ -2681,7 +2820,8 @@ function AppInner() {
     } catch(e){}
   }, []);
 
-  useEffect(()=>{
+  // Load data from localStorage first (fast), then sync from Supabase if logged in
+  const loadFromLocal = () => {
     try {
       const raw = localStorage.getItem("leanplan_v4");
       if (raw) {
@@ -2698,13 +2838,80 @@ function AppInner() {
         if (d.darkOverride !== undefined) setDarkOverride(d.darkOverride);
       }
     } catch(e){}
-    setLoading(false);
-  },[]);
+  };
 
+  const loadFromSupabase = async (userId) => {
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", userId)
+        .single();
+      if (error || !data) return;
+      if (data.profile_data && Object.keys(data.profile_data).length > 0) setProfile(data.profile_data);
+      if (data.entries?.length) setEntries(data.entries);
+      if (data.favourites?.length) setFavourites(data.favourites);
+      if (data.removed?.length) setRemoved(data.removed);
+      if (data.meal_log && Object.keys(data.meal_log).length) setMealLog(data.meal_log);
+      if (data.workout_log && Object.keys(data.workout_log).length) setWorkoutLog(data.workout_log);
+      if (data.water && Object.keys(data.water).length) setWater(data.water);
+      if (data.journal && Object.keys(data.journal).length) setJournal(data.journal);
+      if (data.measurements?.length) setMeasurements(data.measurements);
+      if (data.dark_override !== null && data.dark_override !== undefined) setDarkOverride(data.dark_override);
+      if (data.is_pro) { setIsPro(true); setProData({ customerId: data.stripe_customer_id, subscriptionId: data.stripe_subscription_id, plan: data.stripe_plan }); }
+    } catch(e){ console.error("Supabase load error:", e); }
+  };
+
+  const saveToSupabase = async (userId, data) => {
+    try {
+      await supabase.from("profiles").upsert({
+        id: userId,
+        profile_data: data.profile || {},
+        entries: data.entries || [],
+        favourites: data.favourites || [],
+        removed: data.removed || [],
+        meal_log: data.mealLog || {},
+        workout_log: data.workoutLog || {},
+        water: data.water || {},
+        journal: data.journal || {},
+        measurements: data.measurements || [],
+        dark_override: data.darkOverride,
+        updated_at: new Date().toISOString(),
+      });
+    } catch(e){ console.error("Supabase save error:", e); }
+  };
+
+  // Check auth on mount
+  useEffect(()=>{
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        setUser(session.user);
+        loadFromLocal();
+        loadFromSupabase(session.user.id).then(()=>setLoading(false));
+      } else {
+        loadFromLocal();
+        setLoading(false);
+      }
+      setAuthChecked(true);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user || null);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // Save to both localStorage and Supabase when data changes
   useEffect(()=>{
     if (loading) return;
-    try { localStorage.setItem("leanplan_v4", JSON.stringify({profile,entries,favourites,removed,mealLog,workoutLog,water,journal,measurements,darkOverride})); } catch(e){}
-  },[profile,entries,favourites,removed,mealLog,workoutLog,water,journal,measurements,darkOverride,loading]);
+    const data = {profile,entries,favourites,removed,mealLog,workoutLog,water,journal,measurements,darkOverride};
+    try { localStorage.setItem("leanplan_v4", JSON.stringify(data)); } catch(e){}
+    if (user) {
+      // Debounce Supabase saves to avoid too many writes
+      const timer = setTimeout(() => saveToSupabase(user.id, data), 2000);
+      return () => clearTimeout(timer);
+    }
+  },[profile,entries,favourites,removed,mealLog,workoutLog,water,journal,measurements,darkOverride,loading,user]);
 
   const loadBg = systemDark ? "#000" : "#f2f2f7";
   const loadText = systemDark ? "#8e8e93" : "#8e8e93";
@@ -2716,7 +2923,21 @@ function AppInner() {
       </div>
       <p style={{ color:loadText }}>Loading...</p></div></div>;
 
-  if (!profile) return <Onboarding onDone={p=>setProfile(p)} />;
+  if (showAuth) return <AuthScreen
+    onAuth={async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        setUser(session.user);
+        setShowAuth(false);
+        setSyncing(true);
+        await loadFromSupabase(session.user.id);
+        setSyncing(false);
+      }
+    }}
+    onSkip={() => setShowAuth(false)}
+  />;
+
+  if (!profile) return <Onboarding onDone={p=>{ setProfile(p); if (!user) setShowAuth(true); }} />;
 
   // Apply theme
   const isDark = darkOverride !== null ? darkOverride : systemDark;
@@ -2786,7 +3007,7 @@ function AppInner() {
         {tab==="Train"&&(isPro ? <TrainTab profile={profile} workoutLog={workoutLog} setWorkoutLog={setWorkoutLog} setProfile={setProfile} savedWorkout={todaysWorkout} setSavedWorkout={setTodaysWorkout} /> : <LockedTab feature="Workout tracking, lift tracker and rest day planner" onUpgrade={()=>setShowPaywall(true)} />)}
         {tab==="Track"&&(isPro ? <TrackTab profile={profile} entries={entries} setEntries={fn=>setEntries(typeof fn==="function"?fn(entries):fn)} measurements={measurements} setMeasurements={setMeasurements} /> : <LockedTab feature="Progress tracking, measurements and body stats" onUpgrade={()=>setShowPaywall(true)} />)}
         {tab==="Coach"&&(isPro ? <CoachTab profile={profile} setProfile={setProfile} /> : <LockedTab feature="AI personal coach" onUpgrade={()=>setShowPaywall(true)} />)}
-        {tab==="Profile"&&<ProfileTab profile={profile} setProfile={setProfile} onReset={handleReset} isDark={isDark} darkOverride={darkOverride} setDarkOverride={setDarkOverride} isPro={isPro} proData={proData} onUpgrade={()=>setShowPaywall(true)} />}
+        {tab==="Profile"&&<ProfileTab profile={profile} setProfile={setProfile} onReset={handleReset} isDark={isDark} darkOverride={darkOverride} setDarkOverride={setDarkOverride} isPro={isPro} proData={proData} onUpgrade={()=>setShowPaywall(true)} user={user} onShowAuth={()=>setShowAuth(true)} />}
 
       </div>
 
