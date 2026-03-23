@@ -2887,39 +2887,38 @@ function AppInner() {
 
   // Check auth on mount
   useEffect(()=>{
-    // Handle email confirmation redirect — Supabase puts tokens in the URL hash
-    const hash = window.location.hash;
-    if (hash && hash.includes("access_token")) {
-      supabase.auth.getSession().then(({ data: { session } }) => {
+    // onAuthStateChange catches ALL auth events including email confirmation
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED" || event === "USER_UPDATED") {
         if (session?.user) {
           setUser(session.user);
-          window.history.replaceState({}, "", "/");
+          // Clean up URL if it has tokens in hash
+          if (window.location.hash?.includes("access_token")) {
+            window.history.replaceState({}, "", "/");
+          }
           loadFromLocal();
-          loadFromSupabase(session.user.id).then(()=>setLoading(false));
-        } else {
-          loadFromLocal();
+          await loadFromSupabase(session.user.id);
           setLoading(false);
+          setAuthChecked(true);
         }
-        setAuthChecked(true);
-      });
-      return;
-    }
+      } else if (event === "SIGNED_OUT") {
+        setUser(null);
+      }
+    });
 
+    // Also check existing session on mount
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
         setUser(session.user);
         loadFromLocal();
-        loadFromSupabase(session.user.id).then(()=>setLoading(false));
+        loadFromSupabase(session.user.id).then(()=>{ setLoading(false); setAuthChecked(true); });
       } else {
         loadFromLocal();
         setLoading(false);
+        setAuthChecked(true);
       }
-      setAuthChecked(true);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user || null);
-    });
     return () => subscription.unsubscribe();
   }, []);
 
