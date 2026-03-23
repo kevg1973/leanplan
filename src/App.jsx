@@ -2207,10 +2207,6 @@ const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDar
         ) : (
           <div>
             <Row label="Account" value="Not signed in" color={C.muted} last />
-            <div style={{ padding:"12px 16px" }}>
-              <Btn color={C.accent} onClick={onShowAuth} style={{ width:"100%", marginBottom:8 }}>Sign In / Create Account</Btn>
-              <p style={{ color:C.muted, fontSize:12, textAlign:"center", margin:0 }}>Sign in to sync your data across devices</p>
-            </div>
           </div>
         )}
       </Section>
@@ -2719,17 +2715,8 @@ const AuthScreen = ({ onAuth, onSkip }) => {
         {mode === "login" && <p onClick={()=>{setMode("forgot");setError(null);}} style={{ color:C.accent, fontSize:13, textAlign:"center", cursor:"pointer", marginBottom:16 }}>Forgot password?</p>}
         {mode === "forgot" && <p onClick={()=>{setMode("login");setError(null);}} style={{ color:C.accent, fontSize:13, textAlign:"center", cursor:"pointer", marginBottom:16 }}>← Back to sign in</p>}
 
-        <div style={{ display:"flex", alignItems:"center", gap:12, margin:"16px 0" }}>
-          <div style={{ flex:1, height:1, background:C.border }} />
-          <span style={{ color:C.muted, fontSize:13 }}>or</span>
-          <div style={{ flex:1, height:1, background:C.border }} />
-        </div>
-
-        <button onClick={onSkip} style={{ width:"100%", background:"none", border:`1px solid ${C.border}`, borderRadius:14, padding:"14px 0", color:C.muted, fontSize:15, cursor:"pointer", fontFamily:FONT }}>
-          Continue without account
-        </button>
-        <p style={{ color:C.muted, fontSize:11, textAlign:"center", marginTop:10, lineHeight:1.6 }}>
-          Without an account your data is saved locally only. Create an account to sync across devices and never lose your progress.
+        <p style={{ color:C.muted, fontSize:11, textAlign:"center", marginTop:16, lineHeight:1.6 }}>
+          Your data is securely synced across all your devices. We never share your information.
         </p>
       </div>
     </div>
@@ -2968,27 +2955,27 @@ function AppInner() {
       </div>
       <p style={{ color:loadText }}>Loading...</p></div></div>;
 
-  if (showAuth) return <AuthScreen
+
+
+  if (!user) return <AuthScreen
     onAuth={async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
         setUser(session.user);
-        setShowAuth(false);
         setSyncing(true);
-        // Try to load from Supabase first
-        await loadFromSupabase(session.user.id);
-        // If profile_data was empty, save current local profile immediately
-        const { data } = await supabase.from("profiles").select("profile_data").eq("id", session.user.id).single();
-        if (!data?.profile_data || Object.keys(data.profile_data).length === 0) {
-          const local = JSON.parse(localStorage.getItem("leanplan_v4") || "{}");
-          if (local.profile) {
-            await saveToSupabase(session.user.id, local);
+        try {
+          const { data } = await supabase.from("profiles").select("profile_data").eq("id", session.user.id).single();
+          if (!data?.profile_data || Object.keys(data.profile_data).length === 0) {
+            const local = JSON.parse(localStorage.getItem("leanplan_v4") || "{}");
+            if (local.profile) await saveToSupabase(session.user.id, local);
+          } else {
+            await loadFromSupabase(session.user.id);
           }
-        }
+        } catch(e){}
         setSyncing(false);
       }
     }}
-    onSkip={() => setShowAuth(false)}
+    onSkip={null}
   />;
 
   if (!profile) return <Onboarding onDone={async p=>{ 
@@ -2998,12 +2985,10 @@ function AppInner() {
       const current = JSON.parse(localStorage.getItem("leanplan_v4") || "{}");
       localStorage.setItem("leanplan_v4", JSON.stringify({...current, profile:p}));
     } catch(e){}
-    // If user is already logged in, save to Supabase immediately
+    // Save to Supabase immediately
     const { data: { session } } = await supabase.auth.getSession();
     if (session?.user) {
       await saveToSupabase(session.user.id, { profile:p, entries:[], favourites:[], removed:[], mealLog:{}, workoutLog:{}, water:{}, journal:{}, measurements:[], darkOverride:null });
-    } else {
-      setShowAuth(true);
     }
   }} />;
 
