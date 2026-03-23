@@ -2787,6 +2787,7 @@ function AppInner() {
   const [showAuth, setShowAuth] = useState(false); // show auth screen
   const [showWelcome, setShowWelcome] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [authLoading, setAuthLoading] = useState(true); // true until auth check completes
   const [syncing, setSyncing] = useState(false);
 
   // Listen to system dark mode changes
@@ -2927,6 +2928,7 @@ function AppInner() {
           window.history.replaceState({}, "", "/");
         }
         setAuthChecked(true);
+        setAuthLoading(false);
       }
     };
 
@@ -3025,6 +3027,8 @@ function AppInner() {
     }}
     onSkip={() => setShowAuth(false)}
   />;
+
+  if (authLoading) return null; // Wait for auth check before showing welcome screen
 
   if (!profile && !user && !showOnboarding) return <WelcomeScreen
     onNew={()=>setShowOnboarding(true)}
