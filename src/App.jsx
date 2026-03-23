@@ -2636,7 +2636,11 @@ const AuthScreen = ({ onAuth, onSkip }) => {
     setLoading(true); setError(null);
     try {
       if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({ email, password });
+        const { error } = await supabase.auth.signUp({ 
+          email, 
+          password,
+          options: { emailRedirectTo: "https://www.leanplan.uk" }
+        });
         if (error) throw error;
         setMessage("Account created! Please check your email to verify, then log in.");
         setMode("login");
@@ -2883,6 +2887,24 @@ function AppInner() {
 
   // Check auth on mount
   useEffect(()=>{
+    // Handle email confirmation redirect — Supabase puts tokens in the URL hash
+    const hash = window.location.hash;
+    if (hash && hash.includes("access_token")) {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session?.user) {
+          setUser(session.user);
+          window.history.replaceState({}, "", "/");
+          loadFromLocal();
+          loadFromSupabase(session.user.id).then(()=>setLoading(false));
+        } else {
+          loadFromLocal();
+          setLoading(false);
+        }
+        setAuthChecked(true);
+      });
+      return;
+    }
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
         setUser(session.user);
