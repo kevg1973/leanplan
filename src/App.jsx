@@ -1094,6 +1094,19 @@ const MealsTab =({ profile, favourites, setFavourites, removed, setRemoved, meal
   const [suppOpen, setSuppOpen] = useState(null);
   const [generating, setGenerating] = useState(false);
   const [generateError, setGenerateError] = useState(null);
+  const MAX_GENERATIONS = 3;
+  const [genCount, setGenCount] = useState(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem("leanplan_gen_count") || "{}");
+      return saved.date === todayKey() ? saved.count : 0;
+    } catch { return 0; }
+  });
+
+  const incrementGenCount = () => {
+    const newCount = genCount + 1;
+    setGenCount(newCount);
+    localStorage.setItem("leanplan_gen_count", JSON.stringify({ date: todayKey(), count: newCount }));
+  };
   const [dislikedMeals, setDislikedMeals] = useState(() => {
     try { return JSON.parse(localStorage.getItem("leanplan_disliked_meals") || "[]"); } catch { return []; }
   });
@@ -1131,13 +1144,17 @@ const MealsTab =({ profile, favourites, setFavourites, removed, setRemoved, meal
     setFavourites(f=>f.includes(m.id)?f:[...f,m.id]);
   };
 
+  const [showRegenerateNudge, setShowRegenerateNudge] = useState(false);
+
   const dislikeMeal = (m) => {
     saveDislikedMeals([...dislikedMeals.filter(d=>d!==m.name), m.name]);
     setShown(s=>s?s.filter(x=>x.id!==m.id):s);
+    setShowRegenerateNudge(true);
   };
 
   // AI generation for Pro users
   const generateAI = async () => {
+    if (genCount >= MAX_GENERATIONS) return;
     setGenerating(true);
     setGenerateError(null);
     try {
@@ -1154,6 +1171,8 @@ const MealsTab =({ profile, favourites, setFavourites, removed, setRemoved, meal
       if (data.error) throw new Error(data.error);
       setShown(data.meals);
       setExpanded(null);
+      incrementGenCount();
+      setShowRegenerateNudge(false);
     } catch(err) {
       setGenerateError("Could not generate meals. Please try again.");
       console.error(err);
@@ -1163,6 +1182,9 @@ const MealsTab =({ profile, favourites, setFavourites, removed, setRemoved, meal
 
   // Fallback generation for free users (from hardcoded library)
   const generateLocal = () => {
+    if (genCount >= MAX_GENERATIONS) return;
+    incrementGenCount();
+    setShowRegenerateNudge(false);
     const pool=filtered.length>0?filtered:available;
     const byType = {
       breakfast: [...pool].filter(m=>getMealType(m)==="breakfast").sort(()=>Math.random()-0.5),
@@ -1179,7 +1201,18 @@ const MealsTab =({ profile, favourites, setFavourites, removed, setRemoved, meal
 
   const toggleFav = id => setFavourites(f=>f.includes(id)?f.filter(x=>x!==id):[...f,id]);
   const removeM = id => { setRemoved(r=>[...r,id]); setShown(s=>s?s.filter(m=>m.id!==id):s); };
-  const logMeal = m => setMealLog(ml=>({...ml,[today]:[...(ml[today]||[]),{id:m.id,name:m.name,cals:m.cals,protein:m.protein,carbs:m.carbs,fat:m.fat,time:new Date().toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"})}]}));
+  const logMeal = m => {
+    const currentCals = (mealLog[today]||[]).reduce((a,x)=>a+x.cals,0);
+    const newTotal = currentCals + m.cals;
+    const tdee = calcTDEE(profile);
+    const pace = getPace(profile.paceId||"normal");
+    const target = tdee ? tdee - Math.round(pace.lbs*500) : 1800;
+    if (tdee && newTotal > target * 1.1) {
+      const ok = window.confirm(`⚠️ Calorie Warning\n\nLogging this meal will bring your total to ${newTotal} calories — ${Math.round(((newTotal/target)-1)*100)}% over your daily target of ${target}.\n\nLog it anyway?`);
+      if (!ok) return;
+    }
+    setMealLog(ml=>({...ml,[today]:[...(ml[today]||[]),{id:m.id,name:m.name,cals:m.cals,protein:m.protein,carbs:m.carbs,fat:m.fat,time:new Date().toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"})}]}));
+  };
   const removeMealLog = (i) => setMealLog(ml=>({...ml,[today]:(ml[today]||[]).filter((_,idx)=>idx!==i)}));
 
   return (
@@ -1231,9 +1264,17 @@ const MealsTab =({ profile, favourites, setFavourites, removed, setRemoved, meal
           </div>
           {isPro ? (
             <div>
-              <Btn onClick={generate} disabled={generating} style={{ width:"100%", marginBottom:8 }}>
-                {generating ? "✦ Generating your meals..." : "✦ Generate Today's Meals with AI"}
-              </Btn>
+              {genCount < MAX_GENERATIONS ? (
+                <Btn onClick={generate} disabled={generating} style={{ width:"100%", marginBottom:8 }}>
+                  {generating ? "✦ Generating your meals..." : `✦ Generate Today's Meals with AI`}
+                </Btn>
+              ) : (
+                <div style={{ background:C.sectionBg, borderRadius:14, padding:"12px 16px", marginBottom:8, textAlign:"center" }}>
+                  <p style={{ color:C.muted, fontSize:13, fontWeight:600, margin:"0 0 2px" }}>Daily limit reached</p>
+                  <p style={{ color:C.muted, fontSize:12, margin:0 }}>You've used all 3 generations today. Come back tomorrow for fresh meals! 🌅</p>
+                </div>
+              )}
+              <p style={{ color:C.muted, fontSize:11, textAlign:"center", margin:"0 0 4px" }}>{MAX_GENERATIONS - genCount} generation{MAX_GENERATIONS - genCount !== 1 ? "s" : ""} remaining today</p>
               {generating && (
                 <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:14, padding:"16px", marginTop:8, textAlign:"center" }}>
                   <MealLoadingIndicator />
@@ -1257,8 +1298,8 @@ const MealsTab =({ profile, favourites, setFavourites, removed, setRemoved, meal
             <StatBox label="Carbs" val={`${shown.reduce((a,m)=>a+m.carbs,0)}g`} color={C.orange} />
           </div>
           <div style={{ display:"flex", gap:8, marginBottom:12 }}>
-            <button onClick={generate} disabled={generating} style={{ flex:1, background:"none", border:`1px solid ${C.border}`, borderRadius:10, padding:"8px 0", color:generating?C.muted:C.accent, fontSize:13, fontWeight:600, cursor:generating?"default":"pointer", fontFamily:FONT }}>
-              {generating ? "Generating..." : "↻ Regenerate meals"}
+            <button onClick={generate} disabled={generating||genCount>=MAX_GENERATIONS} style={{ flex:1, background:"none", border:`1px solid ${C.border}`, borderRadius:10, padding:"8px 0", color:(generating||genCount>=MAX_GENERATIONS)?C.muted:C.accent, fontSize:13, fontWeight:600, cursor:(generating||genCount>=MAX_GENERATIONS)?"default":"pointer", fontFamily:FONT }}>
+              {generating ? "Generating..." : genCount>=MAX_GENERATIONS ? "Limit reached" : "↻ Regenerate meals"}
             </button>
             <button onClick={()=>setShown(null)} style={{ background:"none", border:`1px solid ${C.border}`, borderRadius:10, padding:"8px 14px", color:C.muted, fontSize:13, cursor:"pointer", fontFamily:FONT }}>
               ✕ Clear
@@ -1295,6 +1336,12 @@ const MealsTab =({ profile, favourites, setFavourites, removed, setRemoved, meal
             </Card>;
           })}
           {removed.length>0&&<div style={{ textAlign:"center" }}><span onClick={()=>setRemoved([])} style={{ color:C.muted, fontSize:12, cursor:"pointer", textDecoration:"underline" }}>Restore {removed.length} removed meal{removed.length!==1?"s":""}</span></div>}
+          {showRegenerateNudge&&<div style={{ background:`${C.accent}10`, border:`1px solid ${C.accent}33`, borderRadius:14, padding:"12px 16px", display:"flex", justifyContent:"space-between", alignItems:"center", marginTop:8 }}>
+            <p style={{ color:C.text, fontSize:13, margin:0 }}>Want a fresh meal plan?</p>
+            <button onClick={()=>{ setShowRegenerateNudge(false); generate(); }} disabled={generating||genCount>=MAX_GENERATIONS} style={{ background:genCount>=MAX_GENERATIONS?C.muted:C.accent, border:"none", borderRadius:99, padding:"6px 14px", color:"#fff", fontSize:13, fontWeight:700, cursor:(generating||genCount>=MAX_GENERATIONS)?"default":"pointer", fontFamily:FONT }}>
+              {genCount>=MAX_GENERATIONS ? "Limit reached" : "↻ Regenerate"}
+            </button>
+          </div>}
         </>}
       </>}
 
