@@ -2785,7 +2785,8 @@ function AppInner() {
   const [user, setUser] = useState(null); // Supabase user
   const [authChecked, setAuthChecked] = useState(false); // has auth been checked
   const [showAuth, setShowAuth] = useState(false); // show auth screen
-  const [showWelcome, setShowWelcome] = useState(false); // show welcome screen
+  const [showWelcome, setShowWelcome] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const [syncing, setSyncing] = useState(false);
 
   // Listen to system dark mode changes
@@ -2997,7 +2998,7 @@ function AppInner() {
 
 
   if (showWelcome) return <WelcomeScreen
-    onNew={()=>setShowWelcome(false)}
+    onNew={()=>{ setShowWelcome(false); setShowOnboarding(true); }}
     onSignIn={()=>{ setShowWelcome(false); setShowAuth(true); }}
   />;
 
@@ -3025,8 +3026,8 @@ function AppInner() {
     onSkip={() => setShowAuth(false)}
   />;
 
-  if (!profile && !user) return <WelcomeScreen
-    onNew={()=>{}}
+  if (!profile && !user && !showOnboarding) return <WelcomeScreen
+    onNew={()=>setShowOnboarding(true)}
     onSignIn={()=>setShowAuth(true)}
   />;
 
