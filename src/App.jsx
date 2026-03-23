@@ -2889,22 +2889,22 @@ function AppInner() {
   useEffect(()=>{
     let loadingDone = false;
 
+    // Load from localStorage IMMEDIATELY — don't wait for Supabase
+    loadFromLocal();
+    setLoading(false); // Show the app straight away from cache
+
     const finishLoading = () => {
       if (!loadingDone) {
         loadingDone = true;
-        // Clean up URL hash
         if (window.location.hash?.includes("access_token")) {
           window.history.replaceState({}, "", "/");
         }
-        setLoading(false);
         setAuthChecked(true);
       }
     };
 
-    // Safety timeout — never get stuck on loading screen
+    // Safety timeout
     const safetyTimer = setTimeout(() => {
-      console.warn("Auth timeout — forcing load");
-      loadFromLocal();
       finishLoading();
     }, 5000);
 
