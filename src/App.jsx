@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 
 const FONT = "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif";
 const toKg = lbs => (lbs * 0.453592).toFixed(1);
@@ -144,12 +144,244 @@ const ALL_MEALS = [
   { id:"m20", tags:["mediterranean","dinner","gf","df"], name:"Spiced Lamb & Quinoa", time:"7:00 PM", cals:530, protein:44, carbs:38, fat:18, allergens:[], items:["Lamb leg steak (180g)","Quinoa (70g dry)","Spinach (80g)","Cherry tomatoes (100g)","Cumin, coriander, lemon"], method:"1. Cook quinoa: rinse, simmer 12 min, rest 5 min.\n2. Rub lamb with cumin, coriander, olive oil. Grill 3-4 min each side.\n3. Rest lamb 3 min then slice.\n4. Wilt spinach in pan juices, 1 min.\n5. Serve sliced lamb over quinoa with spinach, tomatoes and lemon." },
 ];
 
+// ── Exercise Database ─────────────────────────────────────────────────────────
+// Each exercise tagged with: equipment needed, muscle groups, injuries to avoid
+const EXERCISE_DB = [
+  // CHEST
+  {name:"Dumbbell Bench Press",muscle:"chest",equip:["dumbbells"],avoid:[],tip:"Lower slowly over 3 seconds. Full range of motion."},
+  {name:"Dumbbell Incline Press",muscle:"chest",equip:["dumbbells"],avoid:["shoulders"],tip:"30-45° incline. Targets upper chest."},
+  {name:"Dumbbell Flyes",muscle:"chest",equip:["dumbbells"],avoid:["shoulders"],tip:"Slight bend in elbow. Feel the stretch at the bottom."},
+  {name:"Cable Chest Flye",muscle:"chest",equip:["cables"],avoid:[],tip:"Keep chest up. Squeeze hard at the top."},
+  {name:"Push Up",muscle:"chest",equip:["bodyweight"],avoid:["wrists"],tip:"Body straight as a plank. Go to the floor."},
+  {name:"Close-Grip Push Up",muscle:"chest",equip:["bodyweight"],avoid:["wrists","shoulders"],tip:"Hands shoulder-width. Works triceps hard too."},
+  // BACK
+  {name:"Seated Cable Row",muscle:"back",equip:["cables"],avoid:[],tip:"Drive elbows back. Squeeze shoulder blades together."},
+  {name:"Lat Pulldown",muscle:"back",equip:["cables"],avoid:[],tip:"Pull to upper chest. Lean back slightly."},
+  {name:"Single-Arm Dumbbell Row",muscle:"back",equip:["dumbbells"],avoid:["back"],tip:"Support on bench. Elbow close to body."},
+  {name:"Dumbbell Bent-Over Row",muscle:"back",equip:["dumbbells"],avoid:["back"],tip:"Hinge at hips, back flat. Pull to hip."},
+  {name:"Face Pulls",muscle:"back",equip:["cables"],avoid:[],tip:"Elbows high and wide. Essential for shoulder health."},
+  {name:"Straight-Arm Pulldown",muscle:"back",equip:["cables"],avoid:[],tip:"Arms straight, pull to hips. Great lat isolation."},
+  {name:"Pull Up",muscle:"back",equip:["bodyweight"],avoid:["shoulders"],tip:"Full hang to chin over bar. Control the descent."},
+  {name:"Inverted Row",muscle:"back",equip:["bodyweight"],avoid:[],tip:"Body rigid. Pull chest to bar."},
+  // LEGS
+  {name:"Goblet Squat",muscle:"legs",equip:["dumbbells"],avoid:[],tip:"Sit back into heels. Knees track over toes."},
+  {name:"Dumbbell Squat",muscle:"legs",equip:["dumbbells"],avoid:[],tip:"Feet shoulder-width. Chest up throughout."},
+  {name:"Leg Press",muscle:"legs",equip:["gym_machines"],avoid:[],tip:"Feet high on plate reduces knee stress."},
+  {name:"Romanian Deadlift",muscle:"legs",equip:["dumbbells"],avoid:["back"],tip:"Hinge at hips, soft knees, back flat."},
+  {name:"Dumbbell Lunge",muscle:"legs",equip:["dumbbells"],avoid:["knees"],tip:"Long stride. Front knee stays over ankle."},
+  {name:"Bulgarian Split Squat",muscle:"legs",equip:["dumbbells"],avoid:["knees"],tip:"Rear foot elevated. Most knee-friendly split squat."},
+  {name:"Seated Leg Curl",muscle:"legs",equip:["gym_machines"],avoid:[],tip:"Curl slowly, control the return."},
+  {name:"Leg Extension",muscle:"legs",equip:["gym_machines"],avoid:["knees"],tip:"Full extension. Pause at top."},
+  {name:"Hip Thrust",muscle:"legs",equip:["dumbbells","barbell"],avoid:["back"],tip:"Drive through heels. Hard squeeze at the top."},
+  {name:"Weighted Glute Bridge",muscle:"legs",equip:["dumbbells","bodyweight"],avoid:[],tip:"Weight on hips. Squeeze glutes hard at top."},
+  {name:"Standing Calf Raise",muscle:"legs",equip:["bodyweight","dumbbells"],avoid:[],tip:"Full range. Pause at top and bottom."},
+  {name:"Seated Calf Raise",muscle:"legs",equip:["gym_machines","dumbbells"],avoid:[],tip:"Weight on knees. Slow and controlled."},
+  {name:"Wall Sit",muscle:"legs",equip:["bodyweight"],avoid:["knees"],tip:"90 degrees. Hold as long as possible."},
+  {name:"Step Up",muscle:"legs",equip:["bodyweight","dumbbells"],avoid:["knees"],tip:"Drive through the heel. Full extension at top."},
+  // SHOULDERS
+  {name:"Seated Dumbbell Shoulder Press",muscle:"shoulders",equip:["dumbbells"],avoid:["shoulders"],tip:"Seated protects the back. Full range overhead."},
+  {name:"Standing Dumbbell Shoulder Press",muscle:"shoulders",equip:["dumbbells"],avoid:["shoulders","back"],tip:"Core tight. Don't arch back."},
+  {name:"Lateral Raise",muscle:"shoulders",equip:["dumbbells"],avoid:["shoulders"],tip:"Slight bend in elbow. Lead with the elbow."},
+  {name:"Cable Lateral Raise",muscle:"shoulders",equip:["cables"],avoid:["shoulders"],tip:"Cable gives constant tension. Slow and controlled."},
+  {name:"Front Raise",muscle:"shoulders",equip:["dumbbells"],avoid:["shoulders"],tip:"Alternate arms. No swinging."},
+  {name:"Reverse Fly",muscle:"shoulders",equip:["dumbbells"],avoid:[],tip:"Hinge forward. Arms out to sides."},
+  {name:"Upright Row",muscle:"shoulders",equip:["dumbbells","cables"],avoid:["shoulders"],tip:"Elbows high. Pull to chin level."},
+  {name:"Arnold Press",muscle:"shoulders",equip:["dumbbells"],avoid:["shoulders"],tip:"Rotate palms as you press. Great range of motion."},
+  // ARMS
+  {name:"Dumbbell Bicep Curl",muscle:"arms",equip:["dumbbells"],avoid:[],tip:"Elbows pinned to sides. Squeeze at top."},
+  {name:"Hammer Curl",muscle:"arms",equip:["dumbbells"],avoid:[],tip:"Neutral grip. Works brachialis too."},
+  {name:"Cable Bicep Curl",muscle:"arms",equip:["cables"],avoid:[],tip:"Constant tension. Keep elbows still."},
+  {name:"Incline Dumbbell Curl",muscle:"arms",equip:["dumbbells"],avoid:[],tip:"Incline gives full stretch. Great peak contraction."},
+  {name:"Tricep Rope Pushdown",muscle:"arms",equip:["cables"],avoid:[],tip:"Flare the rope at the bottom. Full extension."},
+  {name:"Overhead Tricep Extension",muscle:"arms",equip:["dumbbells","cables"],avoid:["shoulders","elbows"],tip:"Keep elbows close to head."},
+  {name:"Tricep Dip",muscle:"arms",equip:["bodyweight"],avoid:["shoulders","wrists"],tip:"Body close to bench. Go until upper arms are parallel."},
+  {name:"Skull Crusher",muscle:"arms",equip:["dumbbells","barbell"],avoid:["elbows"],tip:"Lower slowly to forehead. Elbows stay fixed."},
+  {name:"Close-Grip Bench Press",muscle:"arms",equip:["dumbbells","barbell"],avoid:[],tip:"Shoulder-width grip. Tuck elbows."},
+  // CORE
+  {name:"Dead Bug",muscle:"core",equip:["bodyweight"],avoid:[],tip:"Press lower back into floor. Move slowly."},
+  {name:"Plank",muscle:"core",equip:["bodyweight"],avoid:["wrists","shoulders"],tip:"Body rigid. Breathe steadily. Don't drop hips."},
+  {name:"Side Plank",muscle:"core",equip:["bodyweight"],avoid:["wrists","shoulders"],tip:"Stack feet. Hold or add hip dips."},
+  {name:"Pallof Press",muscle:"core",equip:["cables","resistance_bands"],avoid:[],tip:"Anti-rotation. Brace hard. Don't let band pull you."},
+  {name:"Cable Crunch",muscle:"core",equip:["cables"],avoid:["back"],tip:"Round the spine. Pull with abs, not arms."},
+  {name:"Hanging Knee Raise",muscle:"core",equip:["bodyweight"],avoid:["shoulders"],tip:"Control the swing. Pull knees to chest."},
+  {name:"Ab Wheel Rollout",muscle:"core",equip:["bodyweight"],avoid:["back","shoulders"],tip:"Start small. Engage core before rolling out."},
+  {name:"Mountain Climber",muscle:"core",equip:["bodyweight"],avoid:["wrists","shoulders"],tip:"Hips level. Drive knees fast for cardio effect."},
+  {name:"Bird Dog",muscle:"core",equip:["bodyweight"],avoid:[],tip:"Opposite arm and leg. Keep hips level. Back friendly."},
+  {name:"Russian Twist",muscle:"core",equip:["bodyweight","dumbbells"],avoid:["back"],tip:"Lean back slightly. Rotate with control."},
+  // CARDIO
+  {name:"Rowing Machine — Steady",muscle:"cardio",equip:["rowing"],avoid:[],tip:"60% legs / 20% core / 20% arms. 22-24 strokes/min."},
+  {name:"Rowing Machine — Intervals",muscle:"cardio",equip:["rowing"],avoid:[],tip:"2 min moderate, 1 min hard. Repeat 5-6 times."},
+  {name:"Cross Trainer — Steady",muscle:"cardio",equip:["crosstrainer"],avoid:[],tip:"Stand upright. Don't lean on handles — use your core."},
+  {name:"Cross Trainer — Intervals",muscle:"cardio",equip:["crosstrainer"],avoid:[],tip:"2 min easy / 1 min resistance up. Repeat 5 times."},
+  {name:"Treadmill Walk — Incline",muscle:"cardio",equip:["treadmill"],avoid:[],tip:"10-15% incline, 3-4 mph. Burns as many calories as running."},
+  {name:"Treadmill Jog",muscle:"cardio",equip:["treadmill"],avoid:["knees","hips","ankles"],tip:"Easy conversational pace. Land midfoot."},
+  {name:"Exercise Bike — Steady",muscle:"cardio",equip:["bike"],avoid:[],tip:"RPM 80-90. Resistance moderate. Joint-friendly."},
+  {name:"Exercise Bike — Intervals",muscle:"cardio",equip:["bike"],avoid:[],tip:"20 sec sprint / 40 sec easy. 10 rounds."},
+  {name:"Bodyweight Circuit",muscle:"cardio",equip:["bodyweight"],avoid:[],tip:"Squats, push ups, lunges, plank. 40 sec on / 20 sec rest."},
+];
+
+// ── Periodisation Blocks ───────────────────────────────────────────────────────
+// 4-week blocks rotating through different training focuses
+const PERIODISATION_BLOCKS = [
+  {
+    id: 1,
+    name: "Foundation",
+    subtitle: "Week 1-4 · Build the base",
+    color: "#34c759",
+    focus: "Learning movements, building work capacity",
+    reps: "12-15",
+    rest: "60 sec",
+    sets: 3,
+    intensity: "60-65% effort",
+    note: "Focus on form over weight. These weeks build the foundation for everything that follows. By week 4 you should feel the exercises becoming natural.",
+    weeklyNote: ["Focus on perfect form — weight doesn't matter yet.", "Add a little weight if the last 2 reps feel easy.", "You should be feeling stronger. Push the weight slightly.", "Deload week — use 60% of your usual weight. Let your body recover."],
+  },
+  {
+    id: 2,
+    name: "Hypertrophy",
+    subtitle: "Week 5-8 · Build muscle",
+    color: "#007aff",
+    focus: "Muscle growth, higher volume",
+    reps: "8-12",
+    rest: "75 sec",
+    sets: 4,
+    intensity: "70-75% effort",
+    note: "This is where muscle is built. The extra set and heavier weight creates the stimulus your body needs to grow. Track your weights — beat last week every session.",
+    weeklyNote: ["Heavier than Foundation block. Should be challenging by rep 10.", "Add weight if you completed all reps last week.", "Last 2 reps should be a real struggle.", "Deload — 60% weight. This week makes next week's gains happen."],
+  },
+  {
+    id: 3,
+    name: "Strength",
+    subtitle: "Week 9-12 · Get stronger",
+    color: "#ff9500",
+    focus: "Maximum strength, low reps heavy weight",
+    reps: "5-8",
+    rest: "90 sec",
+    sets: 4,
+    intensity: "80-85% effort",
+    note: "Heavy work. Fewer reps, more weight, longer rest. This block drives strength gains that carry into all future blocks. Don't rush the rest periods.",
+    weeklyNote: ["Heavy. Rep 6-7 should feel very hard.", "Add small increments — even 1kg matters at this intensity.", "Push for new personal bests this week.", "Deload — 50% weight. Full recovery before the next cycle."],
+  },
+  {
+    id: 4,
+    name: "Power & Conditioning",
+    subtitle: "Week 13-16 · Peak performance",
+    color: "#ff2d55",
+    focus: "Explosive power, fitness and fat burn",
+    reps: "Mixed",
+    rest: "45-60 sec",
+    sets: 4,
+    intensity: "75-80% effort",
+    note: "Combines strength and cardio. Shorter rest periods keep heart rate elevated. This block burns the most calories and brings everything together.",
+    weeklyNote: ["Mix of strength and cardio. Keep rest short.", "Increase either weight or cardio intensity.", "Push harder on conditioning pieces.", "Final deload. You've completed a full cycle — reset and start stronger."],
+  },
+];
+
+// Get current training block based on start date
+const getCurrentBlock = (profile) => {
+  if (!profile?.trainingStartDate) return PERIODISATION_BLOCKS[0];
+  const weeksSinceStart = Math.floor((Date.now() - new Date(profile.trainingStartDate)) / (7 * 24 * 60 * 60 * 1000));
+  const blockIndex = Math.floor(weeksSinceStart / 4) % PERIODISATION_BLOCKS.length;
+  const weekInBlock = (weeksSinceStart % 4); // 0-3
+  return { ...PERIODISATION_BLOCKS[blockIndex], weekInBlock };
+};
+
+// Build a workout from the exercise database filtered by user profile
+const buildWorkout = (type, profile, block) => {
+  const userEquip = profile?.equipment || ["dumbbells","bodyweight"];
+  const userInjuries = profile?.injuries?.filter(i=>i!=="none") || [];
+  const fitnessLevel = profile?.fitnessLevel || "beginner";
+  const workoutStyle = profile?.workoutStyle || "mixed";
+
+  // Filter exercises by available equipment and injuries
+  const available = EXERCISE_DB.filter(ex => {
+    if (ex.equip.length > 0 && !ex.equip.some(e => userEquip.includes(e))) return false;
+    if (ex.avoid.some(a => userInjuries.includes(a))) return false;
+    return true;
+  });
+
+  const byMuscle = (muscle) => available.filter(ex => ex.muscle === muscle);
+
+  // Adjust sets/reps based on block
+  const blockSets = block?.sets || 3;
+  const blockReps = block?.reps || "12-15";
+  const blockRest = block?.rest || "60 sec";
+
+  // Adjust sets for beginners
+  const sets = fitnessLevel === "beginner" ? Math.max(2, blockSets - 1) : blockSets;
+
+  const pick = (arr, n=1) => [...arr].sort(()=>Math.random()-0.5).slice(0,n);
+
+  let exercises = [];
+
+  if (type === "full-body") {
+    exercises = [
+      ...pick(byMuscle("chest"), 1),
+      ...pick(byMuscle("back"), 2),
+      ...pick(byMuscle("legs"), 2),
+      ...pick(byMuscle("shoulders"), 1),
+      ...pick(byMuscle("core"), 1),
+    ];
+    if (userEquip.some(e=>["rowing","crosstrainer","treadmill","bike"].includes(e))) {
+      exercises.push(...pick(byMuscle("cardio").filter(ex=>ex.equip.some(e=>userEquip.includes(e))), 1));
+    }
+  } else if (type === "upper-body") {
+    exercises = [
+      ...pick(byMuscle("chest"), 2),
+      ...pick(byMuscle("back"), 2),
+      ...pick(byMuscle("shoulders"), 1),
+      ...pick(byMuscle("arms"), 2),
+    ];
+  } else if (type === "lower-body") {
+    exercises = [
+      ...pick(byMuscle("legs"), 4),
+      ...pick(byMuscle("core"), 2),
+    ];
+  } else if (type === "cardio") {
+    const cardioExercises = byMuscle("cardio").filter(ex=>ex.equip.some(e=>userEquip.includes(e)));
+    exercises = pick(cardioExercises.length > 0 ? cardioExercises : byMuscle("cardio"), 3);
+  } else if (type === "strength") {
+    exercises = [
+      ...pick(byMuscle("chest"), 1),
+      ...pick(byMuscle("back"), 2),
+      ...pick(byMuscle("legs"), 2),
+      ...pick(byMuscle("shoulders"), 1),
+    ];
+  }
+
+  return exercises.filter(Boolean).map(ex => ({
+    name: ex.name,
+    sets,
+    reps: blockReps,
+    rest: blockRest,
+    equipment: ex.equip.join("/"),
+    tip: ex.tip,
+    muscle: ex.muscle,
+  }));
+};
+
+// Legacy WORKOUTS kept for structure/colors/warmups/cooldowns
 const WORKOUTS = {
-  "full-body":   { title:"Full Body Strength & Cardio", duration:55, color:"#007aff", warmup:["5 min easy row","Arm circles x10","Hip circles x10","Slow squats x10"], exercises:[{name:"Seated Cable Row",sets:3,reps:"12–15",rest:"60 sec",equipment:"Cable machine",tip:"Drive elbows back, squeeze shoulder blades."},{name:"Goblet Squat",sets:3,reps:"12",rest:"60 sec",equipment:"Dumbbell",tip:"Sit back into heels. Supportive on knees."},{name:"Dumbbell Chest Press",sets:3,reps:"10–12",rest:"60 sec",equipment:"Dumbbells + bench",tip:"Lower slowly over 3 seconds."},{name:"Cross Trainer Intervals",sets:1,reps:"12 min",rest:"—",equipment:"Cross trainer",tip:"2 min moderate, 1 min push — repeat 4 times."},{name:"Lat Pulldown",sets:3,reps:"12",rest:"60 sec",equipment:"Cable machine",tip:"Pull to upper chest, lean back slightly."},{name:"Seated Shoulder Press",sets:3,reps:"10–12",rest:"60 sec",equipment:"Dumbbells",tip:"Seated removes lower back strain."}], cooldown:["5 min easy cross trainer","Hamstring stretch x30 sec each","Cat-cow x10","Chest stretch x30 sec"], note:"Hits push, pull, legs and cardio in under an hour." },
-  "upper-body":  { title:"Upper Body Strength", duration:50, color:"#af52de", warmup:["5 min cross trainer","Arm circles x15","Wall slides x10"], exercises:[{name:"Dumbbell Bench Press",sets:4,reps:"10",rest:"75 sec",equipment:"Dumbbells + bench",tip:"Last 2 reps should be hard."},{name:"Single-Arm Dumbbell Row",sets:3,reps:"12 each",rest:"60 sec",equipment:"Dumbbell + bench",tip:"Support on bench removes back pressure."},{name:"Seated Overhead Press",sets:3,reps:"10–12",rest:"60 sec",equipment:"Dumbbells",tip:"Seated protects the back."},{name:"Face Pulls",sets:3,reps:"15",rest:"45 sec",equipment:"Cable machine",tip:"Elbows high and wide. Essential for shoulder health."},{name:"Bicep Curls",sets:3,reps:"12",rest:"45 sec",equipment:"Dumbbells",tip:"Elbows pinned. Slow is better."},{name:"Tricep Rope Pushdown",sets:3,reps:"12–15",rest:"45 sec",equipment:"Cable machine",tip:"Flare rope at the bottom."}], cooldown:["Shoulder stretch x30 sec each","Chest stretch x30 sec","Neck rolls x5"], note:"Upper body days produce the most visible change." },
-  "lower-body":  { title:"Lower Body & Core", duration:50, color:"#34c759", warmup:["5 min easy row","Clamshells x15 each","Glute bridges x15","Ankle circles x10"], exercises:[{name:"Leg Press",sets:4,reps:"12–15",rest:"75 sec",equipment:"Leg press machine",tip:"Feet high reduces knee stress."},{name:"Romanian Deadlift",sets:3,reps:"10–12",rest:"75 sec",equipment:"Dumbbells",tip:"Hinge at hips, soft knee, flat back."},{name:"Seated Leg Curl",sets:3,reps:"12–15",rest:"60 sec",equipment:"Machine",tip:"Curl slowly, control the return."},{name:"Standing Calf Raise",sets:3,reps:"15–20",rest:"45 sec",equipment:"Bodyweight/dumbbells",tip:"Pause at the top."},{name:"Dead Bug",sets:3,reps:"10 each side",rest:"45 sec",equipment:"Bodyweight",tip:"Press lower back to floor. Brilliant core work."},{name:"Weighted Glute Bridge",sets:3,reps:"15",rest:"45 sec",equipment:"Barbell/dumbbell",tip:"Hard squeeze at top protects lower back."}], cooldown:["Figure-4 stretch x40 sec each","Hamstring stretch x30 sec each","Child's pose x30 sec"], note:"Strong legs and glutes are your best defence against back pain." },
-  "cardio":      { title:"Low-Impact Cardio Burn", duration:45, color:"#ff9500", warmup:["3 min easy row","Hip swings x10","Arm swings x10"], exercises:[{name:"Rowing — Steady State",sets:1,reps:"15 min",rest:"2 min",equipment:"Rowing machine",tip:"22–24 strokes/min. Just hold a conversation."},{name:"Cross Trainer Intervals",sets:1,reps:"15 min",rest:"2 min",equipment:"Cross trainer",tip:"2 min easy / 1 min harder x5."},{name:"Rowing — Push Finish",sets:1,reps:"10 min",rest:"—",equipment:"Rowing machine",tip:"Push above comfort for final 5 min."}], cooldown:["5 min easy cross trainer","Full body stretch","Breathing: 4 in, 6 out x8"], note:"Burns 350–450 calories with zero joint impact." },
-  "strength":    { title:"Progressive Strength", duration:60, color:"#ff2d55", warmup:["5 min easy row","Shoulder rotations x10","Squats x10","Hip hinges x10"], exercises:[{name:"Dumbbell Bench Press — Heavy",sets:4,reps:"6–8",rest:"90 sec",equipment:"Dumbbells + bench",tip:"Lower over 3 seconds. Elevates metabolism 24–48 hrs."},{name:"Lat Pulldown — Heavy",sets:4,reps:"6–8",rest:"90 sec",equipment:"Cable machine",tip:"Struggle on rep 7–8."},{name:"Leg Press — Heavy",sets:4,reps:"8–10",rest:"90 sec",equipment:"Leg press machine",tip:"Heavy leg pressing burns enormously."},{name:"Seated Cable Row — Heavy",sets:3,reps:"8",rest:"75 sec",equipment:"Cable machine",tip:"Hold contracted position 1 second."},{name:"Seated Overhead Press — Heavy",sets:3,reps:"8–10",rest:"75 sec",equipment:"Dumbbells",tip:"Seated keeps spine safe."}], cooldown:["10 min easy cross trainer","Full stretch","Foam roller on back and glutes"], note:"Muscle burns calories at rest 24 hours a day. Don't fear heavy weights." },
+  "full-body":   { title:"Full Body Strength & Cardio", duration:55, color:"#007aff",
+    warmup:["5 min light cardio","Arm circles x10","Hip circles x10","Bodyweight squats x10","Shoulder rotations x10"],
+    cooldown:["5 min easy cardio","Hamstring stretch x30 sec each","Hip flexor stretch x30 sec","Chest stretch x30 sec","Cat-cow x10"],
+    note:"Hits every major muscle group. Most efficient workout for fat loss and muscle maintenance." },
+  "upper-body":  { title:"Upper Body Strength", duration:50, color:"#af52de",
+    warmup:["5 min light cardio","Arm circles x15","Wall slides x10","Band pull-aparts x15"],
+    cooldown:["Shoulder stretch x30 sec each","Chest stretch x30 sec","Tricep stretch x30 sec","Neck rolls x5"],
+    note:"Upper body days produce the most visible change. Focus on the mind-muscle connection." },
+  "lower-body":  { title:"Lower Body & Core", duration:50, color:"#34c759",
+    warmup:["5 min light cardio","Clamshells x15 each","Glute bridges x15","Ankle circles x10","Leg swings x10"],
+    cooldown:["Figure-4 stretch x40 sec each","Hamstring stretch x30 sec each","Calf stretch x30 sec","Child's pose x30 sec"],
+    note:"Strong legs and glutes protect your back and burn the most calories at rest." },
+  "cardio":      { title:"Low-Impact Cardio", duration:45, color:"#ff9500",
+    warmup:["3 min very easy pace","Dynamic stretches","Hip circles x10"],
+    cooldown:["5 min easy pace","Full body stretch","Breathing: 4 in, 6 out x8"],
+    note:"Low-impact cardio burns serious calories with zero joint stress. Consistency beats intensity." },
+  "strength":    { title:"Progressive Strength", duration:60, color:"#ff2d55",
+    warmup:["5 min light cardio","Shoulder rotations x10","Hip hinges x10","Activation sets x10"],
+    cooldown:["10 min easy cardio","Full stretch routine","Foam roller if available"],
+    note:"Heavy compound movements elevate metabolism for 24-48 hours after training." },
 };
 
 const SHOPPING = {
@@ -215,9 +447,22 @@ const Btn = ({ children, onClick, color=C.accent, style={}, disabled, small, out
   <button onClick={onClick} disabled={disabled} style={{ background:outline?"transparent":color, color:outline?color:"#fff", border:outline?`1.5px solid ${color}`:"none", borderRadius:12, padding:small?"8px 16px":"12px 22px", fontFamily:FONT, fontWeight:600, fontSize:small?13:15, cursor:disabled?"not-allowed":"pointer", opacity:disabled?0.4:1, transition:"all 0.15s", boxShadow:outline?"none":`0 2px 8px ${color}44`, ...style }}>{children}</button>
 );
 
-const Chip = ({ children, color=C.accent, active, onClick }) => (
-  <span onClick={onClick} style={{ background:active?color:`${color}15`, color:active?"#fff":color, border:`1px solid ${color}33`, borderRadius:99, padding:"6px 14px", fontSize:13, fontWeight:600, cursor:onClick?"pointer":"default", transition:"all 0.2s", display:"inline-block" }}>{children}</span>
-);
+const Chip = ({ children, color=C.accent, active, onClick }) => {
+  // In light mode, inactive chips need darker text for readability
+  const inactiveTextColor = (() => {
+    // Convert hex to RGB to check if colour is too light
+    const hex = color.replace("#","");
+    const r = parseInt(hex.slice(0,2),16);
+    const g = parseInt(hex.slice(2,4),16);
+    const b = parseInt(hex.slice(4,6),16);
+    const luminance = (0.299*r + 0.587*g + 0.114*b)/255;
+    // If colour is very light, darken it for inactive state
+    return luminance > 0.6 ? "#555" : color;
+  })();
+  return (
+    <span onClick={onClick} style={{ background:active?color:`${color}12`, color:active?"#fff":inactiveTextColor, border:`1.5px solid ${active?color:`${color}55`}`, borderRadius:99, padding:"6px 14px", fontSize:13, fontWeight:600, cursor:onClick?"pointer":"default", transition:"all 0.2s", display:"inline-block" }}>{children}</span>
+  );
+};
 
 const Toggle = ({ value, onChange }) => (
   <div onClick={()=>onChange(!value)} style={{ width:51, height:31, borderRadius:99, background:value?C.accent:"#e5e5ea", cursor:"pointer", position:"relative", transition:"background 0.2s", flexShrink:0 }}>
@@ -452,7 +697,7 @@ const Onboarding = ({ onDone }) => {
           <p style={{ color:C.muted, fontSize:14, marginBottom:20 }}>Select everything available to you. Workouts will be built around this.</p>
           <div style={{ display:"flex", flexWrap:"wrap", gap:8, marginBottom:14 }}>
             {[["gym_machines","Gym machines"],["dumbbells","Dumbbells"],["barbell","Barbell"],["cables","Cable machine"],["rowing","Rowing machine"],["crosstrainer","Cross trainer"],["treadmill","Treadmill"],["bike","Exercise bike"],["resistance_bands","Resistance bands"],["bodyweight","Bodyweight only"]].map(([v,l])=>(
-              <Chip key={v} color={C.indigo} active={data.equipment.includes(v)} onClick={()=>toggleArr("equipment",v)}>{l}</Chip>
+              <Chip key={v} color="#4a4a9a" active={data.equipment.includes(v)} onClick={()=>toggleArr("equipment",v)}>{l}</Chip>
             ))}
           </div>
           <div style={{ marginBottom:14 }}>
@@ -697,7 +942,7 @@ const TodayTab = ({ profile, entries, mealLog, workoutLog, water, setWater, jour
       {/* Hero */}
       <div style={{ background:`linear-gradient(145deg, ${C.accent}, #5ac8fa)`, borderRadius:20, padding:"20px 18px", marginBottom:16, color:"#fff" }}>
         <p style={{ opacity:0.85, fontSize:14, margin:"0 0 4px" }}>Hello{profile.name?`, ${profile.name}`:""}  👋</p>
-        <h2 style={{ fontSize:26, fontWeight:700, margin:"0 0 4px" }}>{profile.targetLbs>0?`Goal: ${toKg(profile.startWeightLbs-profile.targetLbs)} kg loss`:profile.goal?.replace(/_/g," ")||"Get Healthy"}</h2>
+        <h2 style={{ fontSize:26, fontWeight:700, margin:"0 0 4px" }}>{profile.targetLbs>0?`Lose ${toKg(profile.targetLbs)} kg`:profile.goal?.replace(/_/g," ")||"Get Healthy"}</h2>
         <p style={{ opacity:0.8, fontSize:13, margin:"0 0 14px" }}>{lostKg} kg lost{profile.targetLbs>0?` · ${(Math.max(0,profile.targetLbs-lost)*0.453592).toFixed(1)} to go · ${pct}% · ~${eta>0?eta:0} wks`:""} · {pace.lbs} lb/wk</p>
         <div style={{ background:"rgba(255,255,255,0.25)", borderRadius:99, height:8, overflow:"hidden" }}>
           <div style={{ width:`${pct}%`, height:"100%", background:"rgba(255,255,255,0.9)", borderRadius:99, transition:"width 0.6s" }} />
@@ -1053,21 +1298,40 @@ const MealsTab = ({ profile, favourites, setFavourites, removed, setRemoved, mea
 };
 
 // ── TRAIN TAB ─────────────────────────────────────────────────────────────────
-const TrainTab = ({ profile, workoutLog, setWorkoutLog }) => {
+const TrainTab = ({ profile, workoutLog, setWorkoutLog, setProfile }) => {
   const [selectedType, setSelectedType] = useState("full-body");
   const [activeWorkout, setActiveWorkout] = useState(null);
+  const [activeExercises, setActiveExercises] = useState([]);
   const [view, setView] = useState("calendar");
-  const [liftLog, setLiftLog] = useState({});
   const today = todayKey();
 
   const days = Array.from({length:7},(_,i)=>{ const d=new Date(); d.setDate(d.getDate()-d.getDay()+1+i); return d; });
   const dayKey = d => d.toISOString().split("T")[0];
   const weekWorkouts = days.filter(d=>workoutLog[dayKey(d)]).length;
 
+  // Get current training block
+  const block = getCurrentBlock(profile);
+  const weekInBlock = block.weekInBlock || 0;
+  const isDeload = weekInBlock === 3;
+
+  // Set training start date if not set
+  useEffect(() => {
+    if (!profile?.trainingStartDate) {
+      setProfile(p => ({...p, trainingStartDate: new Date().toISOString()}));
+    }
+  }, []);
+
+  const buildAndShowWorkout = (type) => {
+    const w = WORKOUTS[type];
+    const exercises = buildWorkout(type, profile, isDeload ? {...block, sets: Math.max(2, block.sets-1), reps:"12-15", rest:"60 sec"} : block);
+    setActiveWorkout(w);
+    setActiveExercises(exercises);
+    setView("workout");
+  };
+
   const logWorkout = (type) => {
     setWorkoutLog(wl=>({...wl,[today]:{type,date:today,time:new Date().toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"})}}));
-    setActiveWorkout(WORKOUTS[type]);
-    setView("workout");
+    buildAndShowWorkout(type);
   };
 
   const historyWeeks = Array.from({length:4},(_,i)=>{
@@ -1076,7 +1340,6 @@ const TrainTab = ({ profile, workoutLog, setWorkoutLog }) => {
     return {label:i===0?"This week":i===1?"Last week":`${i+1}w ago`,count};
   }).reverse();
 
-  // Suggest rest days based on workouts per week
   const trainDays = profile.workoutsPerWeek||3;
   const restDays = 7 - trainDays;
   const suggestion = trainDays<=3 ? "Mon · Wed · Fri" : trainDays===4 ? "Mon · Tue · Thu · Fri" : "Mon · Tue · Thu · Fri · Sat";
@@ -1090,6 +1353,37 @@ const TrainTab = ({ profile, workoutLog, setWorkoutLog }) => {
       </div>
 
       {view==="calendar"&&<>
+        {/* Training Block Card */}
+        <div style={{ background:`linear-gradient(135deg, ${block.color}, ${block.color}aa)`, borderRadius:16, padding:"16px 18px", marginBottom:14, color:"#fff" }}>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
+            <div>
+              <p style={{ opacity:0.85, fontSize:11, fontWeight:700, letterSpacing:"0.08em", margin:"0 0 4px" }}>TRAINING BLOCK {block.id} OF 4</p>
+              <h3 style={{ margin:0, fontSize:20, fontWeight:800 }}>{block.name}</h3>
+              <p style={{ opacity:0.8, fontSize:12, margin:"3px 0 0" }}>{block.subtitle}</p>
+            </div>
+            <div style={{ background:"rgba(255,255,255,0.2)", borderRadius:12, padding:"8px 12px", textAlign:"center" }}>
+              <div style={{ fontSize:18, fontWeight:800 }}>W{weekInBlock+1}</div>
+              <div style={{ fontSize:10, opacity:0.85 }}>of 4</div>
+            </div>
+          </div>
+          {isDeload&&<div style={{ background:"rgba(255,255,255,0.2)", borderRadius:10, padding:"8px 12px", marginTop:10 }}>
+            <p style={{ fontSize:12, fontWeight:700, margin:"0 0 2px" }}>🔄 DELOAD WEEK</p>
+            <p style={{ fontSize:12, opacity:0.9, margin:0 }}>Reduced volume — let your body recover and grow stronger.</p>
+          </div>}
+          {!isDeload&&<p style={{ opacity:0.8, fontSize:12, margin:"8px 0 0" }}>{block.weeklyNote?.[weekInBlock]}</p>}
+          <div style={{ display:"flex", gap:12, marginTop:12 }}>
+            <div style={{ background:"rgba(255,255,255,0.15)", borderRadius:8, padding:"6px 10px", fontSize:12 }}>
+              <span style={{ opacity:0.8 }}>Reps: </span><strong>{isDeload?"12-15":block.reps}</strong>
+            </div>
+            <div style={{ background:"rgba(255,255,255,0.15)", borderRadius:8, padding:"6px 10px", fontSize:12 }}>
+              <span style={{ opacity:0.8 }}>Sets: </span><strong>{isDeload?Math.max(2,block.sets-1):block.sets}</strong>
+            </div>
+            <div style={{ background:"rgba(255,255,255,0.15)", borderRadius:8, padding:"6px 10px", fontSize:12 }}>
+              <span style={{ opacity:0.8 }}>Rest: </span><strong>{isDeload?"60s":block.rest}</strong>
+            </div>
+          </div>
+        </div>
+
         <Card>
           <p style={{ color:C.muted, fontSize:12, fontWeight:600, letterSpacing:"0.06em", marginBottom:12 }}>THIS WEEK — {weekWorkouts}/{profile.workoutsPerWeek} WORKOUTS</p>
           <ProgressBar value={weekWorkouts} max={profile.workoutsPerWeek||3} color={weekWorkouts>=(profile.workoutsPerWeek||3)?C.green:C.accent} height={6} />
@@ -1107,14 +1401,13 @@ const TrainTab = ({ profile, workoutLog, setWorkoutLog }) => {
           </div>
         </Card>
 
-        {/* Rest day planner */}
         <Card style={{ background:`${C.green}08`, borderColor:`${C.green}22` }}>
           <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:8 }}><Icon name="calendar" size={14} color={C.green} /><p style={{ color:C.muted, fontSize:12, fontWeight:600, letterSpacing:"0.06em", margin:0 }}>REST DAY PLANNER</p></div>
           <p style={{ color:C.text, fontSize:14, marginBottom:6 }}>Training <strong style={{ color:C.accent }}>{trainDays}x</strong> per week · <strong style={{ color:C.green }}>{restDays} rest days</strong></p>
-          <p style={{ color:C.muted, fontSize:13, marginBottom:10 }}>Suggested schedule: <strong style={{ color:C.text }}>{suggestion}</strong></p>
+          <p style={{ color:C.muted, fontSize:13, marginBottom:10 }}>Suggested: <strong style={{ color:C.text }}>{suggestion}</strong></p>
           <div style={{ background:C.sectionBg, borderRadius:10, padding:"10px 12px" }}>
             <p style={{ color:C.muted, fontSize:12, fontWeight:600, marginBottom:4 }}>💚 ON REST DAYS</p>
-            <p style={{ color:C.textSec, fontSize:13, lineHeight:1.6, margin:0 }}>15–20 min gentle walk · Stretching or yoga · Foam rolling · Extra sleep or nap</p>
+            <p style={{ color:C.textSec, fontSize:13, lineHeight:1.6, margin:0 }}>15–20 min gentle walk · Stretching · Foam rolling · Extra sleep</p>
           </div>
         </Card>
 
@@ -1125,10 +1418,10 @@ const TrainTab = ({ profile, workoutLog, setWorkoutLog }) => {
         <Card style={{ background:`linear-gradient(145deg, ${C.accent}08, ${C.purple}08)` }}>
           <p style={{ color:C.muted, fontSize:12, fontWeight:600, letterSpacing:"0.06em", marginBottom:12 }}>LOG TODAY'S WORKOUT</p>
           <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:14 }}>
-            {Object.entries(WORKOUTS).map(([key,val])=><Chip key={key} color={val.color} active={selectedType===key} onClick={()=>setSelectedType(key)}>{key}</Chip>)}
+            {Object.entries(WORKOUTS).map(([key,val])=><Chip key={key} color={val.color} active={selectedType===key} onClick={()=>setSelectedType(key)}>{key.replace("-"," ")}</Chip>)}
           </div>
           <Btn onClick={()=>logWorkout(selectedType)} color={WORKOUTS[selectedType].color} style={{ width:"100%" }}>
-            {workoutLog[today]?"↻ Update Today":"✦ Log & View Workout"}
+            {workoutLog[today]?"↻ Update Today":"✦ Start Today's Workout"}
           </Btn>
         </Card>
       </>}
@@ -1137,22 +1430,25 @@ const TrainTab = ({ profile, workoutLog, setWorkoutLog }) => {
         {!activeWorkout&&<Card>
           <p style={{ color:C.muted, fontSize:12, fontWeight:600, letterSpacing:"0.06em", marginBottom:12 }}>CHOOSE WORKOUT</p>
           <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:14 }}>
-            {Object.entries(WORKOUTS).map(([key,val])=><Chip key={key} color={val.color} active={selectedType===key} onClick={()=>setSelectedType(key)}>{key}</Chip>)}
+            {Object.entries(WORKOUTS).map(([key,val])=><Chip key={key} color={val.color} active={selectedType===key} onClick={()=>setSelectedType(key)}>{key.replace("-"," ")}</Chip>)}
           </div>
-          <Btn onClick={()=>setActiveWorkout(WORKOUTS[selectedType])} color={WORKOUTS[selectedType].color} style={{ width:"100%" }}>✦ View Workout</Btn>
+          <Btn onClick={()=>buildAndShowWorkout(selectedType)} color={WORKOUTS[selectedType].color} style={{ width:"100%" }}>✦ Build My Workout</Btn>
         </Card>}
 
         {activeWorkout&&<>
           <div style={{ background:`linear-gradient(135deg, ${activeWorkout.color}, ${activeWorkout.color}88)`, borderRadius:16, padding:"16px 18px", marginBottom:14, color:"#fff" }}>
             <h3 style={{ margin:0, fontSize:20, fontWeight:700 }}>{activeWorkout.title}</h3>
-            <p style={{ opacity:0.85, fontSize:13, margin:"4px 0 0" }}>{activeWorkout.duration} min · Low impact · Joint safe</p>
+            <p style={{ opacity:0.85, fontSize:13, margin:"4px 0 0" }}>{block.name} Block · Week {weekInBlock+1} · {isDeload?"Deload":block.reps+" reps"}</p>
           </div>
           <Section title={<div style={{display:"flex",alignItems:"center",gap:6}}><Icon name="flame" size={13} color={C.orange} /><span>Warm Up</span></div>}>
             {activeWorkout.warmup.map((x,i)=><Row key={i} label={x} last={i===activeWorkout.warmup.length-1} />)}
           </Section>
-          {activeWorkout.exercises.map((ex,i)=><Card key={i} style={{ borderLeft:`3px solid ${activeWorkout.color}` }}>
+          {activeExercises.map((ex,i)=><Card key={i} style={{ borderLeft:`3px solid ${activeWorkout.color}` }}>
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:8 }}>
-              <div><p style={{ color:activeWorkout.color, fontWeight:700, fontSize:16, margin:0 }}>{i+1}. {ex.name}</p><span style={{ color:C.muted, fontSize:12 }}>{ex.equipment}</span></div>
+              <div>
+                <p style={{ color:activeWorkout.color, fontWeight:700, fontSize:16, margin:0 }}>{i+1}. {ex.name}</p>
+                <span style={{ color:C.muted, fontSize:12 }}>{ex.equipment} · {ex.muscle}</span>
+              </div>
               <div style={{ background:`${activeWorkout.color}15`, borderRadius:10, padding:"8px 12px", textAlign:"right" }}>
                 <div style={{ color:C.text, fontSize:16, fontWeight:700 }}>{ex.sets} × {ex.reps}</div>
                 <div style={{ color:C.muted, fontSize:11 }}>Rest: {ex.rest}</div>
@@ -1160,6 +1456,7 @@ const TrainTab = ({ profile, workoutLog, setWorkoutLog }) => {
             </div>
             {ex.tip&&<div style={{ background:C.sectionBg, borderRadius:8, padding:"8px 12px", fontSize:12, color:C.textSec, borderLeft:`3px solid ${C.yellow}` }}>💬 {ex.tip}</div>}
           </Card>)}
+          {activeExercises.length===0&&<Card><p style={{ color:C.muted, textAlign:"center", fontSize:14 }}>No exercises match your equipment. Try selecting more equipment in Profile → Fitness.</p></Card>}
           <Section title={<div style={{display:"flex",alignItems:"center",gap:6}}><Icon name="snowflake" size={13} color={C.teal} /><span>Cool Down</span></div>}>
             {activeWorkout.cooldown.map((x,i)=><Row key={i} label={x} last={i===activeWorkout.cooldown.length-1} />)}
           </Section>
@@ -1945,8 +2242,31 @@ const PaywallModal = ({ onClose }) => {
   );
 };
 
+
+// ── Error Boundary ────────────────────────────────────────────────────────────
+class ErrorBoundary extends React.Component {
+  constructor(props) { super(props); this.state = { error: null }; }
+  static getDerivedStateFromError(error) { return { error: error.message }; }
+  render() {
+    if (this.state.error) {
+      return (
+        <div style={{ padding:40, fontFamily:"monospace", background:"#fff", minHeight:"100vh" }}>
+          <h2 style={{ color:"red", marginBottom:16 }}>App Error</h2>
+          <pre style={{ background:"#f5f5f5", padding:16, borderRadius:8, fontSize:12, whiteSpace:"pre-wrap", wordBreak:"break-all" }}>
+            {this.state.error}
+          </pre>
+          <button onClick={()=>this.setState({error:null})} style={{ marginTop:16, padding:"8px 16px" }}>
+            Try Again
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 // ── MAIN ──────────────────────────────────────────────────────────────────────
-export default function App() {
+function AppInner() {
   const [profile, setProfile] = useState(null);
   const [tab, setTab] = useState("Today");
   const [isPro, setIsPro] = useState(false);
@@ -2113,7 +2433,7 @@ export default function App() {
 
         {tab==="Today"&&<TodayTab profile={profile} entries={entries} mealLog={mealLog} workoutLog={workoutLog} water={water} setWater={setWater} journal={journal} setJournal={setJournal} measurements={measurements} />}
         {tab==="Meals"&&<MealsTab profile={profile} favourites={favourites} setFavourites={setFavourites} removed={removed} setRemoved={setRemoved} mealLog={mealLog} setMealLog={setMealLog} isPro={isPro} onUpgrade={()=>setShowPaywall(true)} />}
-        {tab==="Train"&&(isPro ? <TrainTab profile={profile} workoutLog={workoutLog} setWorkoutLog={setWorkoutLog} /> : <LockedTab feature="Workout tracking, lift tracker and rest day planner" onUpgrade={()=>setShowPaywall(true)} />)}
+        {tab==="Train"&&(isPro ? <TrainTab profile={profile} workoutLog={workoutLog} setWorkoutLog={setWorkoutLog} setProfile={setProfile} /> : <LockedTab feature="Workout tracking, lift tracker and rest day planner" onUpgrade={()=>setShowPaywall(true)} />)}
         {tab==="Track"&&(isPro ? <TrackTab profile={profile} entries={entries} setEntries={fn=>setEntries(typeof fn==="function"?fn(entries):fn)} measurements={measurements} setMeasurements={setMeasurements} /> : <LockedTab feature="Progress tracking, measurements and body stats" onUpgrade={()=>setShowPaywall(true)} />)}
         {tab==="Coach"&&(isPro ? <CoachTab profile={profile} setProfile={setProfile} /> : <LockedTab feature="AI personal coach" onUpgrade={()=>setShowPaywall(true)} />)}
         {tab==="Profile"&&<ProfileTab profile={profile} setProfile={setProfile} onReset={handleReset} isDark={isDark} darkOverride={darkOverride} setDarkOverride={setDarkOverride} isPro={isPro} proData={proData} onUpgrade={()=>setShowPaywall(true)} />}
@@ -2136,4 +2456,8 @@ export default function App() {
       </div>
     </div>
   );
+}
+
+export default function App() {
+  return <ErrorBoundary><AppInner /></ErrorBoundary>;
 }
