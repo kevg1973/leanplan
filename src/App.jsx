@@ -3014,14 +3014,25 @@ function AppInner() {
         setShowAuth(false);
         setSyncing(true);
         try {
-          const { data } = await supabase.from("profiles").select("profile_data").eq("id", session.user.id).single();
-          if (!data?.profile_data || Object.keys(data.profile_data).length === 0) {
-            const local = JSON.parse(localStorage.getItem("leanplan_v4") || "{}");
-            if (local.profile) await saveToSupabase(session.user.id, local);
+          // Check for pending profile from onboarding
+          const pending = localStorage.getItem("leanplan_pending_profile");
+          if (pending) {
+            const p = JSON.parse(pending);
+            localStorage.removeItem("leanplan_pending_profile");
+            localStorage.setItem("leanplan_v4", JSON.stringify({profile:p, entries:[], favourites:[], removed:[], mealLog:{}, workoutLog:{}, water:{}, journal:{}, measurements:[], darkOverride:null}));
+            await saveToSupabase(session.user.id, { profile:p, entries:[], favourites:[], removed:[], mealLog:{}, workoutLog:{}, water:{}, journal:{}, measurements:[], darkOverride:null });
+            setProfile(p);
           } else {
-            await loadFromSupabase(session.user.id);
+            const { data } = await supabase.from("profiles").select("profile_data").eq("id", session.user.id).single();
+            if (!data?.profile_data || Object.keys(data.profile_data).length === 0) {
+              const local = JSON.parse(localStorage.getItem("leanplan_v4") || "{}");
+              if (local.profile) await saveToSupabase(session.user.id, local);
+              loadFromLocal();
+            } else {
+              await loadFromSupabase(session.user.id);
+            }
           }
-        } catch(e){}
+        } catch(e){ console.error("Auth completion error:", e); }
         setSyncing(false);
       }
     }}
@@ -3035,19 +3046,22 @@ function AppInner() {
     onSignIn={()=>setShowAuth(true)}
   />;
 
-  if (!profile) return <Onboarding onDone={async p=>{ 
-    setProfile(p);
-    // Save immediately to localStorage
+  if (!profile && !showAuth) return <Onboarding onDone={async p=>{ 
+    // Save to localStorage first
     try {
-      const current = JSON.parse(localStorage.getItem("leanplan_v4") || "{}");
-      localStorage.setItem("leanplan_v4", JSON.stringify({...current, profile:p}));
+      localStorage.setItem("leanplan_v4", JSON.stringify({profile:p, entries:[], favourites:[], removed:[], mealLog:{}, workoutLog:{}, water:{}, journal:{}, measurements:{}, darkOverride:null}));
     } catch(e){}
-    // Save to Supabase if already logged in, otherwise show mandatory auth
+    // Check if already logged in
     const { data: { session } } = await supabase.auth.getSession();
     if (session?.user) {
+      // Already has account — save and go straight to app
       await saveToSupabase(session.user.id, { profile:p, entries:[], favourites:[], removed:[], mealLog:{}, workoutLog:{}, water:{}, journal:{}, measurements:[], darkOverride:null });
+      setProfile(p);
     } else {
-      setShowAuth(true); // mandatory — no skip
+      // No account yet — show auth before setting profile
+      // Store profile in a ref so auth screen can access it
+      localStorage.setItem("leanplan_pending_profile", JSON.stringify(p));
+      setShowAuth(true);
     }
   }} />;
 
