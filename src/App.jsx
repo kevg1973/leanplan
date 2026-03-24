@@ -2046,17 +2046,17 @@ const TrackTab = ({ profile, entries, setEntries, measurements, setMeasurements 
         <Card>
           <p style={{ color:C.muted, fontSize:12, fontWeight:600, letterSpacing:"0.06em", marginBottom:12 }}>⚖️ LOG WEEKLY WEIGH-IN</p>
           <div style={{ display:"flex", gap:8, alignItems:"center", marginBottom:10 }}>
-            <TInput value={newW} onChange={e=>setNewW(e.target.value)} placeholder="Current weight in kg" type="number" style={{ flex:1 }} />
+            <TInput value={newW} onChange={e=>setNewW(e.target.value)} placeholder="e.g. 82.5" type="number" style={{ flex:1 }} />
             <Btn onClick={addWeightEntry} disabled={!newW} color={C.accent} style={{ padding:"12px 18px" }}>+ Log</Btn>
           </div>
           <div style={{ display:"flex", gap:16, fontSize:12 }}>
-            <span style={{ color:C.muted }}>Start: <strong style={{ color:C.text }}>{profile.startWeightLbs} lbs</strong></span>
-            <span style={{ color:C.muted }}>Target: <strong style={{ color:C.green }}>{target.toFixed(1)} lbs</strong></span>
+            <span style={{ color:C.muted }}>Start: <strong style={{ color:C.text }}>{toKg(profile.startWeightLbs)} kg</strong></span>
+            <span style={{ color:C.muted }}>Target: <strong style={{ color:C.green }}>{(target*0.453592).toFixed(1)} kg</strong></span>
           </div>
         </Card>
 
         {entries.length>=1&&<Card>
-          <p style={{ color:C.muted, fontSize:12, fontWeight:600, letterSpacing:"0.06em", marginBottom:12 }}>📈 WEIGHT CHART (lbs)</p>
+          <p style={{ color:C.muted, fontSize:12, fontWeight:600, letterSpacing:"0.06em", marginBottom:12 }}>📈 WEIGHT CHART (kg)</p>
           <Chart entries={entries} startWeight={profile.startWeightLbs} targetWeight={target} />
           {entries.length<2&&<p style={{ color:C.muted, fontSize:12, textAlign:"center", marginTop:8 }}>Log more weeks to see your trend</p>}
         </Card>}
@@ -2127,7 +2127,7 @@ const TrackTab = ({ profile, entries, setEntries, measurements, setMeasurements 
         <Section title="Your Plan">
           <Row label="Starting weight" value={`${toKg(profile.startWeightLbs)} kg`} />
           <Row label="Target weight" value={`${toKg(profile.startWeightLbs-profile.targetLbs)} kg`} />
-          <Row label="Pace" value={`${getPace(profile.paceId||"normal").lbs} lbs/week`} />
+          <Row label="Pace" value={`${getPace(profile.paceId||"normal").kgPerWk} kg/week`} />
           <Row label="Estimated weeks" value={`${Math.ceil(profile.targetLbs/getPace(profile.paceId||"normal").lbs)} weeks`} last />
         </Section>
       </>}
@@ -2226,7 +2226,7 @@ const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDar
       <Section title="Goals">
         <Row label="Main goal" value={profile.goal?.replace("_"," ")} onClick={()=>startEdit("goal")} />
         <Row label="Weight target" value={`${toKg(profile.startWeightLbs - profile.targetLbs)} kg target`} onClick={()=>startEdit("weight")} />
-        <Row label="Weekly pace" value={`${getPace(profile.paceId||"normal").lbs} lbs/wk — ${getPace(profile.paceId||"normal").label}`} onClick={()=>startEdit("weight")} last />
+        <Row label="Weekly pace" value={`${getPace(profile.paceId||"normal").kgPerWk} kg/wk — ${getPace(profile.paceId||"normal").label}`} onClick={()=>startEdit("weight")} last />
       </Section>
 
       <Section title="My Details">
