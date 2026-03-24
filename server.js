@@ -40,6 +40,17 @@ app.use((req, res, next) => {
 });
 app.use(express.static(join(__dirname, "dist")));
 
+// Explicitly serve PWA files with correct headers
+app.get("/sw.js", (req, res) => {
+  res.setHeader("Content-Type", "application/javascript");
+  res.setHeader("Service-Worker-Allowed", "/");
+  res.sendFile(join(__dirname, "dist", "sw.js"));
+});
+app.get("/manifest.json", (req, res) => {
+  res.setHeader("Content-Type", "application/manifest+json");
+  res.sendFile(join(__dirname, "dist", "manifest.json"));
+});
+
 // ── Create Stripe checkout session ───────────────────────────────────────────
 app.post("/api/stripe/checkout", async (req, res) => {
   const { plan, deviceId } = req.body;
