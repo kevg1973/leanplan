@@ -1204,6 +1204,11 @@ const TipSplashScreen = ({ tip, onDismiss }) => {
   const [offsetY, setOffsetY] = React.useState(0);
   const [dismissed, setDismissed] = React.useState(false);
 
+  const dismiss = () => {
+    setDismissed(true);
+    setTimeout(onDismiss, 300);
+  };
+
   const handleTouchStart = (e) => {
     startY.current = e.touches[0].clientY;
   };
@@ -1215,9 +1220,8 @@ const TipSplashScreen = ({ tip, onDismiss }) => {
   };
 
   const handleTouchEnd = () => {
-    if (offsetY > 80) {
-      setDismissed(true);
-      setTimeout(onDismiss, 300);
+    if (offsetY > 60) {
+      dismiss();
     } else {
       setOffsetY(0);
     }
@@ -1254,9 +1258,9 @@ const TipSplashScreen = ({ tip, onDismiss }) => {
       </div>
 
       {/* Bottom — swipe indicator */}
-      <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:8 }}>
+      <div onClick={dismiss} style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:8, cursor:"pointer" }}>
         <div style={{ width:36, height:4, background:"rgba(255,255,255,0.25)", borderRadius:99 }} />
-        <p style={{ color:"rgba(255,255,255,0.3)", fontSize:12, margin:0, letterSpacing:"0.04em" }}>Swipe up to continue</p>
+        <p style={{ color:"rgba(255,255,255,0.3)", fontSize:12, margin:0, letterSpacing:"0.04em" }}>Swipe up or tap to continue</p>
       </div>
     </div>
   );
