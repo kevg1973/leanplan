@@ -721,7 +721,7 @@ const PacePicker = ({ value, onChange, targetLbs }) => {
 };
 
 // ── Onboarding ────────────────────────────────────────────────────────────────
-const TOTAL_STEPS = 9;
+const TOTAL_STEPS = 11;
 
 // Scroll picker component
 const ScrollPicker = ({ values, selected, onSelect, unit="" }) => {
@@ -914,7 +914,26 @@ const Onboarding = ({ onDone }) => {
       </div>}
 
       {/* Step 8 — Fitness level */}
+            {/* Step 8 — Pace (weight loss only) */}
       {step===8&&<div style={{ flex:1, display:"flex", flexDirection:"column", padding:"0 24px 48px" }}>
+        <Header step={step} />
+        <div style={{ flex:1, display:"flex", flexDirection:"column", justifyContent:"center" }}>
+          {(data.goal==="lose_weight"||data.goal==="all") ? <>
+            <h2 style={{ color:"#fff", fontSize:32, fontWeight:800, margin:"0 0 8px" }}>How fast do you want to lose weight?</h2>
+            <p style={{ color:"rgba(255,255,255,0.5)", fontSize:16, marginBottom:32 }}>Slower is more sustainable — we recommend Moderate</p>
+            <OOption label="Steady — 0.25 kg/week" desc="Gentle and sustainable. Best for long term." selected={data.paceId==="slow"} onClick={()=>{ update("paceId","slow"); setTimeout(next,300); }} />
+            <OOption label="Moderate — 0.5 kg/week" desc="Recommended. Steady progress without sacrifice." selected={data.paceId==="normal"} onClick={()=>{ update("paceId","normal"); setTimeout(next,300); }} />
+            <OOption label="Active — 0.75 kg/week" desc="Faster results. Requires stricter diet." selected={data.paceId==="fast"} onClick={()=>{ update("paceId","fast"); setTimeout(next,300); }} />
+            <OOption label="Aggressive — 1 kg/week" desc="Maximum speed. Not recommended long term." selected={data.paceId==="vfast"} onClick={()=>{ update("paceId","vfast"); setTimeout(next,300); }} />
+          </> : <>
+            <h2 style={{ color:"#fff", fontSize:32, fontWeight:800, margin:"0 0 16px" }}>How many workouts per week?</h2>
+            {[2,3,4,5].map(n=><OOption key={n} label={`${n} workouts per week`} selected={data.workoutsPerWeek===n} onClick={()=>{ update("workoutsPerWeek",n); setTimeout(next,300); }} />)}
+          </>}
+        </div>
+      </div>}
+
+      {/* Step 9 — Fitness level */}
+      {step===9&&<div style={{ flex:1, display:"flex", flexDirection:"column", padding:"0 24px 48px" }}>
         <Header step={step} />
         <div style={{ flex:1, paddingTop:8 }}>
           <h2 style={{ color:"#fff", fontSize:32, fontWeight:800, margin:"0 0 8px" }}>Your fitness level</h2>
@@ -926,8 +945,8 @@ const Onboarding = ({ onDone }) => {
         </div>
       </div>}
 
-      {/* Step 9 — Diet */}
-      {step===9&&<div style={{ flex:1, display:"flex", flexDirection:"column", padding:"0 24px 48px", overflowY:"auto" }}>
+      {/* Step 10 — Diet */}
+      {step===10&&<div style={{ flex:1, display:"flex", flexDirection:"column", padding:"0 24px 48px", overflowY:"auto" }}>
         <Header step={step} />
         <h2 style={{ color:"#fff", fontSize:32, fontWeight:800, margin:"0 0 8px", padding:"0 0 0" }}>Your diet</h2>
         <p style={{ color:"rgba(255,255,255,0.5)", fontSize:16, marginBottom:24 }}>We'll generate meals that work for you</p>
@@ -959,8 +978,8 @@ const Onboarding = ({ onDone }) => {
         <OBtn onClick={next}>Continue →</OBtn>
       </div>}
 
-      {/* Step 10 — Equipment & building plan */}
-      {step===10&&<div style={{ flex:1, display:"flex", flexDirection:"column", padding:"0 24px 48px" }}>
+      {/* Step 11 — Equipment & building plan */}
+      {step===11&&<div style={{ flex:1, display:"flex", flexDirection:"column", padding:"0 24px 48px" }}>
         <Header step={step} />
         <div style={{ flex:1, paddingTop:8 }}>
           <h2 style={{ color:"#fff", fontSize:32, fontWeight:800, margin:"0 0 8px" }}>What equipment do you have?</h2>
