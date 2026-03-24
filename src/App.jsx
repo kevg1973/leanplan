@@ -750,7 +750,7 @@ const BuildingPlanScreen = ({ onDone }) => {
         clearInterval(interval);
         setTimeout(onDone, 800);
       }
-    }, 600);
+    }, 1000);
     return () => clearInterval(interval);
   }, []);
 
