@@ -724,6 +724,78 @@ const PacePicker = ({ value, onChange, targetLbs }) => {
 const TOTAL_STEPS = 11;
 
 // Scroll picker component
+
+// ── Building Plan Screen ──────────────────────────────────────────────────────
+const BuildingPlanScreen = ({ onDone }) => {
+  const [progress, setProgress] = useState(0);
+  const [completedSteps, setCompletedSteps] = useState([]);
+
+  const steps = [
+    "Calculating your calorie targets",
+    "Personalising your meal plan",
+    "Building your workout programme",
+    "Setting up your training blocks",
+    "Configuring your AI coach",
+    "Finalising your health plan",
+  ];
+
+  useEffect(() => {
+    let currentStep = 0;
+    const interval = setInterval(() => {
+      currentStep++;
+      const newProgress = Math.round((currentStep / steps.length) * 100);
+      setProgress(newProgress);
+      setCompletedSteps(prev => [...prev, currentStep - 1]);
+      if (currentStep >= steps.length) {
+        clearInterval(interval);
+        setTimeout(onDone, 800);
+      }
+    }, 600);
+    return () => clearInterval(interval);
+  }, []);
+
+  const radius = 80;
+  const circumference = 2 * Math.PI * radius;
+  const strokeDash = circumference - (progress / 100) * circumference;
+
+  return (
+    <div style={{ minHeight:"100vh", background:"#000", fontFamily:FONT, display:"flex", flexDirection:"column", justifyContent:"center", alignItems:"center", padding:"0 32px" }}>
+      <h1 style={{ color:"#fff", fontSize:32, fontWeight:800, textAlign:"center", margin:"0 0 12px", lineHeight:1.2 }}>Building your<br/>personal plan</h1>
+      <p style={{ color:"rgba(255,255,255,0.5)", fontSize:15, textAlign:"center", marginBottom:48 }}>Tailoring everything to you — just a moment</p>
+
+      <div style={{ position:"relative", width:200, height:200, marginBottom:48 }}>
+        <svg width="200" height="200" style={{ transform:"rotate(-90deg)" }}>
+          <circle cx="100" cy="100" r={radius} fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="8" />
+          <circle cx="100" cy="100" r={radius} fill="none" stroke="#007aff" strokeWidth="8"
+            strokeDasharray={circumference} strokeDashoffset={strokeDash}
+            strokeLinecap="round" style={{ transition:"stroke-dashoffset 0.5s ease" }} />
+        </svg>
+        <div style={{ position:"absolute", inset:0, display:"flex", alignItems:"center", justifyContent:"center" }}>
+          <span style={{ color:"#fff", fontSize:36, fontWeight:800 }}>{progress}%</span>
+        </div>
+      </div>
+
+      <div style={{ width:"100%", maxWidth:320 }}>
+        {steps.map((step, i) => {
+          const done = completedSteps.includes(i);
+          const active = completedSteps.length === i;
+          return (
+            <div key={i} style={{ display:"flex", alignItems:"center", gap:14, marginBottom:16, opacity:done||active?1:0.3, transition:"opacity 0.3s" }}>
+              <div style={{ width:28, height:28, borderRadius:99, background:done?"#007aff":"rgba(255,255,255,0.1)", border:"none", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, transition:"background 0.3s" }}>
+                {done ? <span style={{ color:"#fff", fontSize:14, fontWeight:700 }}>✓</span>
+                : active ? <div style={{ width:10, height:10, borderRadius:99, background:"#007aff", animation:"pulse 0.8s ease-in-out infinite alternate" }} />
+                : null}
+              </div>
+              <p style={{ color:"#fff", fontSize:15, margin:0, fontWeight:done?500:400 }}>{step}</p>
+            </div>
+          );
+        })}
+      </div>
+      <style>{`@keyframes pulse { from { opacity:0.4; transform:scale(0.8); } to { opacity:1; transform:scale(1.2); } }`}</style>
+    </div>
+  );
+};
+
 const ScrollPicker = ({ values, selected, onSelect, unit="" }) => {
   const ref = React.useRef(null);
   const itemH = 52;
@@ -779,6 +851,7 @@ const OBtn = ({ children, onClick, disabled }) => (
 
 const Onboarding = ({ onDone }) => {
   const [step, setStep] = useState(1);
+  const [building, setBuilding] = useState(false);
   const [data, setData] = useState({
     name:"", goal:"lose_weight", 
     startWeightKg:83, targetWeightKg:73,
@@ -797,7 +870,9 @@ const Onboarding = ({ onDone }) => {
   const update = (k,v) => setData(d=>({...d,[k]:v}));
   const toggleArr = (k,v) => setData(d=>({...d,[k]:d[k].includes(v)?d[k].filter(x=>x!==v):[...d[k],v]}));
 
-  const finish = () => {
+  const finish = () => setBuilding(true);
+
+  const complete = () => {
     const targetLbs = parseFloat(((data.startWeightKg - data.targetWeightKg) * 2.20462).toFixed(1));
     const startWeightLbs = parseFloat((data.startWeightKg * 2.20462).toFixed(1));
     onDone({
@@ -806,6 +881,8 @@ const Onboarding = ({ onDone }) => {
       targetRaw: String(data.targetWeightKg),
     });
   };
+
+  if (building) return <BuildingPlanScreen onDone={complete} />;
 
   const pct = Math.round((step / TOTAL_STEPS) * 100);
   const next = () => setStep(s => s + 1);
