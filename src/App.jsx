@@ -5,6 +5,19 @@ const FONT = "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text'
 const toKg = lbs => (lbs * 0.453592).toFixed(1);
 const fromKg = kg => parseFloat((kg * 2.20462).toFixed(1));
 
+// ── Trial system ──────────────────────────────────────────────────────────────
+const TRIAL_DAYS = 7;
+const getTrialStart = () => localStorage.getItem("leanplan_trial_start");
+const setTrialStart = () => { if (!getTrialStart()) localStorage.setItem("leanplan_trial_start", new Date().toISOString()); };
+const getTrialDaysLeft = () => {
+  const start = getTrialStart();
+  if (!start) return TRIAL_DAYS;
+  const days = Math.floor((Date.now() - new Date(start)) / (1000 * 60 * 60 * 24));
+  return Math.max(0, TRIAL_DAYS - days);
+};
+const isTrialActive = () => getTrialDaysLeft() > 0;
+const isTrialExpired = () => getTrialStart() && getTrialDaysLeft() === 0;
+
 const LIGHT = {
   bg:"#f2f2f7", surface:"#ffffff", card:"#ffffff",
   accent:"#007aff", green:"#34c759", red:"#ff3b30",
@@ -1274,7 +1287,7 @@ const MealLoadingIndicator = () => {
   );
 };
 
-const MealsTab =({ profile, favourites, setFavourites, removed, setRemoved, mealLog, setMealLog, isPro, onUpgrade, shownMeals, setShownMeals }) => {
+const MealsTab =({ profile, favourites, setFavourites, removed, setRemoved, mealLog, setMealLog, isPro, isTrial, onUpgrade, shownMeals, setShownMeals }) => {
   const [style, setStyle] = useState("all");
   const shown = shownMeals;
   const setShown = setShownMeals;
@@ -1390,7 +1403,7 @@ const MealsTab =({ profile, favourites, setFavourites, removed, setRemoved, meal
     setExpanded(null);
   };
 
-  const generate = isPro ? generateAI : generateLocal;
+  const generate = (isPro && !isTrial) ? generateAI : generateLocal;
 
   const toggleFav = id => setFavourites(f=>f.includes(id)?f.filter(x=>x!==id):[...f,id]);
   const removeM = id => { setRemoved(r=>[...r,id]); setShown(s=>s?s.filter(m=>m.id!==id):s); };
@@ -2648,6 +2661,26 @@ const WelcomeScreen = ({ onNew, onSignIn }) => (
   </div>
 );
 
+
+// ── Trial Expired Screen ──────────────────────────────────────────────────────
+const TrialExpiredScreen = ({ onSignUp }) => (
+  <div style={{ minHeight:"100vh", background:C.bg, fontFamily:FONT, display:"flex", flexDirection:"column", justifyContent:"center", padding:"0 20px" }}>
+    <div style={{ maxWidth:400, margin:"0 auto", width:"100%", textAlign:"center" }}>
+      <img src="/leanplan_app_icon.png" alt="" style={{ height:80, width:80, borderRadius:20, marginBottom:24 }} />
+      <h1 style={{ fontSize:28, fontWeight:800, color:C.text, margin:"0 0 12px" }}>Your free trial has ended</h1>
+      <p style={{ color:C.muted, fontSize:15, lineHeight:1.7, marginBottom:32 }}>
+        Create a free account to keep your data and continue using LeanPlan. Your 7-day trial data will be saved.
+      </p>
+      <Btn onClick={onSignUp} color={C.accent} style={{ width:"100%", fontSize:17, padding:"16px 0", marginBottom:16 }}>
+        Create Free Account
+      </Btn>
+      <p style={{ color:C.muted, fontSize:13, lineHeight:1.6 }}>
+        Free to use · Upgrade to Pro anytime for AI meal generation, coaching and more
+      </p>
+    </div>
+  </div>
+);
+
 // ── Auth Screen ───────────────────────────────────────────────────────────────
 const AuthScreen = ({ onAuth, onSkip }) => {
   const [mode, setMode] = useState("login"); // login, signup, forgot
@@ -3007,7 +3040,8 @@ function AppInner() {
 
 
   // ── Render sequence ──────────────────────────────────────────────────────────
-  // 1. Auth screen (highest priority — shown after onboarding or sign in request)
+
+  // 1. Auth screen — shown when explicitly requested
   if (showAuth) return <AuthScreen
     onAuth={async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -3016,47 +3050,44 @@ function AppInner() {
         setShowAuth(false);
         setSyncing(true);
         try {
-          const pending = localStorage.getItem("leanplan_pending_profile");
-          if (pending) {
-            // Coming from onboarding — save profile
-            const p = JSON.parse(pending);
-            localStorage.removeItem("leanplan_pending_profile");
-            await saveToSupabase(session.user.id, { profile:p, entries:[], favourites:[], removed:[], mealLog:{}, workoutLog:{}, water:{}, journal:{}, measurements:[], darkOverride:null });
-            setProfile(p);
-          } else {
-            // Returning user — load from Supabase
-            await loadFromSupabase(session.user.id);
+          await loadFromSupabase(session.user.id);
+          // Push any local data up if Supabase is empty
+          const { data } = await supabase.from("profiles").select("profile_data").eq("id", session.user.id).single();
+          if (!data?.profile_data || Object.keys(data.profile_data).length === 0) {
+            const local = JSON.parse(localStorage.getItem("leanplan_v4") || "{}");
+            if (local.profile) await saveToSupabase(session.user.id, local);
           }
-        } catch(e){ console.error("Auth error:", e); loadFromLocal(); }
+        } catch(e){}
         setSyncing(false);
       }
     }}
     onSkip={null}
   />;
 
-  // 2. Loading screen while auth check runs (new device, no cache)
+  // 2. Loading screen — only while auth check runs with no cached data
   if (authLoading && !profile) return <div style={{ minHeight:"100vh", background:loadBg, display:"flex", alignItems:"center", justifyContent:"center", fontFamily:FONT }}><div style={{ textAlign:"center" }}><div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:16 }}><img src="/leanplan_app_icon.png" alt="" style={{ height:52, width:52, objectFit:"contain", borderRadius:12 }} /><span style={{ fontSize:28, fontWeight:800, letterSpacing:"-0.02em", fontFamily:FONT }}><span style={{ color:loadBg==="#000"?"#fff":"#000" }}>Lean</span><span style={{ color:"#0a84ff" }}>Plan</span></span></div><p style={{ color:loadText }}>Loading...</p></div></div>;
 
-  // 3. Welcome screen (no profile, no user, not in onboarding)
+  // 3. Welcome screen — first time, no profile, no user
   if (!profile && !user && !showOnboarding) return <WelcomeScreen
-    onNew={()=>setShowOnboarding(true)}
+    onNew={()=>{ setTrialStart(); setShowOnboarding(true); }}
     onSignIn={()=>setShowAuth(true)}
   />;
 
-  // 4. Onboarding (new user, has clicked Get Started)
-  if (!profile) return <Onboarding onDone={async p=>{ 
+  // 4. Onboarding — after Get Started
+  if (!profile) return <Onboarding onDone={p=>{ 
+    setProfile(p);
+    setTrialStart();
     try {
-      localStorage.setItem("leanplan_pending_profile", JSON.stringify(p));
+      localStorage.setItem("leanplan_v4", JSON.stringify({profile:p, entries:[], favourites:[], removed:[], mealLog:{}, workoutLog:{}, water:{}, journal:{}, measurements:[], darkOverride:null}));
     } catch(e){}
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session?.user) {
-      localStorage.removeItem("leanplan_pending_profile");
-      await saveToSupabase(session.user.id, { profile:p, entries:[], favourites:[], removed:[], mealLog:{}, workoutLog:{}, water:{}, journal:{}, measurements:[], darkOverride:null });
-      setProfile(p);
-    } else {
-      setShowAuth(true); // Show auth — profile set after signup
-    }
+    // If logged in, save to Supabase too
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) saveToSupabase(session.user.id, { profile:p, entries:[], favourites:[], removed:[], mealLog:{}, workoutLog:{}, water:{}, journal:{}, measurements:[], darkOverride:null });
+    });
   }} />;
+
+  // 5. Trial expired — not logged in, no Pro
+  if (isTrialExpired() && !user && !isPro) return <TrialExpiredScreen onSignUp={()=>setShowAuth(true)} />;
 
   // Apply theme
   const isDark = darkOverride !== null ? darkOverride : systemDark;
@@ -3118,11 +3149,17 @@ function AppInner() {
       </div>
 
       <div style={{ padding:"16px 14px 100px" }}>
-        {/* Pro upgrade banner for free users */}
-        {!isPro && <ProBanner onUpgrade={()=>setShowPaywall(true)} />}
+        {/* Trial banner or Pro upgrade banner */}
+        {!isPro && !user && isTrialActive() && (
+          <div style={{ background:`${C.orange}15`, border:`1px solid ${C.orange}33`, borderRadius:14, padding:"10px 16px", marginBottom:14, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+            <p style={{ color:C.text, fontSize:13, margin:0 }}>⏱ <strong>{getTrialDaysLeft()} day{getTrialDaysLeft()!==1?"s":""}</strong> left in your free trial</p>
+            <button onClick={()=>setShowAuth(true)} style={{ background:C.orange, border:"none", borderRadius:99, padding:"6px 14px", color:"#fff", fontSize:12, fontWeight:700, cursor:"pointer", fontFamily:FONT }}>Save my data</button>
+          </div>
+        )}
+        {!isPro && (user || !isTrialActive()) && <ProBanner onUpgrade={()=>setShowPaywall(true)} />}
 
         {tab==="Today"&&<TodayTab profile={profile} entries={entries} mealLog={mealLog} workoutLog={workoutLog} water={water} setWater={setWater} journal={journal} setJournal={setJournal} measurements={measurements} />}
-        {tab==="Meals"&&<MealsTab profile={profile} favourites={favourites} setFavourites={setFavourites} removed={removed} setRemoved={setRemoved} mealLog={mealLog} setMealLog={setMealLog} isPro={isPro} onUpgrade={()=>setShowPaywall(true)} shownMeals={todaysMeals} setShownMeals={setTodaysMeals} />}
+        {tab==="Meals"&&<MealsTab profile={profile} favourites={favourites} setFavourites={setFavourites} removed={removed} setRemoved={setRemoved} mealLog={mealLog} setMealLog={setMealLog} isPro={isPro} isTrial={!user&&isTrialActive()} onUpgrade={()=>setShowPaywall(true)} shownMeals={todaysMeals} setShownMeals={setTodaysMeals} />}
         {tab==="Train"&&(isPro ? <TrainTab profile={profile} workoutLog={workoutLog} setWorkoutLog={setWorkoutLog} setProfile={setProfile} savedWorkout={todaysWorkout} setSavedWorkout={setTodaysWorkout} /> : <LockedTab feature="Workout tracking, lift tracker and rest day planner" onUpgrade={()=>setShowPaywall(true)} />)}
         {tab==="Track"&&(isPro ? <TrackTab profile={profile} entries={entries} setEntries={fn=>setEntries(typeof fn==="function"?fn(entries):fn)} measurements={measurements} setMeasurements={setMeasurements} /> : <LockedTab feature="Progress tracking, measurements and body stats" onUpgrade={()=>setShowPaywall(true)} />)}
         {tab==="Coach"&&(isPro ? <CoachTab profile={profile} setProfile={setProfile} /> : <LockedTab feature="AI personal coach" onUpgrade={()=>setShowPaywall(true)} />)}
