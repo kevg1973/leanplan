@@ -1241,7 +1241,7 @@ const TipSplashScreen = ({ tip, onDismiss }) => {
         background:"#000",
         display:"flex", flexDirection:"column",
         justifyContent:"space-between",
-        padding:"60px 32px 50px",
+        padding:"48px 32px 40px",
         transform:`translateY(${dismissed ? "-100%" : `-${offsetY}px`})`,
         transition:dismissed ? "transform 0.3s ease-in" : offsetY > 0 ? "none" : "transform 0.1s ease-out",
         opacity: visible ? 1 : 0,
@@ -1262,11 +1262,11 @@ const TipSplashScreen = ({ tip, onDismiss }) => {
         opacity: visible ? 1 : 0, transform: visible ? "translateY(0)" : "translateY(10px)",
         transition:"opacity 0.6s ease 0.1s, transform 0.6s ease 0.1s"
       }}>
-        <img src="/leanplan_logo_light.png" alt="LeanPlan" style={{ height:28, objectFit:"contain" }} />
+        <img src="/leanplan_logo_light.png" alt="LeanPlan" style={{ height:42, objectFit:"contain" }} />
       </div>
 
       {/* Middle — tip */}
-      <div style={{ position:"relative", zIndex:1,
+      <div style={{ position:"relative", zIndex:1, marginTop:"-40px",
         opacity: visible ? 1 : 0, transform: visible ? "translateY(0)" : "translateY(20px)",
         transition:"opacity 0.7s ease 0.2s, transform 0.7s ease 0.2s"
       }}>
