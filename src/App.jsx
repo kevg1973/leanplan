@@ -1200,7 +1200,7 @@ const Chart = ({ entries, startWeight, targetWeight, color=C.accent }) => {
 
 // ── Daily Tip Splash Screen ───────────────────────────────────────────────────
 const TipSplashScreen = ({ tip, onDismiss }) => {
-  const [startY, setStartY] = React.useRef(null);
+  const startY = React.useRef(null);
   const [offsetY, setOffsetY] = React.useState(0);
   const [dismissed, setDismissed] = React.useState(false);
 
@@ -1209,6 +1209,7 @@ const TipSplashScreen = ({ tip, onDismiss }) => {
   };
 
   const handleTouchMove = (e) => {
+    if (startY.current === null) return;
     const dy = startY.current - e.touches[0].clientY;
     if (dy > 0) setOffsetY(dy);
   };
@@ -1220,6 +1221,7 @@ const TipSplashScreen = ({ tip, onDismiss }) => {
     } else {
       setOffsetY(0);
     }
+    startY.current = null;
   };
 
   return (
