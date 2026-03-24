@@ -1258,12 +1258,11 @@ const TipSplashScreen = ({ tip, onDismiss }) => {
       </div>
 
       {/* Top — branding */}
-      <div style={{ display:"flex", alignItems:"center", gap:10, position:"relative", zIndex:1,
+      <div style={{ position:"relative", zIndex:1,
         opacity: visible ? 1 : 0, transform: visible ? "translateY(0)" : "translateY(10px)",
         transition:"opacity 0.6s ease 0.1s, transform 0.6s ease 0.1s"
       }}>
-        <img src="/leanplan_app_icon.png" alt="" style={{ height:36, width:36, borderRadius:9 }} />
-        <span style={{ color:"rgba(255,255,255,0.5)", fontSize:14, fontWeight:600 }}>LeanPlan</span>
+        <img src="/leanplan_logo_light.png" alt="LeanPlan" style={{ height:28, objectFit:"contain" }} />
       </div>
 
       {/* Middle — tip */}
