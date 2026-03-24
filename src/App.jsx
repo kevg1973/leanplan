@@ -721,7 +721,7 @@ const PacePicker = ({ value, onChange, targetLbs }) => {
 };
 
 // ── Onboarding ────────────────────────────────────────────────────────────────
-const TOTAL_STEPS = 11;
+const TOTAL_STEPS = 13;
 
 // Scroll picker component
 
@@ -1036,8 +1036,26 @@ const Onboarding = ({ onDone }) => {
         </div>
       </div>}
 
-      {/* Step 10 — Diet */}
-      {step===10&&<div style={{ flex:1, display:"flex", flexDirection:"column", padding:"0 24px 48px", overflowY:"auto" }}>
+      {/* Step 10 — Injuries */}
+      {step===10&&<div style={{ flex:1, display:"flex", flexDirection:"column", padding:"0 24px 48px" }}>
+        <Header step={step} />
+        <div style={{ flex:1, paddingTop:8 }}>
+          <h2 style={{ color:"#fff", fontSize:26, fontWeight:800, margin:"0 0 8px" }}>Any injuries or limitations?</h2>
+          <p style={{ color:"rgba(255,255,255,0.5)", fontSize:14, marginBottom:24 }}>We'll avoid exercises that could cause problems. Select all that apply.</p>
+          <OOption label="No limitations" desc="I'm good to do any exercises" selected={data.injuries.includes("none")} onClick={()=>update("injuries",["none"])} />
+          {[["back","Lower back problems"],["knees","Knee problems"],["hips","Hip problems"],["shoulders","Shoulder problems"],["wrists","Wrist problems"],["ankles","Ankle problems"]].map(([v,l])=>(
+            <OOption key={v} label={l} selected={data.injuries.includes(v)} onClick={()=>{
+              const without = data.injuries.filter(x=>x!=="none");
+              if (without.includes(v)) update("injuries", without.filter(x=>x!==v));
+              else update("injuries", [...without, v]);
+            }} />
+          ))}
+        </div>
+        <OBtn onClick={next}>Continue →</OBtn>
+      </div>}
+
+      {/* Step 11 — Diet */}
+      {step===11&&<div style={{ flex:1, display:"flex", flexDirection:"column", padding:"0 24px 48px", overflowY:"auto" }}>
         <Header step={step} />
         <h2 style={{ color:"#fff", fontSize:32, fontWeight:800, margin:"0 0 8px", padding:"0 0 0" }}>Your diet</h2>
         <p style={{ color:"rgba(255,255,255,0.5)", fontSize:16, marginBottom:24 }}>We'll generate meals that work for you</p>
@@ -1069,8 +1087,33 @@ const Onboarding = ({ onDone }) => {
         <OBtn onClick={next}>Continue →</OBtn>
       </div>}
 
-      {/* Step 11 — Equipment & building plan */}
-      {step===11&&<div style={{ flex:1, display:"flex", flexDirection:"column", padding:"0 24px 48px" }}>
+      {/* Step 12 — Supplements */}
+      {step===12&&<div style={{ flex:1, display:"flex", flexDirection:"column", padding:"0 24px 48px", overflowY:"auto" }}>
+        <Header step={step} />
+        <h2 style={{ color:"#fff", fontSize:26, fontWeight:800, margin:"0 0 8px" }}>Are you open to supplements?</h2>
+        <p style={{ color:"rgba(255,255,255,0.5)", fontSize:14, marginBottom:20 }}>Especially useful if you're over 40. We'll only recommend what's relevant to you.</p>
+        <OOption label="Yes — I'm open to them" desc="Show me what's relevant to my goals" selected={data.supplementsOpen==="yes"} onClick={()=>update("supplementsOpen","yes")} />
+        <OOption label="Maybe — tell me more" desc="I'd like to learn before deciding" selected={data.supplementsOpen==="maybe"} onClick={()=>update("supplementsOpen","maybe")} />
+        <OOption label="No thanks — food only" desc="I prefer to get everything from diet" selected={data.supplementsOpen==="no"} onClick={()=>update("supplementsOpen","no")} />
+        {(data.supplementsOpen==="yes"||data.supplementsOpen==="maybe")&&<div style={{ marginTop:16 }}>
+          <p style={{ color:"rgba(255,255,255,0.6)", fontSize:12, fontWeight:600, letterSpacing:"0.06em", marginBottom:12 }}>INTERESTED IN:</p>
+          <div style={{ display:"flex", flexWrap:"wrap" }}>
+            {[["creatine","Creatine"],["protein","Protein powder"],["vitd","Vitamin D3+K2"],["omega3","Omega-3"],["magnesium","Magnesium"],["multivitamin","Multivitamin"],["collagen","Collagen"],["probiotics","Probiotics"]].map(([v,l])=>(
+              <OChip key={v} label={l} selected={data.supplementsInterested.includes(v)} onClick={()=>toggleArr("supplementsInterested",v)} />
+            ))}
+          </div>
+          {parseInt(data.age)>=40&&<div style={{ background:"rgba(0,122,255,0.15)", border:"1px solid rgba(0,122,255,0.3)", borderRadius:12, padding:"12px 14px", marginTop:12 }}>
+            <p style={{ color:"#0a84ff", fontSize:12, fontWeight:700, margin:"0 0 4px" }}>💡 RECOMMENDED FOR YOUR AGE</p>
+            <p style={{ color:"rgba(255,255,255,0.7)", fontSize:12, lineHeight:1.6, margin:0 }}>Creatine preserves muscle, Vitamin D3 supports mood and bones, Magnesium improves sleep — all highly effective over 40.</p>
+          </div>}
+        </div>}
+        <div style={{ marginTop:"auto", paddingTop:16 }}>
+          <OBtn onClick={next}>Continue →</OBtn>
+        </div>
+      </div>}
+
+      {/* Step 13 — Equipment & building plan */}
+      {step===13&&<div style={{ flex:1, display:"flex", flexDirection:"column", padding:"0 24px 48px" }}>
         <Header step={step} />
         <div style={{ flex:1, paddingTop:8 }}>
           <h2 style={{ color:"#fff", fontSize:32, fontWeight:800, margin:"0 0 8px" }}>What equipment do you have?</h2>
