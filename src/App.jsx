@@ -2299,19 +2299,21 @@ const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDar
       </Section>
 
       {/* Pro status */}
-      {isPro && proData?.customerId !== 'bypass' ? (
+      {isPro && proData?.customerId && proData?.customerId !== 'bypass' && proData?.subscriptionId !== 'bypass' ? (
         <div style={{ background:`${C.green}10`, border:`1px solid ${C.green}33`, borderRadius:14, padding:"14px 16px", marginBottom:16 }}>
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
             <div>
               <p style={{ color:C.green, fontWeight:700, fontSize:15, margin:0 }}>✓ LeanPlan Pro</p>
               <p style={{ color:C.muted, fontSize:12, margin:"2px 0 0" }}>{proData?.plan === "annual" ? "Annual plan" : "Monthly plan"}</p>
             </div>
-            {proData?.customerId !== "bypass" && (
+            {proData?.customerId && proData.customerId !== "bypass" && (
               <Btn small outline color={C.green} onClick={async()=>{
-                if (!proData?.customerId) return;
-                const res = await fetch("/api/stripe/portal",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({customerId:proData.customerId})});
-                const data = await res.json();
-                if (data.url) window.location.href = data.url;
+                try {
+                  const res = await fetch("/api/stripe/portal",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({customerId:proData.customerId})});
+                  const data = await res.json();
+                  if (data.url) window.location.href = data.url;
+                  else alert("Could not open billing portal. Please contact support.");
+                } catch(e){ alert("Could not connect. Please try again."); }
               }}>Manage</Btn>
             )}
           </div>
@@ -2940,7 +2942,7 @@ function AppInner() {
       .then(r => r.json())
       .then(data => {
         if (data.bypass) {
-          setIsPro(true);
+          console.log("PRO SET: bypass"); setIsPro(true);
           setProData({ plan:"annual", customerId:"bypass", subscriptionId:"bypass" });
         }
       })
@@ -2954,7 +2956,7 @@ function AppInner() {
         .then(r => r.json())
         .then(data => {
           if (data.pro) {
-            setIsPro(true);
+            console.log("PRO SET: stripe verify"); setIsPro(true);
             setProData({ customerId: data.customerId, subscriptionId: data.subscriptionId, plan: data.plan });
             localStorage.setItem("leanplan_pro", JSON.stringify({ isPro: true, customerId: data.customerId, subscriptionId: data.subscriptionId, plan: data.plan }));
           }
@@ -2967,7 +2969,7 @@ function AppInner() {
       const savedPro = localStorage.getItem("leanplan_pro");
       if (savedPro) {
         const pd = JSON.parse(savedPro);
-        if (pd.isPro) { setIsPro(true); setProData(pd); }
+        if (pd.isPro) { console.log("PRO SET: localStorage leanplan_pro"); setIsPro(true); setProData(pd); }
       }
     } catch(e){}
   }, []);
@@ -3010,7 +3012,7 @@ function AppInner() {
       if (data.journal && Object.keys(data.journal).length) setJournal(data.journal);
       if (data.measurements?.length) setMeasurements(data.measurements);
       if (data.dark_override !== null && data.dark_override !== undefined) setDarkOverride(data.dark_override);
-      if (data.is_pro) { setIsPro(true); setProData({ customerId: data.stripe_customer_id, subscriptionId: data.stripe_subscription_id, plan: data.stripe_plan }); }
+      if (data.is_pro) { console.log("PRO SET: supabase is_pro"); setIsPro(true); setProData({ customerId: data.stripe_customer_id, subscriptionId: data.stripe_subscription_id, plan: data.stripe_plan }); }
     } catch(e){ console.error("Supabase load error:", e); }
   };
 
