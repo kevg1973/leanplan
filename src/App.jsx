@@ -721,7 +721,7 @@ const PacePicker = ({ value, onChange, targetLbs }) => {
 };
 
 // ── Onboarding ────────────────────────────────────────────────────────────────
-const TOTAL_STEPS = 10;
+const TOTAL_STEPS = 9;
 
 // Scroll picker component
 const ScrollPicker = ({ values, selected, onSelect, unit="" }) => {
@@ -817,7 +817,7 @@ const Onboarding = ({ onDone }) => {
       <div style={{ height:3, background:"rgba(255,255,255,0.15)", borderRadius:99, marginBottom:32 }}>
         <div style={{ height:"100%", width:`${pct}%`, background:"#fff", borderRadius:99, transition:"width 0.4s" }} />
       </div>
-      {step > 0 && <button onClick={back} style={{ background:"none", border:"none", color:"rgba(255,255,255,0.6)", fontSize:22, cursor:"pointer", padding:0, marginBottom:8 }}>‹</button>}
+      {step > 1 && <button onClick={back} style={{ background:"none", border:"none", color:"rgba(255,255,255,0.6)", fontSize:22, cursor:"pointer", padding:0, marginBottom:8 }}>‹</button>}
     </div>
   );
 
@@ -827,23 +827,6 @@ const Onboarding = ({ onDone }) => {
 
   return (
     <div style={S}>
-      {/* Step 0 — Welcome */}
-      {step===0&&<div style={{ flex:1, display:"flex", flexDirection:"column", justifyContent:"space-between", padding:"0 24px 48px" }}>
-        <div style={{ flex:1, display:"flex", flexDirection:"column", justifyContent:"center", paddingTop:80, textAlign:"center" }}>
-          <img src="/leanplan_app_icon.png" alt="" style={{ height:80, width:80, borderRadius:20, margin:"0 auto 28px" }} />
-          <h1 style={{ color:"#fff", fontSize:40, fontWeight:800, margin:"0 0 16px", lineHeight:1.1 }}>
-            Your personal<br/>health coach
-          </h1>
-          <p style={{ color:"rgba(255,255,255,0.5)", fontSize:17, lineHeight:1.6, margin:0 }}>
-            AI-powered meals, workouts and coaching — tailored entirely to you.
-          </p>
-        </div>
-        <div>
-          <OBtn onClick={next}>Get Started</OBtn>
-          <p style={{ color:"rgba(255,255,255,0.3)", fontSize:12, textAlign:"center", marginTop:16 }}>Takes about 3 minutes</p>
-        </div>
-      </div>}
-
       {/* Step 1 — Name */}
       {step===1&&<div style={{ flex:1, display:"flex", flexDirection:"column", padding:"0 24px 48px" }}>
         <Header step={step} />
@@ -2163,7 +2146,7 @@ const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDar
       </Section>
 
       {/* Pro status */}
-      {isPro ? (
+      {isPro && proData?.customerId !== 'bypass' ? (
         <div style={{ background:`${C.green}10`, border:`1px solid ${C.green}33`, borderRadius:14, padding:"14px 16px", marginBottom:16 }}>
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
             <div>
@@ -2538,7 +2521,7 @@ const PaywallModal = ({ onClose }) => {
         </Btn>
 
         <p style={{ color:C.muted, fontSize:12, textAlign:"center", lineHeight:1.6 }}>
-          Cancel anytime in your account settings. Secure payment by Stripe. By subscribing you agree to our terms.
+          Cancel anytime. Secure payment by Stripe.
         </p>
       </div>
     </div>
@@ -2720,6 +2703,7 @@ const AuthScreen = ({ onAuth, onSkip }) => {
 
         {mode === "login" && <p onClick={()=>{setMode("forgot");setError(null);}} style={{ color:C.accent, fontSize:13, textAlign:"center", cursor:"pointer", marginBottom:16 }}>Forgot password?</p>}
         {mode === "forgot" && <p onClick={()=>{setMode("login");setError(null);}} style={{ color:C.accent, fontSize:13, textAlign:"center", cursor:"pointer", marginBottom:16 }}>← Back to sign in</p>}
+        {mode === "login" && onSkip && <p onClick={onSkip} style={{ color:C.muted, fontSize:13, textAlign:"center", cursor:"pointer", marginBottom:16 }}>← Back</p>}
 
         {onSkip && <>
           <div style={{ display:"flex", alignItems:"center", gap:12, margin:"16px 0" }}>
@@ -3100,7 +3084,7 @@ function AppInner() {
 
       <div style={{ padding:"16px 14px 100px" }}>
         {/* Trial banner or Pro upgrade banner */}
-        {!effectiveIsPro && !isTrialActive() && !user && (
+        {!isPro && isTrialActive() && (
           <div style={{ background:`linear-gradient(135deg, #1c1c2e, #2d2b55)`, border:`1px solid rgba(88,86,214,0.4)`, borderRadius:14, padding:"12px 16px", marginBottom:14, display:"flex", justifyContent:"space-between", alignItems:"center", boxShadow:"0 4px 16px rgba(88,86,214,0.2)" }}>
             <div>
               <p style={{ color:"#fff", fontWeight:700, fontSize:13, margin:0 }}>✦ Full access — {getTrialDaysLeft()} day{getTrialDaysLeft()!==1?"s":""} left</p>
