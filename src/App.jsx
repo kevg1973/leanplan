@@ -1228,91 +1228,103 @@ const TodayTab = ({ profile, entries, mealLog, workoutLog, water, setWater, jour
     else break;
   }
 
+  const [showCalories, setShowCalories] = useState(false);
+
   return (
     <div>
       {/* Hero */}
-      <div style={{ background:`linear-gradient(145deg, ${C.accent}, #5ac8fa)`, borderRadius:20, padding:"20px 18px", marginBottom:16, color:"#fff" }}>
-        <p style={{ opacity:0.85, fontSize:14, margin:"0 0 4px" }}>Hello{profile.name?`, ${profile.name}`:""}  👋</p>
-        <h2 style={{ fontSize:26, fontWeight:700, margin:"0 0 4px" }}>{profile.targetLbs>0?`Lose ${toKg(profile.targetLbs)} kg`:profile.goal?.replace(/_/g," ")||"Get Healthy"}</h2>
-        <p style={{ opacity:0.8, fontSize:13, margin:"0 0 14px" }}>{lostKg} kg lost{profile.targetLbs>0?` · ${(Math.max(0,profile.targetLbs-lost)*0.453592).toFixed(1)} to go · ${pct}% · ~${eta>0?eta:0} wks`:""} · {pace.kgPerWk} kg/wk</p>
-        <div style={{ background:"rgba(255,255,255,0.25)", borderRadius:99, height:8, overflow:"hidden" }}>
+      <div style={{ background:`linear-gradient(145deg, ${C.accent}, #5ac8fa)`, borderRadius:20, padding:"20px 18px", marginBottom:14, color:"#fff" }}>
+        <p style={{ opacity:0.85, fontSize:14, margin:"0 0 2px" }}>Hello{profile.name?`, ${profile.name}`:""}  👋</p>
+        <h2 style={{ fontSize:24, fontWeight:700, margin:"0 0 4px" }}>{profile.targetLbs>0?`Lose ${toKg(profile.targetLbs)} kg`:profile.goal?.replace(/_/g," ")||"Get Healthy"}</h2>
+        <p style={{ opacity:0.8, fontSize:12, margin:"0 0 12px" }}>{lostKg} kg lost{profile.targetLbs>0?` · ${(Math.max(0,profile.targetLbs-lost)*0.453592).toFixed(1)} to go · ${pct}%`:""}</p>
+        <div style={{ background:"rgba(255,255,255,0.25)", borderRadius:99, height:6, overflow:"hidden" }}>
           <div style={{ width:`${pct}%`, height:"100%", background:"rgba(255,255,255,0.9)", borderRadius:99, transition:"width 0.6s" }} />
         </div>
-        <div style={{ display:"flex", justifyContent:"space-between", marginTop:6, opacity:0.75, fontSize:11 }}>
-          <span>{profile.startWeightLbs?toKg(profile.startWeightLbs):"—"} kg start</span><span>{toKg(cur)} kg now</span>
+        <div style={{ display:"flex", justifyContent:"space-between", marginTop:5, opacity:0.7, fontSize:11 }}>
+          <span>{profile.startWeightLbs?toKg(profile.startWeightLbs):"—"} kg</span>
+          <span>~{eta>0?eta:0} weeks to go</span>
+          <span>{toKg(cur)} kg now</span>
         </div>
       </div>
 
       {/* Weekly summary on Mondays */}
       {isMonday&&lastWeekWorkouts>0&&<Card style={{ background:`${C.green}08`, borderColor:`${C.green}33`, marginBottom:12 }}>
-        <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:6 }}><Icon name="calendar" size={14} color={C.green} /><p style={{ color:C.green, fontSize:12, fontWeight:700, margin:0 }}>LAST WEEK'S SUMMARY</p></div>
-        <p style={{ color:C.text, fontSize:14, margin:0 }}>You completed <strong style={{ color:C.green }}>{lastWeekWorkouts} workout{lastWeekWorkouts!==1?"s":""}</strong> last week. {lastWeekWorkouts>=profile.workoutsPerWeek?"🎯 Goal hit!":"Keep pushing this week!"}</p>
+        <p style={{ color:C.green, fontSize:13, margin:0 }}>🎯 Last week: <strong>{lastWeekWorkouts} workout{lastWeekWorkouts!==1?"s":""}</strong> — {lastWeekWorkouts>=profile.workoutsPerWeek?"Goal hit!":"keep pushing!"}</p>
       </Card>}
 
-      {/* Quick stats */}
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:10, marginBottom:16 }}>
-        <StatBox label="Calories" val={todayCalories||"—"} sub={targetCals?`/ ${targetCals}`:undefined} color={targetCals&&todayCalories>targetCals?C.red:C.accent} />
-        <StatBox label="Protein" val={todayProtein>0?`${todayProtein}g`:"—"} sub="target 120g+" color={todayProtein>=120?C.green:C.orange} />
+      {/* Quick stats row */}
+      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr 1fr", gap:8, marginBottom:14 }}>
+        <StatBox label="Calories" val={todayCalories||"—"} sub={targetCals?`/ ${targetCals}`:""} color={targetCals&&todayCalories>targetCals?C.red:C.accent} />
+        <StatBox label="Protein" val={todayProtein>0?`${todayProtein}g`:"—"} sub="120g+" color={todayProtein>=120?C.green:C.orange} />
+        <StatBox label="Water" val={`${(todayWater*0.25).toFixed(1)}L`} sub="/ 2.0L" color={C.teal} />
         <StatBox label="Streak" val={`${streak}d`} color={streak>=7?C.orange:C.purple} />
       </div>
 
-      {/* Water tracker */}
-      <Card>
-        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10 }}>
-          <div style={{ display:"flex", alignItems:"center", gap:6 }}><Icon name="water" size={16} color={C.teal} /><p style={{ color:C.muted, fontSize:12, fontWeight:600, letterSpacing:"0.06em", margin:0 }}>WATER TODAY</p></div>
-          <span style={{ color:C.teal, fontWeight:700, fontSize:15 }}>{(todayWater*0.25).toFixed(2)}L / 2.0L</span>
+      {/* Today's actions - compact row */}
+      <div style={{ display:"flex", gap:8, marginBottom:14 }}>
+        <div style={{ flex:1, background:C.card, borderRadius:14, padding:"12px 10px", border:`1px solid ${C.border}`, textAlign:"center" }}>
+          <div style={{ fontSize:20, marginBottom:2 }}>{todayWorked?"✅":"🏋️"}</div>
+          <div style={{ color:C.text, fontSize:11, fontWeight:600, lineHeight:1.3 }}>{todayWorked?todayWorked.type.split("-").join(" "):"No workout"}</div>
         </div>
-        <ProgressBar value={todayWater} max={8} color={C.teal} height={10} />
-        <div style={{ display:"flex", gap:8, marginTop:12 }}>
-          <Btn onClick={()=>setWater(w=>({...w,[today]:Math.max(0,(w[today]||0)-1)})) } color={C.teal} outline small style={{ flex:1 }}>− 250ml</Btn>
+        <div style={{ flex:1, background:C.card, borderRadius:14, padding:"12px 10px", border:`1px solid ${C.border}`, textAlign:"center" }}>
+          <div style={{ fontSize:20, marginBottom:2 }}>🍽️</div>
+          <div style={{ color:C.text, fontSize:11, fontWeight:600 }}>{todayMeals.length} meals logged</div>
+        </div>
+        <div style={{ flex:1, background:C.card, borderRadius:14, padding:"12px 10px", border:`1px solid ${C.border}`, textAlign:"center" }}>
+          <div style={{ fontSize:20, marginBottom:2 }}>⚖️</div>
+          <div style={{ color:C.text, fontSize:11, fontWeight:600 }}>{toKg(cur)} kg</div>
+        </div>
+      </div>
+
+      {/* Water tracker */}
+      <Card style={{ marginBottom:14 }}>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
+          <div style={{ display:"flex", alignItems:"center", gap:6 }}><Icon name="water" size={14} color={C.teal} /><p style={{ color:C.muted, fontSize:12, fontWeight:600, letterSpacing:"0.06em", margin:0 }}>WATER</p></div>
+          <span style={{ color:C.teal, fontWeight:700, fontSize:13 }}>{(todayWater*0.25).toFixed(2)}L / 2.0L</span>
+        </div>
+        <ProgressBar value={todayWater} max={8} color={C.teal} height={8} />
+        <div style={{ display:"flex", gap:8, marginTop:10 }}>
+          <Btn onClick={()=>setWater(w=>({...w,[today]:Math.max(0,(w[today]||0)-1)}))} color={C.teal} outline small style={{ flex:1 }}>− 250ml</Btn>
           <Btn onClick={()=>setWater(w=>({...w,[today]:Math.min(16,(w[today]||0)+1)}))} color={C.teal} small style={{ flex:2 }}>+ 250ml</Btn>
         </div>
       </Card>
 
-      {/* Today status */}
-      <div style={{ display:"flex", gap:10, marginBottom:16 }}>
-        <div style={{ flex:1, background:C.card, borderRadius:14, padding:14, border:`1px solid ${C.border}`, textAlign:"center" }}>
-          <div style={{ marginBottom:4, display:"flex", justifyContent:"center" }}><Icon name={todayWorked?"check":"barbell"} size={24} color={todayWorked?C.green:C.muted} /></div>
-          <div style={{ color:C.text, fontSize:13, fontWeight:600 }}>{todayWorked?todayWorked.type.split("-").join(" "):"Rest day"}</div>
-          <div style={{ color:C.muted, fontSize:11 }}>workout</div>
+      {/* Calorie targets — collapsible */}
+      {tdee&&<Card style={{ marginBottom:14, cursor:"pointer" }} onClick={()=>setShowCalories(s=>!s)}>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+          <div style={{ display:"flex", alignItems:"center", gap:6 }}>
+            <Icon name="flame" size={14} color={C.orange} />
+            <p style={{ color:C.muted, fontSize:12, fontWeight:600, letterSpacing:"0.06em", margin:0 }}>CALORIE TARGETS</p>
+          </div>
+          <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+            <span style={{ color:C.accent, fontWeight:700, fontSize:14 }}>{targetCals} cal</span>
+            <span style={{ color:C.muted, fontSize:12 }}>{showCalories?"▲":"▼"}</span>
+          </div>
         </div>
-        <div style={{ flex:1, background:C.card, borderRadius:14, padding:14, border:`1px solid ${C.border}`, textAlign:"center" }}>
-          <div style={{ marginBottom:4, display:"flex", justifyContent:"center" }}><Icon name="meals" size={24} color={C.orange} /></div>
-          <div style={{ color:C.text, fontSize:13, fontWeight:600 }}>{todayMeals.length} meals</div>
-          <div style={{ color:C.muted, fontSize:11 }}>logged today</div>
-        </div>
-        <div style={{ flex:1, background:C.card, borderRadius:14, padding:14, border:`1px solid ${C.border}`, textAlign:"center" }}>
-          <div style={{ marginBottom:4, display:"flex", justifyContent:"center" }}><Icon name="weight" size={24} color={C.accent} /></div>
-          <div style={{ color:C.text, fontSize:13, fontWeight:600 }}>{toKg(cur)}</div>
-          <div style={{ color:C.muted, fontSize:11 }}>kg current</div>
-        </div>
-      </div>
-
-      {/* TDEE info */}
-      {tdee&&<Card style={{ borderLeft:`3px solid ${C.green}` }}>
-        <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:8 }}><Icon name="flame" size={15} color={C.orange} /><p style={{ color:C.muted, fontSize:12, fontWeight:600, letterSpacing:"0.06em", margin:0 }}>YOUR CALORIE TARGETS</p></div>
-        <div style={{ display:"flex", gap:8 }}>
-          <div style={{ flex:1, textAlign:"center", padding:"8px 0" }}><div style={{ color:C.text, fontSize:17, fontWeight:700 }}>{tdee}</div><div style={{ color:C.muted, fontSize:11 }}>TDEE (maintenance)</div></div>
+        {showCalories&&<div style={{ display:"flex", gap:8, marginTop:12 }}>
+          <div style={{ flex:1, textAlign:"center", padding:"8px 0" }}><div style={{ color:C.text, fontSize:17, fontWeight:700 }}>{tdee}</div><div style={{ color:C.muted, fontSize:11 }}>maintenance</div></div>
           <div style={{ width:1, background:C.border }} />
-          <div style={{ flex:1, textAlign:"center", padding:"8px 0" }}><div style={{ color:C.accent, fontSize:17, fontWeight:700 }}>{targetCals}</div><div style={{ color:C.muted, fontSize:11 }}>Target (deficit)</div></div>
-        </div>
+          <div style={{ flex:1, textAlign:"center", padding:"8px 0" }}><div style={{ color:C.accent, fontSize:17, fontWeight:700 }}>{targetCals}</div><div style={{ color:C.muted, fontSize:11 }}>target (deficit)</div></div>
+          <div style={{ width:1, background:C.border }} />
+          <div style={{ flex:1, textAlign:"center", padding:"8px 0" }}><div style={{ color:C.orange, fontSize:17, fontWeight:700 }}>{pace.kgPerWk}kg</div><div style={{ color:C.muted, fontSize:11 }}>per week</div></div>
+        </div>}
       </Card>}
+
+      {/* Tip */}
+      <Card style={{ borderLeft:`3px solid ${C.accent}`, marginBottom:14 }}>
+        <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:6 }}><Icon name="tip" size={14} color={C.accent} /><p style={{ color:C.accent, fontSize:11, fontWeight:700, letterSpacing:"0.08em", margin:0 }}>TODAY'S TIP</p></div>
+        <p style={{ color:C.text, fontSize:13, lineHeight:1.7, margin:0 }}>{DAILY_TIPS[tipIdx]}</p>
+        <button onClick={()=>setTipIdx(i=>(i+1)%DAILY_TIPS.length)} style={{ background:"none", border:"none", color:C.accent, fontSize:12, cursor:"pointer", marginTop:8, fontFamily:FONT, fontWeight:600 }}>↻ Next tip</button>
+      </Card>
 
       {/* Journal */}
       <Card>
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:showJournal?12:0 }}>
-          <div style={{ display:"flex", alignItems:"center", gap:6 }}><Icon name="note" size={15} color={C.muted} /><p style={{ color:C.muted, fontSize:12, fontWeight:600, letterSpacing:"0.06em", margin:0 }}>DAILY JOURNAL</p></div>
+          <div style={{ display:"flex", alignItems:"center", gap:6 }}><Icon name="note" size={14} color={C.muted} /><p style={{ color:C.muted, fontSize:12, fontWeight:600, letterSpacing:"0.06em", margin:0 }}>DAILY JOURNAL</p></div>
           <button onClick={()=>setShowJournal(s=>!s)} style={{ background:"none", border:"none", color:C.accent, fontSize:13, cursor:"pointer", fontFamily:FONT, fontWeight:600 }}>{showJournal?"Done":"Write"}</button>
         </div>
         {showJournal&&<textarea value={journal[today]||""} onChange={e=>setJournal(j=>({...j,[today]:e.target.value}))} placeholder="How are you feeling today? Energy levels, sleep, anything notable..." style={{ width:"100%", minHeight:80, background:C.sectionBg, border:`1px solid ${C.border}`, borderRadius:10, padding:"10px 12px", fontSize:14, fontFamily:FONT, color:C.text, outline:"none", resize:"vertical" }} />}
         {!showJournal&&journal[today]&&<p style={{ color:C.textSec, fontSize:14, margin:0, marginTop:8, lineHeight:1.6 }}>{journal[today]}</p>}
-      </Card>
-
-      {/* Tip */}
-      <Card style={{ borderLeft:`3px solid ${C.accent}` }}>
-        <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:8 }}><Icon name="tip" size={15} color={C.accent} /><p style={{ color:C.accent, fontSize:11, fontWeight:700, letterSpacing:"0.08em", margin:0 }}>TODAY'S TIP</p></div>
-        <p style={{ color:C.text, fontSize:14, lineHeight:1.75, margin:0 }}>{DAILY_TIPS[tipIdx]}</p>
-        <button onClick={()=>setTipIdx(i=>(i+1)%DAILY_TIPS.length)} style={{ background:"none", border:"none", color:C.accent, fontSize:13, cursor:"pointer", marginTop:10, fontFamily:FONT, fontWeight:600 }}>↻ Next tip</button>
       </Card>
     </div>
   );
