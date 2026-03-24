@@ -761,9 +761,9 @@ const ScrollPicker = ({ values, selected, onSelect, unit="" }) => {
 };
 
 const OOption = ({ label, desc, selected, onClick }) => (
-  <div onClick={onClick} style={{ border:`1.5px solid ${selected?"#fff":"rgba(255,255,255,0.15)"}`, borderRadius:16, padding:"18px 20px", marginBottom:12, cursor:"pointer", background:selected?"rgba(255,255,255,0.08)":"transparent", transition:"all 0.2s" }}>
-    <p style={{ color:"#fff", fontSize:17, fontWeight:selected?600:400, margin:0 }}>{label}</p>
-    {desc&&<p style={{ color:"rgba(255,255,255,0.5)", fontSize:13, margin:"4px 0 0" }}>{desc}</p>}
+  <div onClick={onClick} style={{ border:`1.5px solid ${selected?"#fff":"rgba(255,255,255,0.15)"}`, borderRadius:14, padding:"14px 18px", marginBottom:10, cursor:"pointer", background:selected?"rgba(255,255,255,0.08)":"transparent", transition:"all 0.2s" }}>
+    <p style={{ color:"#fff", fontSize:16, fontWeight:selected?600:400, margin:0 }}>{label}</p>
+    {desc&&<p style={{ color:"rgba(255,255,255,0.5)", fontSize:12, margin:"3px 0 0" }}>{desc}</p>}
   </div>
 );
 
@@ -919,8 +919,8 @@ const Onboarding = ({ onDone }) => {
         <Header step={step} />
         <div style={{ flex:1, display:"flex", flexDirection:"column", justifyContent:"center" }}>
           {(data.goal==="lose_weight"||data.goal==="all") ? <>
-            <h2 style={{ color:"#fff", fontSize:32, fontWeight:800, margin:"0 0 8px" }}>How fast do you want to lose weight?</h2>
-            <p style={{ color:"rgba(255,255,255,0.5)", fontSize:16, marginBottom:32 }}>Slower is more sustainable — we recommend Moderate</p>
+            <h2 style={{ color:"#fff", fontSize:26, fontWeight:800, margin:"0 0 6px" }}>How fast do you want to lose weight?</h2>
+            <p style={{ color:"rgba(255,255,255,0.5)", fontSize:14, marginBottom:20 }}>Slower is more sustainable — we recommend Moderate</p>
             <OOption label="Steady — 0.25 kg/week" desc="Gentle and sustainable. Best for long term." selected={data.paceId==="slow"} onClick={()=>{ update("paceId","slow"); setTimeout(next,300); }} />
             <OOption label="Moderate — 0.5 kg/week" desc="Recommended. Steady progress without sacrifice." selected={data.paceId==="normal"} onClick={()=>{ update("paceId","normal"); setTimeout(next,300); }} />
             <OOption label="Active — 0.75 kg/week" desc="Faster results. Requires stricter diet." selected={data.paceId==="fast"} onClick={()=>{ update("paceId","fast"); update("paceConfirmed",false); }} />
