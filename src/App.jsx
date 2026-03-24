@@ -1229,7 +1229,7 @@ const TipSplashScreen = ({ tip, onDismiss }) => {
   };
 
   const [visible, setVisible] = React.useState(false);
-  React.useEffect(()=>{ setTimeout(()=>setVisible(true), 50); }, []);
+  React.useEffect(()=>{ setTimeout(()=>setVisible(true), 150); }, []);
 
   return (
     <div
@@ -1267,7 +1267,7 @@ const TipSplashScreen = ({ tip, onDismiss }) => {
       {/* Middle — tip */}
       <div style={{ position:"relative", zIndex:1, marginTop:"-40px",
         opacity: visible ? 1 : 0, transform: visible ? "translateY(0)" : "translateY(20px)",
-        transition:"opacity 0.7s ease 0.2s, transform 0.7s ease 0.2s"
+        transition:"opacity 0.7s ease 0.5s, transform 0.7s ease 0.5s"
       }}>
         <p style={{ color:"rgba(255,255,255,0.4)", fontSize:11, fontWeight:700, letterSpacing:"0.14em", marginBottom:16, textTransform:"uppercase" }}>Today's tip</p>
         <p style={{ color:"#fff", fontSize:34, fontWeight:800, lineHeight:1.25, margin:0, fontFamily:FONT }}>{tip}</p>
@@ -1275,7 +1275,7 @@ const TipSplashScreen = ({ tip, onDismiss }) => {
 
       {/* Bottom — swipe indicator */}
       <div onClick={dismiss} style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:8, cursor:"pointer", position:"relative", zIndex:1,
-        opacity: visible ? 1 : 0, transition:"opacity 0.8s ease 0.4s"
+        opacity: visible ? 1 : 0, transition:"opacity 0.8s ease 0.8s"
       }}>
         <div style={{ width:36, height:4, background:"rgba(255,255,255,0.2)", borderRadius:99 }} />
         <p style={{ color:"rgba(255,255,255,0.3)", fontSize:12, margin:0, letterSpacing:"0.04em" }}>Swipe up or tap to continue</p>
