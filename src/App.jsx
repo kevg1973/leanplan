@@ -1231,22 +1231,32 @@ const TipSplashScreen = ({ tip, onDismiss }) => {
       onTouchEnd={handleTouchEnd}
       style={{
         position:"fixed", inset:0, zIndex:9999,
-        background:"#000",
+        background:"linear-gradient(160deg, #0a0a0a 0%, #0d1117 40%, #0a0f1e 100%)",
         display:"flex", flexDirection:"column",
-        justifyContent:"center", alignItems:"center",
-        padding:"0 32px",
+        justifyContent:"space-between",
+        padding:"80px 32px 60px",
         transform:`translateY(${dismissed ? "-100%" : `-${offsetY}px`})`,
         transition:dismissed?"transform 0.3s ease-in":"none",
-        userSelect:"none"
+        userSelect:"none",
+        fontFamily:FONT,
       }}
     >
-      <div style={{ maxWidth:340, width:"100%", textAlign:"center" }}>
-        <p style={{ color:"rgba(255,255,255,0.4)", fontSize:12, fontWeight:700, letterSpacing:"0.12em", marginBottom:24 }}>TODAY'S TIP</p>
-        <p style={{ color:"#fff", fontSize:24, fontWeight:700, lineHeight:1.4, marginBottom:48 }}>{tip}</p>
-        <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:6 }}>
-          <div style={{ width:32, height:3, background:"rgba(255,255,255,0.3)", borderRadius:99 }} />
-          <p style={{ color:"rgba(255,255,255,0.3)", fontSize:12, margin:0 }}>Swipe up to continue</p>
-        </div>
+      {/* Top — branding */}
+      <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+        <img src="/leanplan_app_icon.png" alt="" style={{ height:36, width:36, borderRadius:9 }} />
+        <span style={{ color:"rgba(255,255,255,0.5)", fontSize:14, fontWeight:600, letterSpacing:"0.02em" }}>LeanPlan</span>
+      </div>
+
+      {/* Middle — tip */}
+      <div>
+        <p style={{ color:"rgba(255,255,255,0.35)", fontSize:11, fontWeight:700, letterSpacing:"0.14em", marginBottom:20, textTransform:"uppercase" }}>Today's tip</p>
+        <p style={{ color:"#fff", fontSize:32, fontWeight:800, lineHeight:1.3, margin:0, fontFamily:FONT }}>{tip}</p>
+      </div>
+
+      {/* Bottom — swipe indicator */}
+      <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:8 }}>
+        <div style={{ width:36, height:4, background:"rgba(255,255,255,0.25)", borderRadius:99 }} />
+        <p style={{ color:"rgba(255,255,255,0.3)", fontSize:12, margin:0, letterSpacing:"0.04em" }}>Swipe up to continue</p>
       </div>
     </div>
   );
