@@ -2155,8 +2155,8 @@ const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDar
           <div>
             <Row label="Account" value="Not signed in" color={C.muted} last />
             <div style={{ padding:"12px 16px" }}>
-              <Btn color={C.accent} onClick={onShowAuth} style={{ width:"100%", marginBottom:8 }}>Sign In / Create Account</Btn>
-              <p style={{ color:C.muted, fontSize:12, textAlign:"center", margin:0 }}>Sync your data across devices</p>
+              <Btn color={C.accent} onClick={onShowAuth} style={{ width:"100%", marginBottom:8 }}>Sign In to Existing Account</Btn>
+              <p style={{ color:C.muted, fontSize:12, textAlign:"center", margin:0 }}>Have an account? Sign in to sync your data across devices</p>
             </div>
           </div>
         )}
@@ -2682,10 +2682,9 @@ const AuthScreen = ({ onAuth, onSkip }) => {
         </div>
 
         {/* Mode tabs */}
-        {mode !== "forgot" && <div style={{ display:"flex", background:C.sectionBg, borderRadius:12, padding:4, marginBottom:24 }}>
-          {[["login","Sign In"],["signup","Create Account"]].map(([m,l])=>(
-            <div key={m} onClick={()=>{setMode(m);setError(null);setMessage(null);}} style={{ flex:1, textAlign:"center", padding:"10px 0", borderRadius:10, background:mode===m?C.card:"transparent", color:mode===m?C.text:C.muted, fontWeight:mode===m?700:400, fontSize:15, cursor:"pointer", transition:"all 0.2s" }}>{l}</div>
-          ))}
+        {mode !== "forgot" && <div style={{ marginBottom:24 }}>
+          <h2 style={{ color:C.text, fontSize:22, fontWeight:700, margin:0 }}>Sign in to your account</h2>
+          <p style={{ color:C.muted, fontSize:14, margin:"6px 0 0" }}>Your plan and data will sync to this device</p>
         </div>}
 
         {mode === "forgot" && <div style={{ marginBottom:24 }}>
@@ -3056,9 +3055,14 @@ function AppInner() {
       // Clear fitness data but keep Pro status
       localStorage.removeItem("leanplan_v4");
       localStorage.removeItem("leanplan_lifts");
+      localStorage.removeItem("leanplan_trial_start");
+      localStorage.removeItem("leanplan_pro");
+      localStorage.removeItem("leanplan_gen_count");
+      localStorage.removeItem("leanplan_disliked_meals");
+      localStorage.removeItem("leanplan_liked_meals");
       setProfile(null); setEntries([]); setFavourites([]); setRemoved([]);
       setMealLog({}); setWorkoutLog({}); setWater({}); setJournal({}); setMeasurements([]);
-      // isPro and proData stay intact
+      setIsPro(false); setProData(null);
     } else {
       if (!window.confirm("Reset all data? This cannot be undone.")) return;
       localStorage.removeItem("leanplan_v4");
