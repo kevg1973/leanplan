@@ -2225,7 +2225,7 @@ const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDar
 
       <Section title="Goals">
         <Row label="Main goal" value={profile.goal?.replace("_"," ")} onClick={()=>startEdit("goal")} />
-        <Row label="Weight target" value={`${profile.targetLbs/14} stone (${profile.targetLbs} lbs)`} onClick={()=>startEdit("weight")} />
+        <Row label="Weight target" value={`${toKg(profile.startWeightLbs - profile.targetLbs)} kg target`} onClick={()=>startEdit("weight")} />
         <Row label="Weekly pace" value={`${getPace(profile.paceId||"normal").lbs} lbs/wk — ${getPace(profile.paceId||"normal").label}`} onClick={()=>startEdit("weight")} last />
       </Section>
 
