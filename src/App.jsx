@@ -833,15 +833,15 @@ const ScrollPicker = ({ values, selected, onSelect, unit="" }) => {
 };
 
 const OOption = ({ label, desc, selected, onClick }) => (
-  <div onClick={onClick} style={{ border:`1.5px solid ${selected?"#fff":"rgba(255,255,255,0.15)"}`, borderRadius:14, padding:"14px 18px", marginBottom:10, cursor:"pointer", background:selected?"rgba(255,255,255,0.08)":"transparent", transition:"all 0.2s" }}>
-    <p style={{ color:"#fff", fontSize:16, fontWeight:selected?600:400, margin:0 }}>{label}</p>
+  <div onClick={onClick} style={{ border:`1.5px solid ${selected?"#fff":"rgba(255,255,255,0.15)"}`, borderRadius:14, padding:"14px 18px", marginBottom:10, cursor:"pointer", background:selected?"rgba(255,255,255,0.08)":"transparent" }}>
+    <p style={{ color:"#fff", fontSize:16, fontWeight:600, margin:0 }}>{label}</p>
     {desc&&<p style={{ color:"rgba(255,255,255,0.5)", fontSize:12, margin:"3px 0 0" }}>{desc}</p>}
   </div>
 );
 
 const OChip = ({ label, selected, onClick, color="#fff" }) => (
   <div onClick={onClick} style={{ border:`1.5px solid ${selected?"#fff":"rgba(255,255,255,0.2)"}`, borderRadius:99, padding:"10px 18px", cursor:"pointer", background:selected?"rgba(255,255,255,0.15)":"transparent", display:"inline-block", margin:"0 8px 8px 0" }}>
-    <span style={{ color:"#fff", fontSize:14, fontWeight:selected?600:400 }}>{label}</span>
+    <span style={{ color:"#fff", fontSize:14, fontWeight:600 }}>{label}</span>
   </div>
 );
 
