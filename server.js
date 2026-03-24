@@ -38,16 +38,13 @@ app.use((req, res, next) => {
   if (req.method === "OPTIONS") return res.sendStatus(200);
   next();
 });
-// Serve sw.js and manifest.json directly from public folder as fallback
+// Serve sw.js with required Service-Worker-Allowed header
 app.get("/sw.js", (req, res) => {
   res.setHeader("Content-Type", "application/javascript");
   res.setHeader("Service-Worker-Allowed", "/");
-  res.sendFile(join(__dirname, "public", "sw.js"));
-});
-
-app.get("/manifest.json", (req, res) => {
-  res.setHeader("Content-Type", "application/manifest+json");
-  res.sendFile(join(__dirname, "public", "manifest.json"));
+  res.sendFile(join(__dirname, "dist", "sw.js"), err => {
+    if (err) res.status(404).send("sw.js not found");
+  });
 });
 
 app.use(express.static(join(__dirname, "dist")));
