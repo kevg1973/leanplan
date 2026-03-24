@@ -1250,11 +1250,10 @@ const TipSplashScreen = ({ tip, onDismiss }) => {
         overflow:"hidden",
       }}
     >
-      {/* Background glow effects */}
+      {/* Background image */}
       <div style={{ position:"absolute", inset:0, pointerEvents:"none", zIndex:0 }}>
-        <div style={{ position:"absolute", top:"-20%", left:"-20%", width:"70%", height:"70%", background:"radial-gradient(circle, rgba(0,122,255,0.18) 0%, transparent 70%)", borderRadius:"50%" }} />
-        <div style={{ position:"absolute", bottom:"10%", right:"-10%", width:"60%", height:"60%", background:"radial-gradient(circle, rgba(88,86,214,0.15) 0%, transparent 70%)", borderRadius:"50%" }} />
-        <div style={{ position:"absolute", top:"40%", left:"30%", width:"40%", height:"40%", background:"radial-gradient(circle, rgba(0,122,255,0.08) 0%, transparent 70%)", borderRadius:"50%" }} />
+        <img src="/splash_bg.png" alt="" style={{ width:"100%", height:"100%", objectFit:"cover", opacity:0.6 }} />
+        <div style={{ position:"absolute", inset:0, background:"linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.5) 60%, rgba(0,0,0,0.8) 100%)" }} />
       </div>
 
       {/* Top — branding */}
