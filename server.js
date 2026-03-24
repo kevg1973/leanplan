@@ -38,18 +38,19 @@ app.use((req, res, next) => {
   if (req.method === "OPTIONS") return res.sendStatus(200);
   next();
 });
-app.use(express.static(join(__dirname, "dist")));
-
-// Explicitly serve PWA files with correct headers
+// Serve sw.js and manifest.json directly from public folder as fallback
 app.get("/sw.js", (req, res) => {
   res.setHeader("Content-Type", "application/javascript");
   res.setHeader("Service-Worker-Allowed", "/");
-  res.sendFile(join(__dirname, "dist", "sw.js"));
+  res.sendFile(join(__dirname, "public", "sw.js"));
 });
+
 app.get("/manifest.json", (req, res) => {
   res.setHeader("Content-Type", "application/manifest+json");
-  res.sendFile(join(__dirname, "dist", "manifest.json"));
+  res.sendFile(join(__dirname, "public", "manifest.json"));
 });
+
+app.use(express.static(join(__dirname, "dist")));
 
 // ── Create Stripe checkout session ───────────────────────────────────────────
 app.post("/api/stripe/checkout", async (req, res) => {
