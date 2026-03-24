@@ -2942,7 +2942,7 @@ function AppInner() {
       .then(r => r.json())
       .then(data => {
         if (data.bypass) {
-          console.log("PRO SET: bypass"); setIsPro(true);
+          setIsPro(true);
           setProData({ plan:"annual", customerId:"bypass", subscriptionId:"bypass" });
         }
       })
@@ -2956,7 +2956,7 @@ function AppInner() {
         .then(r => r.json())
         .then(data => {
           if (data.pro) {
-            console.log("PRO SET: stripe verify"); setIsPro(true);
+            setIsPro(true);
             setProData({ customerId: data.customerId, subscriptionId: data.subscriptionId, plan: data.plan });
             localStorage.setItem("leanplan_pro", JSON.stringify({ isPro: true, customerId: data.customerId, subscriptionId: data.subscriptionId, plan: data.plan }));
           }
@@ -2969,7 +2969,7 @@ function AppInner() {
       const savedPro = localStorage.getItem("leanplan_pro");
       if (savedPro) {
         const pd = JSON.parse(savedPro);
-        if (pd.isPro) { console.log("PRO SET: localStorage leanplan_pro"); setIsPro(true); setProData(pd); }
+        if (pd.isPro) { setIsPro(true); setProData(pd); }
       }
     } catch(e){}
   }, []);
@@ -3012,7 +3012,7 @@ function AppInner() {
       if (data.journal && Object.keys(data.journal).length) setJournal(data.journal);
       if (data.measurements?.length) setMeasurements(data.measurements);
       if (data.dark_override !== null && data.dark_override !== undefined) setDarkOverride(data.dark_override);
-      if (data.is_pro) { console.log("PRO SET: supabase is_pro"); setIsPro(true); setProData({ customerId: data.stripe_customer_id, subscriptionId: data.stripe_subscription_id, plan: data.stripe_plan }); }
+      if (data.is_pro) { setIsPro(true); setProData({ customerId: data.stripe_customer_id, subscriptionId: data.stripe_subscription_id, plan: data.stripe_plan }); }
     } catch(e){ console.error("Supabase load error:", e); }
   };
 
