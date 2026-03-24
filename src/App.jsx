@@ -96,10 +96,10 @@ const fmtDate = d => new Date(d).toLocaleDateString("en-GB",{day:"numeric",month
 const DAY_NAMES = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
 
 const PACE_OPTIONS = [
-  { id:"slow",   label:"Steady",     lbs:0.5, color:C.green,  desc:"0.25 kg/week — very sustainable, minimal hunger.", warning:null },
-  { id:"normal", label:"Moderate",   lbs:1,   color:C.accent, desc:"1 lb/week — the gold standard for sustainable fat loss.", warning:null },
-  { id:"fast",   label:"Active",     lbs:1.5, color:C.orange, desc:"0.75 kg/week — achievable with consistent training.", warning:"⚠️ Requires a strict 750 cal/day deficit. Keep protein at 120g+ to protect muscle." },
-  { id:"vfast",  label:"Aggressive", lbs:2,   color:C.red,    desc:"1 kg/week — maximum recommended rate.", warning:"🚨 Upper safe limit. Risks muscle loss and fatigue. Requires 1000 cal/day deficit. Consult your GP if you have health concerns." },
+  { id:"slow",   label:"Steady",     lbs:0.5512, kgPerWk:0.25, color:C.green,  desc:"0.25 kg/week — very sustainable, minimal hunger.", warning:null },
+  { id:"normal", label:"Moderate",   lbs:1.1023, kgPerWk:0.5,  color:C.accent, desc:"0.5 kg/week — the gold standard for sustainable fat loss.", warning:null },
+  { id:"fast",   label:"Active",     lbs:1.6535, kgPerWk:0.75, color:C.orange, desc:"0.75 kg/week — achievable with consistent training.", warning:"⚠️ Requires a strict 375 cal/day deficit. Keep protein at 120g+ to protect muscle." },
+  { id:"vfast",  label:"Aggressive", lbs:2.2046, kgPerWk:1.0,  color:C.red,    desc:"1 kg/week — maximum recommended rate.", warning:"🚨 Upper safe limit. Risks muscle loss and fatigue. Requires 500 cal/day deficit. Consult your GP if you have health concerns." },
 ];
 const getPace = id => PACE_OPTIONS.find(p=>p.id===id)||PACE_OPTIONS[1];
 
@@ -705,9 +705,9 @@ const PacePicker = ({ value, onChange, targetLbs }) => {
           <div key={p.id} onClick={()=>onChange(p.id)} style={{ flex:"1 1 calc(50% - 4px)", background:value===p.id?`${p.color}15`:C.card, border:`2px solid ${value===p.id?p.color:C.border}`, borderRadius:12, padding:"10px 12px", cursor:"pointer", transition:"all 0.2s" }}>
             <div style={{ display:"flex", justifyContent:"space-between", marginBottom:2 }}>
               <span style={{ color:value===p.id?p.color:C.text, fontWeight:700, fontSize:14 }}>{p.label}</span>
-              <span style={{ color:p.color, fontSize:12, fontWeight:700 }}>{(p.lbs*0.453592).toFixed(2)} kg/wk</span>
+              <span style={{ color:p.color, fontSize:12, fontWeight:700 }}>{p.kgPerWk} kg/wk</span>
             </div>
-            <div style={{ color:C.muted, fontSize:11 }}>{Math.round(targetLbs/p.lbs)} wks</div>
+            <div style={{ color:C.muted, fontSize:11 }}>{Math.round((targetLbs*0.453592)/p.kgPerWk)} wks</div>
           </div>
         ))}
       </div>
@@ -1219,7 +1219,7 @@ const TodayTab = ({ profile, entries, mealLog, workoutLog, water, setWater, jour
       <div style={{ background:`linear-gradient(145deg, ${C.accent}, #5ac8fa)`, borderRadius:20, padding:"20px 18px", marginBottom:16, color:"#fff" }}>
         <p style={{ opacity:0.85, fontSize:14, margin:"0 0 4px" }}>Hello{profile.name?`, ${profile.name}`:""}  👋</p>
         <h2 style={{ fontSize:26, fontWeight:700, margin:"0 0 4px" }}>{profile.targetLbs>0?`Lose ${toKg(profile.targetLbs)} kg`:profile.goal?.replace(/_/g," ")||"Get Healthy"}</h2>
-        <p style={{ opacity:0.8, fontSize:13, margin:"0 0 14px" }}>{lostKg} kg lost{profile.targetLbs>0?` · ${(Math.max(0,profile.targetLbs-lost)*0.453592).toFixed(1)} to go · ${pct}% · ~${eta>0?eta:0} wks`:""} · {(pace.lbs*0.453592).toFixed(2)} kg/wk</p>
+        <p style={{ opacity:0.8, fontSize:13, margin:"0 0 14px" }}>{lostKg} kg lost{profile.targetLbs>0?` · ${(Math.max(0,profile.targetLbs-lost)*0.453592).toFixed(1)} to go · ${pct}% · ~${eta>0?eta:0} wks`:""} · {pace.kgPerWk} kg/wk</p>
         <div style={{ background:"rgba(255,255,255,0.25)", borderRadius:99, height:8, overflow:"hidden" }}>
           <div style={{ width:`${pct}%`, height:"100%", background:"rgba(255,255,255,0.9)", borderRadius:99, transition:"width 0.6s" }} />
         </div>
@@ -2167,7 +2167,7 @@ const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDar
         <div style={{ marginBottom:14 }}>
           <p style={{ color:C.muted, fontSize:13, marginBottom:8 }}>Weight loss target</p>
           <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
-            {[7,14,21,28].map(lbs=><Chip key={lbs} color={C.accent} active={tempData.targetLbs===lbs} onClick={()=>setTempData(d=>({...d,targetLbs:lbs}))}>{lbs/14} stone</Chip>)}
+            {[3,5,7,10,15,20].map(kg=>{ const lbs=parseFloat((kg*2.20462).toFixed(1)); return <Chip key={kg} color={C.accent} active={Math.abs((tempData.targetLbs||0)-lbs)<0.6} onClick={()=>setTempData(d=>({...d,targetLbs:lbs}))}>{kg} kg</Chip>; })}
           </div>
         </div>
         <div>
