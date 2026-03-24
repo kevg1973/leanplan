@@ -96,10 +96,10 @@ const fmtDate = d => new Date(d).toLocaleDateString("en-GB",{day:"numeric",month
 const DAY_NAMES = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
 
 const PACE_OPTIONS = [
-  { id:"slow",   label:"Steady",     lbs:0.5, color:C.green,  desc:"0.5 lbs/week — very sustainable, minimal hunger.", warning:null },
+  { id:"slow",   label:"Steady",     lbs:0.5, color:C.green,  desc:"0.25 kg/week — very sustainable, minimal hunger.", warning:null },
   { id:"normal", label:"Moderate",   lbs:1,   color:C.accent, desc:"1 lb/week — the gold standard for sustainable fat loss.", warning:null },
-  { id:"fast",   label:"Active",     lbs:1.5, color:C.orange, desc:"1.5 lbs/week — achievable with consistent training.", warning:"⚠️ Requires a strict 750 cal/day deficit. Keep protein at 120g+ to protect muscle." },
-  { id:"vfast",  label:"Aggressive", lbs:2,   color:C.red,    desc:"2 lbs/week — maximum recommended rate.", warning:"🚨 Upper safe limit. Risks muscle loss and fatigue. Requires 1000 cal/day deficit. Consult your GP if you have health concerns." },
+  { id:"fast",   label:"Active",     lbs:1.5, color:C.orange, desc:"0.75 kg/week — achievable with consistent training.", warning:"⚠️ Requires a strict 750 cal/day deficit. Keep protein at 120g+ to protect muscle." },
+  { id:"vfast",  label:"Aggressive", lbs:2,   color:C.red,    desc:"1 kg/week — maximum recommended rate.", warning:"🚨 Upper safe limit. Risks muscle loss and fatigue. Requires 1000 cal/day deficit. Consult your GP if you have health concerns." },
 ];
 const getPace = id => PACE_OPTIONS.find(p=>p.id===id)||PACE_OPTIONS[1];
 
@@ -705,9 +705,9 @@ const PacePicker = ({ value, onChange, targetLbs }) => {
           <div key={p.id} onClick={()=>onChange(p.id)} style={{ flex:"1 1 calc(50% - 4px)", background:value===p.id?`${p.color}15`:C.card, border:`2px solid ${value===p.id?p.color:C.border}`, borderRadius:12, padding:"10px 12px", cursor:"pointer", transition:"all 0.2s" }}>
             <div style={{ display:"flex", justifyContent:"space-between", marginBottom:2 }}>
               <span style={{ color:value===p.id?p.color:C.text, fontWeight:700, fontSize:14 }}>{p.label}</span>
-              <span style={{ color:p.color, fontSize:12, fontWeight:700 }}>{p.lbs} lb/wk</span>
+              <span style={{ color:p.color, fontSize:12, fontWeight:700 }}>{(p.lbs*0.453592).toFixed(2)} kg/wk</span>
             </div>
-            <div style={{ color:C.muted, fontSize:11 }}>{Math.round(targetLbs/p.lbs)} wks / {(targetLbs*0.453592).toFixed(1)} kg</div>
+            <div style={{ color:C.muted, fontSize:11 }}>{Math.round(targetLbs/p.lbs)} wks</div>
           </div>
         ))}
       </div>
@@ -925,6 +925,12 @@ const Onboarding = ({ onDone }) => {
             <OOption label="Moderate — 0.5 kg/week" desc="Recommended. Steady progress without sacrifice." selected={data.paceId==="normal"} onClick={()=>{ update("paceId","normal"); setTimeout(next,300); }} />
             <OOption label="Active — 0.75 kg/week" desc="Faster results. Requires stricter diet." selected={data.paceId==="fast"} onClick={()=>{ update("paceId","fast"); setTimeout(next,300); }} />
             <OOption label="Aggressive — 1 kg/week" desc="Maximum speed. Not recommended long term." selected={data.paceId==="vfast"} onClick={()=>{ update("paceId","vfast"); setTimeout(next,300); }} />
+            {data.paceId==="fast"&&<div style={{ background:"rgba(255,149,0,0.15)", border:"1px solid rgba(255,149,0,0.4)", borderRadius:12, padding:"12px 16px", marginTop:8 }}>
+              <p style={{ color:"#ff9500", fontSize:13, margin:0, lineHeight:1.6 }}>⚠️ Requires a 375 cal/day deficit. Keep protein at 120g+ to protect muscle.</p>
+            </div>}
+            {data.paceId==="vfast"&&<div style={{ background:"rgba(255,69,58,0.15)", border:"1px solid rgba(255,69,58,0.4)", borderRadius:12, padding:"12px 16px", marginTop:8 }}>
+              <p style={{ color:"#ff453a", fontSize:13, margin:0, lineHeight:1.6 }}>⚠️ Requires a strict 500 cal/day deficit. Only recommended if you have significant weight to lose. High protein essential.</p>
+            </div>}
           </> : <>
             <h2 style={{ color:"#fff", fontSize:32, fontWeight:800, margin:"0 0 16px" }}>How many workouts per week?</h2>
             {[2,3,4,5].map(n=><OOption key={n} label={`${n} workouts per week`} selected={data.workoutsPerWeek===n} onClick={()=>{ update("workoutsPerWeek",n); setTimeout(next,300); }} />)}
@@ -1085,7 +1091,7 @@ const TodayTab = ({ profile, entries, mealLog, workoutLog, water, setWater, jour
       <div style={{ background:`linear-gradient(145deg, ${C.accent}, #5ac8fa)`, borderRadius:20, padding:"20px 18px", marginBottom:16, color:"#fff" }}>
         <p style={{ opacity:0.85, fontSize:14, margin:"0 0 4px" }}>Hello{profile.name?`, ${profile.name}`:""}  👋</p>
         <h2 style={{ fontSize:26, fontWeight:700, margin:"0 0 4px" }}>{profile.targetLbs>0?`Lose ${toKg(profile.targetLbs)} kg`:profile.goal?.replace(/_/g," ")||"Get Healthy"}</h2>
-        <p style={{ opacity:0.8, fontSize:13, margin:"0 0 14px" }}>{lostKg} kg lost{profile.targetLbs>0?` · ${(Math.max(0,profile.targetLbs-lost)*0.453592).toFixed(1)} to go · ${pct}% · ~${eta>0?eta:0} wks`:""} · {pace.lbs} lb/wk</p>
+        <p style={{ opacity:0.8, fontSize:13, margin:"0 0 14px" }}>{lostKg} kg lost{profile.targetLbs>0?` · ${(Math.max(0,profile.targetLbs-lost)*0.453592).toFixed(1)} to go · ${pct}% · ~${eta>0?eta:0} wks`:""} · {(pace.lbs*0.453592).toFixed(2)} kg/wk</p>
         <div style={{ background:"rgba(255,255,255,0.25)", borderRadius:99, height:8, overflow:"hidden" }}>
           <div style={{ width:`${pct}%`, height:"100%", background:"rgba(255,255,255,0.9)", borderRadius:99, transition:"width 0.6s" }} />
         </div>
@@ -1899,7 +1905,7 @@ const TrackTab = ({ profile, entries, setEntries, measurements, setMeasurements 
           </div>
           <ProgressBar value={lost} max={profile.targetLbs} color={C.accent} height={10} />
           <div style={{ display:"flex", justifyContent:"space-between", marginTop:6, fontSize:11, color:C.muted }}>
-            <span>{profile.startWeightLbs} lbs</span><span>Goal: {target.toFixed(1)} lbs</span>
+            <span>{startKg} kg start</span><span>Goal: {(target*0.453592).toFixed(1)} kg</span>
           </div>
         </div>
 
