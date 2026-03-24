@@ -807,10 +807,16 @@ const ScrollPicker = ({ values, selected, onSelect, unit="" }) => {
     }
   }, []);
 
+  const lastIdx = React.useRef(-1);
   const handleScroll = () => {
     if (!ref.current) return;
     const idx = Math.round(ref.current.scrollTop / itemH);
-    if (values[idx] !== undefined) onSelect(values[idx]);
+    if (values[idx] !== undefined && idx !== lastIdx.current) {
+      lastIdx.current = idx;
+      onSelect(values[idx]);
+      // Haptic feedback
+      if (navigator.vibrate) navigator.vibrate(10);
+    }
   };
 
   return (
