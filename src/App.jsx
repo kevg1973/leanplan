@@ -2318,7 +2318,7 @@ const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDar
             )}
           </div>
         </div>
-      ) : (
+      ) : proData?.customerId === "bypass" ? null : (
         <Btn onClick={onUpgrade} color="#5856d6" style={{ width:"100%", marginBottom:16 }}>✦ Upgrade to Pro from £4.99/mo</Btn>
       )}
 
