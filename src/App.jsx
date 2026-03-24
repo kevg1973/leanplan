@@ -1261,7 +1261,7 @@ const TipSplashScreen = ({ tip, onDismiss }) => {
         opacity: visible ? 1 : 0, transform: visible ? "translateY(0)" : "translateY(10px)",
         transition:"opacity 0.6s ease 0.1s, transform 0.6s ease 0.1s"
       }}>
-        <img src="/leanplan_logo_light.png" alt="LeanPlan" style={{ height:42, objectFit:"contain" }} />
+        <img src="/leanplan_splash_logo.png" alt="LeanPlan" style={{ height:42, objectFit:"contain" }} />
       </div>
 
       {/* Middle — tip */}
