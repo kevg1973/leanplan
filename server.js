@@ -29,6 +29,15 @@ const APP_URL = process.env.APP_URL || "https://www.leanplan.uk";
 // ── Stripe webhook needs raw body ─────────────────────────────────────────────
 app.use("/api/stripe/webhook", express.raw({ type: "application/json" }));
 app.use(express.json());
+
+// CORS headers
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Headers", "Content-Type");
+  res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  if (req.method === "OPTIONS") return res.sendStatus(200);
+  next();
+});
 app.use(express.static(join(__dirname, "dist")));
 
 // ── Create Stripe checkout session ───────────────────────────────────────────
