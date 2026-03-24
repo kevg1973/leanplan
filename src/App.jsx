@@ -721,7 +721,7 @@ const PacePicker = ({ value, onChange, targetLbs }) => {
 };
 
 // ── Onboarding ────────────────────────────────────────────────────────────────
-const TOTAL_STEPS = 13;
+const TOTAL_STEPS = 14;
 
 // Scroll picker component
 
@@ -1055,41 +1055,49 @@ const Onboarding = ({ onDone }) => {
         <OBtn onClick={next}>Continue →</OBtn>
       </div>}
 
-      {/* Step 11 — Diet */}
-      {step===11&&<div style={{ flex:1, display:"flex", flexDirection:"column", padding:"0 24px 48px", overflowY:"auto" }}>
+      {/* Step 11 — Diet type */}
+      {step===11&&<div style={{ flex:1, display:"flex", flexDirection:"column", padding:"0 24px 48px" }}>
         <Header step={step} />
-        <h2 style={{ color:"#fff", fontSize:32, fontWeight:800, margin:"0 0 8px", padding:"0 0 0" }}>Your diet</h2>
-        <p style={{ color:"rgba(255,255,255,0.5)", fontSize:16, marginBottom:24 }}>We'll generate meals that work for you</p>
-        <div style={{ marginBottom:20 }}>
-          <p style={{ color:"rgba(255,255,255,0.6)", fontSize:13, fontWeight:600, letterSpacing:"0.06em", marginBottom:12 }}>DIET TYPE</p>
-          <OOption label="Omnivore" desc="Eat everything" selected={data.dietType==="omnivore"} onClick={()=>update("dietType","omnivore")} />
-          <OOption label="Pescatarian" desc="Fish and seafood, no meat" selected={data.dietType==="pescatarian"} onClick={()=>update("dietType","pescatarian")} />
-          <OOption label="Vegetarian" desc="No meat or fish" selected={data.dietType==="vegetarian"} onClick={()=>update("dietType","vegetarian")} />
-          <OOption label="Vegan" desc="No animal products" selected={data.dietType==="vegan"} onClick={()=>update("dietType","vegan")} />
+        <div style={{ flex:1, paddingTop:8 }}>
+          <h2 style={{ color:"#fff", fontSize:32, fontWeight:800, margin:"0 0 8px" }}>Your diet</h2>
+          <p style={{ color:"rgba(255,255,255,0.5)", fontSize:16, marginBottom:32 }}>We'll generate meals that work for you</p>
+          <OOption label="Omnivore" desc="Eat everything" selected={data.dietType==="omnivore"} onClick={()=>{ update("dietType","omnivore"); setTimeout(next,300); }} />
+          <OOption label="Pescatarian" desc="Fish and seafood, no meat" selected={data.dietType==="pescatarian"} onClick={()=>{ update("dietType","pescatarian"); setTimeout(next,300); }} />
+          <OOption label="Vegetarian" desc="No meat or fish" selected={data.dietType==="vegetarian"} onClick={()=>{ update("dietType","vegetarian"); setTimeout(next,300); }} />
+          <OOption label="Vegan" desc="No animal products" selected={data.dietType==="vegan"} onClick={()=>{ update("dietType","vegan"); setTimeout(next,300); }} />
         </div>
-        <div style={{ marginBottom:20 }}>
-          <p style={{ color:"rgba(255,255,255,0.6)", fontSize:13, fontWeight:600, letterSpacing:"0.06em", marginBottom:12 }}>DAIRY</p>
-          <div style={{ display:"flex", flexWrap:"wrap" }}>
-            {[["full_dairy","Full dairy"],["lactose_free","Lactose-free"],["dairy_free","Dairy-free"]].map(([v,l])=><OChip key={v} label={l} selected={data.dairyPref===v} onClick={()=>update("dairyPref",v)} />)}
+      </div>}
+
+      {/* Step 12 — Dietary preferences */}
+      {step===12&&<div style={{ flex:1, display:"flex", flexDirection:"column", padding:"0 24px 48px" }}>
+        <Header step={step} />
+        <div style={{ flex:1, paddingTop:8 }}>
+          <h2 style={{ color:"#fff", fontSize:32, fontWeight:800, margin:"0 0 8px" }}>Dietary preferences</h2>
+          <p style={{ color:"rgba(255,255,255,0.5)", fontSize:16, marginBottom:24 }}>We'll make sure your meals avoid anything that doesn't work for you</p>
+          <div style={{ marginBottom:20 }}>
+            <p style={{ color:"rgba(255,255,255,0.6)", fontSize:13, fontWeight:600, letterSpacing:"0.06em", marginBottom:12 }}>DAIRY</p>
+            <div style={{ display:"flex", flexWrap:"wrap" }}>
+              {[["full_dairy","Full dairy"],["lactose_free","Lactose-free"],["dairy_free","Dairy-free"]].map(([v,l])=><OChip key={v} label={l} selected={data.dairyPref===v} onClick={()=>update("dairyPref",v)} />)}
+            </div>
           </div>
-        </div>
-        <div style={{ marginBottom:20 }}>
-          <p style={{ color:"rgba(255,255,255,0.6)", fontSize:13, fontWeight:600, letterSpacing:"0.06em", marginBottom:12 }}>GLUTEN</p>
-          <div style={{ display:"flex", flexWrap:"wrap" }}>
-            {[["regular","Regular"],["gluten_free","Gluten-free"]].map(([v,l])=><OChip key={v} label={l} selected={data.glutenPref===v} onClick={()=>update("glutenPref",v)} />)}
+          <div style={{ marginBottom:20 }}>
+            <p style={{ color:"rgba(255,255,255,0.6)", fontSize:13, fontWeight:600, letterSpacing:"0.06em", marginBottom:12 }}>GLUTEN</p>
+            <div style={{ display:"flex", flexWrap:"wrap" }}>
+              {[["regular","Regular"],["gluten_free","Gluten-free"]].map(([v,l])=><OChip key={v} label={l} selected={data.glutenPref===v} onClick={()=>update("glutenPref",v)} />)}
+            </div>
           </div>
-        </div>
-        <div style={{ marginBottom:24 }}>
-          <p style={{ color:"rgba(255,255,255,0.6)", fontSize:13, fontWeight:600, letterSpacing:"0.06em", marginBottom:12 }}>ALLERGIES</p>
-          <div style={{ display:"flex", flexWrap:"wrap" }}>
-            {ALLERGENS.map(a=><OChip key={a} label={a} selected={data.allergies.includes(a)} onClick={()=>toggleArr("allergies",a)} />)}
+          <div style={{ marginBottom:24 }}>
+            <p style={{ color:"rgba(255,255,255,0.6)", fontSize:13, fontWeight:600, letterSpacing:"0.06em", marginBottom:12 }}>ALLERGIES</p>
+            <div style={{ display:"flex", flexWrap:"wrap" }}>
+              {ALLERGENS.map(a=><OChip key={a} label={a} selected={data.allergies.includes(a)} onClick={()=>toggleArr("allergies",a)} />)}
+            </div>
           </div>
         </div>
         <OBtn onClick={next}>Continue →</OBtn>
       </div>}
 
-      {/* Step 12 — Supplements */}
-      {step===12&&<div style={{ flex:1, display:"flex", flexDirection:"column", padding:"0 24px 48px", overflowY:"auto" }}>
+      {/* Step 13 — Supplements */}
+      {step===13&&<div style={{ flex:1, display:"flex", flexDirection:"column", padding:"0 24px 48px", overflowY:"auto" }}>
         <Header step={step} />
         <h2 style={{ color:"#fff", fontSize:26, fontWeight:800, margin:"0 0 8px" }}>Are you open to supplements?</h2>
         <p style={{ color:"rgba(255,255,255,0.5)", fontSize:14, marginBottom:20 }}>Especially useful if you're over 40. We'll only recommend what's relevant to you.</p>
@@ -1113,8 +1121,8 @@ const Onboarding = ({ onDone }) => {
         </div>
       </div>}
 
-      {/* Step 13 — Equipment & building plan */}
-      {step===13&&<div style={{ flex:1, display:"flex", flexDirection:"column", padding:"0 24px 48px" }}>
+      {/* Step 14 — Equipment & building plan */}
+      {step===14&&<div style={{ flex:1, display:"flex", flexDirection:"column", padding:"0 24px 48px" }}>
         <Header step={step} />
         <div style={{ flex:1, paddingTop:8 }}>
           <h2 style={{ color:"#fff", fontSize:32, fontWeight:800, margin:"0 0 8px" }}>What equipment do you have?</h2>
