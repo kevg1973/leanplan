@@ -840,8 +840,9 @@ const OOption = ({ label, desc, selected, onClick }) => (
 );
 
 const OChip = ({ label, selected, onClick, color="#fff" }) => (
-  <div onClick={onClick} style={{ border:`1.5px solid ${selected?"#fff":"rgba(255,255,255,0.2)"}`, borderRadius:99, padding:"10px 18px", cursor:"pointer", background:selected?"rgba(255,255,255,0.15)":"transparent", display:"inline-block", margin:"0 8px 8px 0" }}>
-    <span style={{ color:"#fff", fontSize:14, fontWeight:600 }}>{label}</span>
+  <div onClick={onClick} style={{ border:`1.5px solid ${selected?"#fff":"rgba(255,255,255,0.2)"}`, borderRadius:99, padding:"10px 18px", cursor:"pointer", background:selected?"rgba(255,255,255,0.15)":"transparent", display:"inline-flex", alignItems:"center", margin:"0 8px 8px 0", position:"relative" }}>
+    <span style={{ color:"#fff", fontSize:14, fontWeight:600, visibility:"hidden", pointerEvents:"none" }}>{label}</span>
+    <span style={{ color:"#fff", fontSize:14, fontWeight:selected?600:400, position:"absolute", left:"18px" }}>{label}</span>
   </div>
 );
 
