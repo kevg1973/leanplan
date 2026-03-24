@@ -1197,6 +1197,59 @@ const Chart = ({ entries, startWeight, targetWeight, color=C.accent }) => {
 };
 
 // ── TODAY TAB ─────────────────────────────────────────────────────────────────
+
+// ── Daily Tip Splash Screen ───────────────────────────────────────────────────
+const TipSplashScreen = ({ tip, onDismiss }) => {
+  const [startY, setStartY] = React.useRef(null);
+  const [offsetY, setOffsetY] = React.useState(0);
+  const [dismissed, setDismissed] = React.useState(false);
+
+  const handleTouchStart = (e) => {
+    startY.current = e.touches[0].clientY;
+  };
+
+  const handleTouchMove = (e) => {
+    const dy = startY.current - e.touches[0].clientY;
+    if (dy > 0) setOffsetY(dy);
+  };
+
+  const handleTouchEnd = () => {
+    if (offsetY > 80) {
+      setDismissed(true);
+      setTimeout(onDismiss, 300);
+    } else {
+      setOffsetY(0);
+    }
+  };
+
+  return (
+    <div
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      style={{
+        position:"fixed", inset:0, zIndex:9999,
+        background:"#000",
+        display:"flex", flexDirection:"column",
+        justifyContent:"center", alignItems:"center",
+        padding:"0 32px",
+        transform:`translateY(${dismissed ? "-100%" : `-${offsetY}px`})`,
+        transition:dismissed?"transform 0.3s ease-in":"none",
+        userSelect:"none"
+      }}
+    >
+      <div style={{ maxWidth:340, width:"100%", textAlign:"center" }}>
+        <p style={{ color:"rgba(255,255,255,0.4)", fontSize:12, fontWeight:700, letterSpacing:"0.12em", marginBottom:24 }}>TODAY'S TIP</p>
+        <p style={{ color:"#fff", fontSize:24, fontWeight:700, lineHeight:1.4, marginBottom:48 }}>{tip}</p>
+        <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:6 }}>
+          <div style={{ width:32, height:3, background:"rgba(255,255,255,0.3)", borderRadius:99 }} />
+          <p style={{ color:"rgba(255,255,255,0.3)", fontSize:12, margin:0 }}>Swipe up to continue</p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const TodayTab = ({ profile, entries, mealLog, workoutLog, water, setWater, journal, setJournal, measurements }) => {
   const [tipIdx, setTipIdx] = useState(()=>Math.floor(Math.random()*DAILY_TIPS.length));
   const [showJournal, setShowJournal] = useState(false);
@@ -1316,13 +1369,6 @@ const TodayTab = ({ profile, entries, mealLog, workoutLog, water, setWater, jour
           <div style={{ flex:1, textAlign:"center", padding:"8px 0" }}><div style={{ color:C.orange, fontSize:17, fontWeight:700 }}>{pace.kgPerWk}kg</div><div style={{ color:C.muted, fontSize:11 }}>per week</div></div>
         </div>}
       </Card>}
-
-      {/* Tip */}
-      <Card style={{ borderLeft:`3px solid ${C.accent}`, marginBottom:14 }}>
-        <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:6 }}><Icon name="tip" size={14} color={C.accent} /><p style={{ color:C.accent, fontSize:11, fontWeight:700, letterSpacing:"0.08em", margin:0 }}>TODAY'S TIP</p></div>
-        <p style={{ color:C.text, fontSize:13, lineHeight:1.7, margin:0 }}>{DAILY_TIPS[tipIdx]}</p>
-        <button onClick={()=>setTipIdx(i=>(i+1)%DAILY_TIPS.length)} style={{ background:"none", border:"none", color:C.accent, fontSize:12, cursor:"pointer", marginTop:8, fontFamily:FONT, fontWeight:600 }}>↻ Next tip</button>
-      </Card>
 
       {/* Journal */}
       <Card>
@@ -2941,6 +2987,8 @@ function AppInner() {
   const [user, setUser] = useState(null); // Supabase user
   const [authChecked, setAuthChecked] = useState(false); // has auth been checked
   const [showAuth, setShowAuth] = useState(false); // show auth screen
+  const [showTipSplash, setShowTipSplash] = useState(true);
+  const [splashTipIdx] = useState(()=>Math.floor(Math.random()*DAILY_TIPS.length)); // show tip on open
   const [showWelcome, setShowWelcome] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [authLoading, setAuthLoading] = useState(true); // true until auth check completes
@@ -3156,6 +3204,11 @@ function AppInner() {
 
 
 
+
+  // Show tip splash on every open (after profile is loaded)
+  if (showTipSplash && profile && !showAuth && !showWelcome && !showOnboarding) {
+    return <TipSplashScreen tip={DAILY_TIPS[splashTipIdx]} onDismiss={()=>setShowTipSplash(false)} />;
+  }
 
   // Apply theme first — needed by all render paths
   const isDark = darkOverride !== null ? darkOverride : systemDark;
