@@ -2968,6 +2968,10 @@ function AppInner() {
 
 
 
+  // Apply theme first — needed by all render paths
+  const isDark = darkOverride !== null ? darkOverride : systemDark;
+  C = isDark ? DARK : LIGHT;
+
   // ── Render sequence ──────────────────────────────────────────────────────────
 
   // 1. Auth screen — shown when explicitly requested
@@ -3017,10 +3021,6 @@ function AppInner() {
 
   // 5. Trial expired — show subscribe screen
   if (isTrialExpired() && !isPro) return <TrialExpiredScreen onSubscribe={()=>setShowPaywall(true)} />;
-
-  // Apply theme
-  const isDark = darkOverride !== null ? darkOverride : systemDark;
-  C = isDark ? DARK : LIGHT;
 
   const cur = entries.length>0?entries[entries.length-1].weight:profile.startWeightLbs;
   const lost = Math.max(0,profile.startWeightLbs-cur);
