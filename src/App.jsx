@@ -2990,7 +2990,7 @@ function AppInner() {
         setSyncing(false);
       }
     }}
-    onSkip={null}
+    onSkip={()=>setShowAuth(false)}
   />;
 
   // 2. Loading screen — only while auth check runs with no cached data
