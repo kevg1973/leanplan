@@ -1228,21 +1228,28 @@ const TodayTab = ({ profile, entries, mealLog, workoutLog, water, setWater, jour
     else break;
   }
 
-  const [showCalories, setShowCalories] = useState(false);
+  const [showCalories, setShowCalories] = useState(true);
 
   return (
     <div>
-      {/* Hero */}
-      <div style={{ background:`linear-gradient(145deg, ${C.accent}, #5ac8fa)`, borderRadius:20, padding:"20px 18px", marginBottom:14, color:"#fff" }}>
-        <p style={{ opacity:0.85, fontSize:14, margin:"0 0 2px" }}>Hello{profile.name?`, ${profile.name}`:""}  👋</p>
-        <h2 style={{ fontSize:24, fontWeight:700, margin:"0 0 4px" }}>{profile.targetLbs>0?`Lose ${toKg(profile.targetLbs)} kg`:profile.goal?.replace(/_/g," ")||"Get Healthy"}</h2>
-        <p style={{ opacity:0.8, fontSize:12, margin:"0 0 12px" }}>{lostKg} kg lost{profile.targetLbs>0?` · ${(Math.max(0,profile.targetLbs-lost)*0.453592).toFixed(1)} to go · ${pct}%`:""}</p>
-        <div style={{ background:"rgba(255,255,255,0.25)", borderRadius:99, height:6, overflow:"hidden" }}>
+      {/* Hero — compact */}
+      <div style={{ background:`linear-gradient(145deg, ${C.accent}, #5ac8fa)`, borderRadius:16, padding:"14px 16px", marginBottom:12, color:"#fff" }}>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
+          <div>
+            <p style={{ opacity:0.85, fontSize:12, margin:"0 0 1px" }}>Hello{profile.name?`, ${profile.name}`:""}  👋</p>
+            <h2 style={{ fontSize:18, fontWeight:700, margin:0 }}>{profile.targetLbs>0?`Lose ${toKg(profile.targetLbs)} kg`:profile.goal?.replace(/_/g," ")||"Get Healthy"}</h2>
+          </div>
+          <div style={{ textAlign:"right" }}>
+            <p style={{ opacity:0.9, fontSize:16, fontWeight:700, margin:"0 0 1px" }}>{pct}%</p>
+            <p style={{ opacity:0.7, fontSize:11, margin:0 }}>{lostKg}kg lost</p>
+          </div>
+        </div>
+        <div style={{ background:"rgba(255,255,255,0.25)", borderRadius:99, height:5, overflow:"hidden" }}>
           <div style={{ width:`${pct}%`, height:"100%", background:"rgba(255,255,255,0.9)", borderRadius:99, transition:"width 0.6s" }} />
         </div>
-        <div style={{ display:"flex", justifyContent:"space-between", marginTop:5, opacity:0.7, fontSize:11 }}>
-          <span>{profile.startWeightLbs?toKg(profile.startWeightLbs):"—"} kg</span>
-          <span>~{eta>0?eta:0} weeks to go</span>
+        <div style={{ display:"flex", justifyContent:"space-between", marginTop:4, opacity:0.7, fontSize:10 }}>
+          <span>{profile.startWeightLbs?toKg(profile.startWeightLbs):"—"} kg start</span>
+          <span>~{eta>0?eta:0} wks to go</span>
           <span>{toKg(cur)} kg now</span>
         </div>
       </div>
