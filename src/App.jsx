@@ -1228,6 +1228,9 @@ const TipSplashScreen = ({ tip, onDismiss }) => {
     startY.current = null;
   };
 
+  const [visible, setVisible] = React.useState(false);
+  React.useEffect(()=>{ setTimeout(()=>setVisible(true), 50); }, []);
+
   return (
     <div
       onTouchStart={handleTouchStart}
@@ -1235,31 +1238,48 @@ const TipSplashScreen = ({ tip, onDismiss }) => {
       onTouchEnd={handleTouchEnd}
       style={{
         position:"fixed", inset:0, zIndex:9999,
-        background:"linear-gradient(160deg, #0a0a0a 0%, #0d1117 40%, #0a0f1e 100%)",
+        background:"#000",
         display:"flex", flexDirection:"column",
         justifyContent:"space-between",
-        padding:"80px 32px 60px",
+        padding:"60px 32px 50px",
         transform:`translateY(${dismissed ? "-100%" : `-${offsetY}px`})`,
-        transition:dismissed?"transform 0.3s ease-in":"none",
+        transition:dismissed ? "transform 0.3s ease-in" : offsetY > 0 ? "none" : "transform 0.1s ease-out",
+        opacity: visible ? 1 : 0,
         userSelect:"none",
         fontFamily:FONT,
+        overflow:"hidden",
       }}
     >
+      {/* Background glow effects */}
+      <div style={{ position:"absolute", inset:0, pointerEvents:"none", zIndex:0 }}>
+        <div style={{ position:"absolute", top:"-20%", left:"-20%", width:"70%", height:"70%", background:"radial-gradient(circle, rgba(0,122,255,0.18) 0%, transparent 70%)", borderRadius:"50%" }} />
+        <div style={{ position:"absolute", bottom:"10%", right:"-10%", width:"60%", height:"60%", background:"radial-gradient(circle, rgba(88,86,214,0.15) 0%, transparent 70%)", borderRadius:"50%" }} />
+        <div style={{ position:"absolute", top:"40%", left:"30%", width:"40%", height:"40%", background:"radial-gradient(circle, rgba(0,122,255,0.08) 0%, transparent 70%)", borderRadius:"50%" }} />
+      </div>
+
       {/* Top — branding */}
-      <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+      <div style={{ display:"flex", alignItems:"center", gap:10, position:"relative", zIndex:1,
+        opacity: visible ? 1 : 0, transform: visible ? "translateY(0)" : "translateY(10px)",
+        transition:"opacity 0.6s ease 0.1s, transform 0.6s ease 0.1s"
+      }}>
         <img src="/leanplan_app_icon.png" alt="" style={{ height:36, width:36, borderRadius:9 }} />
-        <span style={{ color:"rgba(255,255,255,0.5)", fontSize:14, fontWeight:600, letterSpacing:"0.02em" }}>LeanPlan</span>
+        <span style={{ color:"rgba(255,255,255,0.5)", fontSize:14, fontWeight:600 }}>LeanPlan</span>
       </div>
 
       {/* Middle — tip */}
-      <div>
-        <p style={{ color:"rgba(255,255,255,0.35)", fontSize:11, fontWeight:700, letterSpacing:"0.14em", marginBottom:20, textTransform:"uppercase" }}>Today's tip</p>
-        <p style={{ color:"#fff", fontSize:32, fontWeight:800, lineHeight:1.3, margin:0, fontFamily:FONT }}>{tip}</p>
+      <div style={{ position:"relative", zIndex:1,
+        opacity: visible ? 1 : 0, transform: visible ? "translateY(0)" : "translateY(20px)",
+        transition:"opacity 0.7s ease 0.2s, transform 0.7s ease 0.2s"
+      }}>
+        <p style={{ color:"rgba(255,255,255,0.4)", fontSize:11, fontWeight:700, letterSpacing:"0.14em", marginBottom:16, textTransform:"uppercase" }}>Today's tip</p>
+        <p style={{ color:"#fff", fontSize:34, fontWeight:800, lineHeight:1.25, margin:0, fontFamily:FONT }}>{tip}</p>
       </div>
 
       {/* Bottom — swipe indicator */}
-      <div onClick={dismiss} style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:8, cursor:"pointer" }}>
-        <div style={{ width:36, height:4, background:"rgba(255,255,255,0.25)", borderRadius:99 }} />
+      <div onClick={dismiss} style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:8, cursor:"pointer", position:"relative", zIndex:1,
+        opacity: visible ? 1 : 0, transition:"opacity 0.8s ease 0.4s"
+      }}>
+        <div style={{ width:36, height:4, background:"rgba(255,255,255,0.2)", borderRadius:99 }} />
         <p style={{ color:"rgba(255,255,255,0.3)", fontSize:12, margin:0, letterSpacing:"0.04em" }}>Swipe up or tap to continue</p>
       </div>
     </div>
