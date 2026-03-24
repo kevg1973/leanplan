@@ -1403,7 +1403,7 @@ const MealsTab =({ profile, favourites, setFavourites, removed, setRemoved, meal
     setExpanded(null);
   };
 
-  const generate = (isPro && !isTrial) ? generateAI : generateLocal;
+  const generate = isPro ? generateAI : generateLocal;
 
   const toggleFav = id => setFavourites(f=>f.includes(id)?f.filter(x=>x!==id):[...f,id]);
   const removeM = id => { setRemoved(r=>[...r,id]); setShown(s=>s?s.filter(m=>m.id!==id):s); };
@@ -2663,19 +2663,29 @@ const WelcomeScreen = ({ onNew, onSignIn }) => (
 
 
 // ── Trial Expired Screen ──────────────────────────────────────────────────────
-const TrialExpiredScreen = ({ onSignUp }) => (
+const TrialExpiredScreen = ({ onSubscribe }) => (
   <div style={{ minHeight:"100vh", background:C.bg, fontFamily:FONT, display:"flex", flexDirection:"column", justifyContent:"center", padding:"0 20px" }}>
     <div style={{ maxWidth:400, margin:"0 auto", width:"100%", textAlign:"center" }}>
       <img src="/leanplan_app_icon.png" alt="" style={{ height:80, width:80, borderRadius:20, marginBottom:24 }} />
-      <h1 style={{ fontSize:28, fontWeight:800, color:C.text, margin:"0 0 12px" }}>Your free trial has ended</h1>
-      <p style={{ color:C.muted, fontSize:15, lineHeight:1.7, marginBottom:32 }}>
-        Create a free account to keep your data and continue using LeanPlan. Your 7-day trial data will be saved.
+      <h1 style={{ fontSize:28, fontWeight:800, color:C.text, margin:"0 0 12px" }}>Your 7-day trial has ended</h1>
+      <p style={{ color:C.muted, fontSize:15, lineHeight:1.7, marginBottom:24 }}>
+        You've had full access to AI meal generation, personalised workouts and your AI health coach. Subscribe to keep it all going.
       </p>
-      <Btn onClick={onSignUp} color={C.accent} style={{ width:"100%", fontSize:17, padding:"16px 0", marginBottom:16 }}>
-        Create Free Account
+      <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:16, padding:"16px", marginBottom:24, textAlign:"left" }}>
+        {[
+          "✦ AI meal plans tailored to your diet",
+          "✦ Personalised workout programmes",
+          "✦ Unlimited AI health coach",
+          "✦ Progress tracking & measurements",
+          "✦ Shopping lists & supplement guide",
+          "✦ Data synced across all devices",
+        ].map((f,i)=><p key={i} style={{ color:C.text, fontSize:14, margin:"6px 0" }}>{f}</p>)}
+      </div>
+      <Btn onClick={onSubscribe} color={C.accent} style={{ width:"100%", fontSize:17, padding:"16px 0", marginBottom:12 }}>
+        Subscribe from £4.99/month
       </Btn>
-      <p style={{ color:C.muted, fontSize:13, lineHeight:1.6 }}>
-        Free to use · Upgrade to Pro anytime for AI meal generation, coaching and more
+      <p style={{ color:C.muted, fontSize:12, lineHeight:1.6 }}>
+        Cancel anytime · Secure payment by Stripe
       </p>
     </div>
   </div>
@@ -2804,6 +2814,8 @@ function AppInner() {
   const [profile, setProfile] = useState(null);
   const [tab, setTab] = useState("Today");
   const [isPro, setIsPro] = useState(false);
+  // Trial users get full Pro access
+  const effectiveIsPro = isPro || isTrialActive();
   const [proData, setProData] = useState(null);
   const [showPaywall, setShowPaywall] = useState(false);
   const [todaysMeals, setTodaysMeals] = useState(null);
@@ -3086,8 +3098,8 @@ function AppInner() {
     });
   }} />;
 
-  // 5. Trial expired — not logged in, no Pro
-  if (isTrialExpired() && !user && !isPro) return <TrialExpiredScreen onSignUp={()=>setShowAuth(true)} />;
+  // 5. Trial expired — show subscribe screen
+  if (isTrialExpired() && !isPro) return <TrialExpiredScreen onSubscribe={()=>setShowPaywall(true)} />;
 
   // Apply theme
   const isDark = darkOverride !== null ? darkOverride : systemDark;
@@ -3150,20 +3162,23 @@ function AppInner() {
 
       <div style={{ padding:"16px 14px 100px" }}>
         {/* Trial banner or Pro upgrade banner */}
-        {!isPro && !user && isTrialActive() && (
-          <div style={{ background:`${C.orange}15`, border:`1px solid ${C.orange}33`, borderRadius:14, padding:"10px 16px", marginBottom:14, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-            <p style={{ color:C.text, fontSize:13, margin:0 }}>⏱ <strong>{getTrialDaysLeft()} day{getTrialDaysLeft()!==1?"s":""}</strong> left in your free trial</p>
-            <button onClick={()=>setShowAuth(true)} style={{ background:C.orange, border:"none", borderRadius:99, padding:"6px 14px", color:"#fff", fontSize:12, fontWeight:700, cursor:"pointer", fontFamily:FONT }}>Save my data</button>
+        {!effectiveIsPro && !isTrialActive() && !user && (
+          <div style={{ background:`linear-gradient(135deg, #1c1c2e, #2d2b55)`, border:`1px solid rgba(88,86,214,0.4)`, borderRadius:14, padding:"12px 16px", marginBottom:14, display:"flex", justifyContent:"space-between", alignItems:"center", boxShadow:"0 4px 16px rgba(88,86,214,0.2)" }}>
+            <div>
+              <p style={{ color:"#fff", fontWeight:700, fontSize:13, margin:0 }}>✦ Full access — {getTrialDaysLeft()} day{getTrialDaysLeft()!==1?"s":""} left</p>
+              <p style={{ color:"rgba(255,255,255,0.6)", fontSize:11, margin:"2px 0 0" }}>Subscribe before your trial ends to keep everything</p>
+            </div>
+            <button onClick={()=>setShowPaywall(true)} style={{ background:"#5856d6", border:"none", borderRadius:99, padding:"7px 14px", color:"#fff", fontSize:12, fontWeight:700, cursor:"pointer", fontFamily:FONT, whiteSpace:"nowrap" }}>Subscribe →</button>
           </div>
         )}
-        {!isPro && (user || !isTrialActive()) && <ProBanner onUpgrade={()=>setShowPaywall(true)} />}
+        {!effectiveIsPro && <ProBanner onUpgrade={()=>setShowPaywall(true)} />}
 
         {tab==="Today"&&<TodayTab profile={profile} entries={entries} mealLog={mealLog} workoutLog={workoutLog} water={water} setWater={setWater} journal={journal} setJournal={setJournal} measurements={measurements} />}
-        {tab==="Meals"&&<MealsTab profile={profile} favourites={favourites} setFavourites={setFavourites} removed={removed} setRemoved={setRemoved} mealLog={mealLog} setMealLog={setMealLog} isPro={isPro} isTrial={!user&&isTrialActive()} onUpgrade={()=>setShowPaywall(true)} shownMeals={todaysMeals} setShownMeals={setTodaysMeals} />}
-        {tab==="Train"&&(isPro ? <TrainTab profile={profile} workoutLog={workoutLog} setWorkoutLog={setWorkoutLog} setProfile={setProfile} savedWorkout={todaysWorkout} setSavedWorkout={setTodaysWorkout} /> : <LockedTab feature="Workout tracking, lift tracker and rest day planner" onUpgrade={()=>setShowPaywall(true)} />)}
-        {tab==="Track"&&(isPro ? <TrackTab profile={profile} entries={entries} setEntries={fn=>setEntries(typeof fn==="function"?fn(entries):fn)} measurements={measurements} setMeasurements={setMeasurements} /> : <LockedTab feature="Progress tracking, measurements and body stats" onUpgrade={()=>setShowPaywall(true)} />)}
-        {tab==="Coach"&&(isPro ? <CoachTab profile={profile} setProfile={setProfile} /> : <LockedTab feature="AI personal coach" onUpgrade={()=>setShowPaywall(true)} />)}
-        {tab==="Profile"&&<ProfileTab profile={profile} setProfile={setProfile} onReset={handleReset} isDark={isDark} darkOverride={darkOverride} setDarkOverride={setDarkOverride} isPro={isPro} proData={proData} onUpgrade={()=>setShowPaywall(true)} user={user} onShowAuth={()=>setShowAuth(true)} />}
+        {tab==="Meals"&&<MealsTab profile={profile} favourites={favourites} setFavourites={setFavourites} removed={removed} setRemoved={setRemoved} mealLog={mealLog} setMealLog={setMealLog} isPro={effectiveIsPro} onUpgrade={()=>setShowPaywall(true)} shownMeals={todaysMeals} setShownMeals={setTodaysMeals} />}
+        {tab==="Train"&&(effectiveIsPro ? <TrainTab profile={profile} workoutLog={workoutLog} setWorkoutLog={setWorkoutLog} setProfile={setProfile} savedWorkout={todaysWorkout} setSavedWorkout={setTodaysWorkout} /> : <LockedTab feature="Workout tracking, lift tracker and rest day planner" onUpgrade={()=>setShowPaywall(true)} />)}
+        {tab==="Track"&&(effectiveIsPro ? <TrackTab profile={profile} entries={entries} setEntries={fn=>setEntries(typeof fn==="function"?fn(entries):fn)} measurements={measurements} setMeasurements={setMeasurements} /> : <LockedTab feature="Progress tracking, measurements and body stats" onUpgrade={()=>setShowPaywall(true)} />)}
+        {tab==="Coach"&&(effectiveIsPro ? <CoachTab profile={profile} setProfile={setProfile} /> : <LockedTab feature="AI personal coach" onUpgrade={()=>setShowPaywall(true)} />)}
+        {tab==="Profile"&&<ProfileTab profile={profile} setProfile={setProfile} onReset={handleReset} isDark={isDark} darkOverride={darkOverride} setDarkOverride={setDarkOverride} isPro={effectiveIsPro} proData={proData} onUpgrade={()=>setShowPaywall(true)} user={user} onShowAuth={()=>setShowAuth(true)} />}
 
       </div>
 
