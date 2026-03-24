@@ -923,19 +923,27 @@ const Onboarding = ({ onDone }) => {
             <p style={{ color:"rgba(255,255,255,0.5)", fontSize:16, marginBottom:32 }}>Slower is more sustainable — we recommend Moderate</p>
             <OOption label="Steady — 0.25 kg/week" desc="Gentle and sustainable. Best for long term." selected={data.paceId==="slow"} onClick={()=>{ update("paceId","slow"); setTimeout(next,300); }} />
             <OOption label="Moderate — 0.5 kg/week" desc="Recommended. Steady progress without sacrifice." selected={data.paceId==="normal"} onClick={()=>{ update("paceId","normal"); setTimeout(next,300); }} />
-            <OOption label="Active — 0.75 kg/week" desc="Faster results. Requires stricter diet." selected={data.paceId==="fast"} onClick={()=>{ update("paceId","fast"); setTimeout(next,300); }} />
-            <OOption label="Aggressive — 1 kg/week" desc="Maximum speed. Not recommended long term." selected={data.paceId==="vfast"} onClick={()=>{ update("paceId","vfast"); setTimeout(next,300); }} />
-            {data.paceId==="fast"&&<div style={{ background:"rgba(255,149,0,0.15)", border:"1px solid rgba(255,149,0,0.4)", borderRadius:12, padding:"12px 16px", marginTop:8 }}>
-              <p style={{ color:"#ff9500", fontSize:13, margin:0, lineHeight:1.6 }}>⚠️ Requires a 375 cal/day deficit. Keep protein at 120g+ to protect muscle.</p>
-            </div>}
-            {data.paceId==="vfast"&&<div style={{ background:"rgba(255,69,58,0.15)", border:"1px solid rgba(255,69,58,0.4)", borderRadius:12, padding:"12px 16px", marginTop:8 }}>
-              <p style={{ color:"#ff453a", fontSize:13, margin:0, lineHeight:1.6 }}>⚠️ Requires a strict 500 cal/day deficit. Only recommended if you have significant weight to lose. High protein essential.</p>
+            <OOption label="Active — 0.75 kg/week" desc="Faster results. Requires stricter diet." selected={data.paceId==="fast"} onClick={()=>{ update("paceId","fast"); update("paceConfirmed",false); }} />
+            <OOption label="Aggressive — 1 kg/week" desc="Maximum speed. Not recommended long term." selected={data.paceId==="vfast"} onClick={()=>{ update("paceId","vfast"); update("paceConfirmed",false); }} />
+            {(data.paceId==="fast"||data.paceId==="vfast")&&<div style={{ background:data.paceId==="vfast"?"rgba(255,69,58,0.15)":"rgba(255,149,0,0.15)", border:`1px solid ${data.paceId==="vfast"?"rgba(255,69,58,0.4)":"rgba(255,149,0,0.4)"}`, borderRadius:12, padding:"14px 16px", marginTop:8 }}>
+              <p style={{ color:data.paceId==="vfast"?"#ff453a":"#ff9500", fontSize:13, lineHeight:1.6, margin:"0 0 12px" }}>
+                {data.paceId==="fast" ? "⚠️ Requires a 375 cal/day deficit. Keep protein at 120g+ to protect muscle." : "🚨 Requires a strict 500 cal/day deficit. Only recommended if you have significant weight to lose. High protein essential."}
+              </p>
+              <div onClick={()=>update("paceConfirmed",!data.paceConfirmed)} style={{ display:"flex", alignItems:"center", gap:12, cursor:"pointer" }}>
+                <div style={{ width:24, height:24, borderRadius:6, border:`2px solid ${data.paceConfirmed?"#fff":"rgba(255,255,255,0.4)"}`, background:data.paceConfirmed?"#fff":"transparent", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+                  {data.paceConfirmed&&<span style={{ color:"#000", fontSize:14, fontWeight:700 }}>✓</span>}
+                </div>
+                <p style={{ color:"rgba(255,255,255,0.8)", fontSize:13, margin:0, lineHeight:1.5 }}>I understand the requirements and want to proceed at this pace</p>
+              </div>
             </div>}
           </> : <>
             <h2 style={{ color:"#fff", fontSize:32, fontWeight:800, margin:"0 0 16px" }}>How many workouts per week?</h2>
             {[2,3,4,5].map(n=><OOption key={n} label={`${n} workouts per week`} selected={data.workoutsPerWeek===n} onClick={()=>{ update("workoutsPerWeek",n); setTimeout(next,300); }} />)}
           </>}
         </div>
+        {(data.goal==="lose_weight"||data.goal==="all") && (data.paceId==="fast"||data.paceId==="vfast") && (
+          <OBtn onClick={next} disabled={!data.paceConfirmed}>Continue →</OBtn>
+        )}
       </div>}
 
       {/* Step 9 — Fitness level */}
