@@ -778,7 +778,7 @@ const OBtn = ({ children, onClick, disabled }) => (
 );
 
 const Onboarding = ({ onDone }) => {
-  const [step, setStep] = useState(0);
+  const [step, setStep] = useState(1);
   const [data, setData] = useState({
     name:"", goal:"lose_weight", 
     startWeightKg:83, targetWeightKg:73,
