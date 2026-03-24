@@ -3271,7 +3271,7 @@ function AppInner() {
         </div>
       </div>
 
-      <div style={{ padding:"16px 14px 100px" }}>
+      <div style={{ padding:"8px 14px 100px" }}>
         {/* Trial banner or Pro upgrade banner */}
         {!isPro && isTrialActive() && (
           <div style={{ background:`linear-gradient(135deg, #1c1c2e, #2d2b55)`, border:`1px solid rgba(88,86,214,0.4)`, borderRadius:14, padding:"12px 16px", marginBottom:14, display:"flex", justifyContent:"space-between", alignItems:"center", boxShadow:"0 4px 16px rgba(88,86,214,0.2)" }}>
