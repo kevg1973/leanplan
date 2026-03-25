@@ -1998,9 +1998,9 @@ const TrainTab = ({ profile, workoutLog, setWorkoutLog, setProfile, savedWorkout
 
   return (
     <div>
-      <div style={{ display:"flex", gap:6, marginBottom:16 }}>
+      <div style={{ display:"flex", background:C.card, border:`1px solid ${C.border}`, borderRadius:12, padding:3, marginBottom:12, gap:2 }}>
         {[["calendar","Calendar"],["workout","Workout"],["lifts","Lifts"]].map(([k,l])=>(
-          <Chip key={k} color={C.accent} active={view===k} onClick={()=>setView(k)}>{l}</Chip>
+          <button key={k} onClick={()=>setView(k)} style={{ flex:1, background:view===k?C.accent:"transparent", color:view===k?"#fff":C.muted, border:"none", borderRadius:10, padding:"8px 0", fontSize:13, fontWeight:600, cursor:"pointer", fontFamily:FONT, transition:"all 0.2s" }}>{l}</button>
         ))}
       </div>
 
@@ -2062,10 +2062,6 @@ const TrainTab = ({ profile, workoutLog, setWorkoutLog, setProfile, savedWorkout
             <p style={{ color:C.textSec, fontSize:13, lineHeight:1.6, margin:0 }}>15–20 min gentle walk · Stretching · Foam rolling · Extra sleep</p>
           </div>
         </Card>
-
-        <Section title="Workout History">
-          {historyWeeks.map((w,i)=><Row key={i} label={w.label} value={`${w.count} / ${profile.workoutsPerWeek||3}`} color={w.count>=(profile.workoutsPerWeek||3)?C.green:w.count>0?C.accent:C.muted} last={i===historyWeeks.length-1} />)}
-        </Section>
 
         <Card style={{ background:`linear-gradient(145deg, ${C.accent}08, ${C.purple}08)` }}>
           <p style={{ color:C.muted, fontSize:12, fontWeight:600, letterSpacing:"0.06em", marginBottom:12 }}>LOG TODAY'S WORKOUT</p>
@@ -2237,7 +2233,7 @@ const LiftTracker = ({ workoutLog }) => {
 };
 
 // ── TRACK TAB ─────────────────────────────────────────────────────────────────
-const TrackTab = ({ profile, entries, setEntries, measurements, setMeasurements }) => {
+const TrackTab = ({ profile, entries, setEntries, measurements, setMeasurements, workoutLog={} }) => {
   const [newW, setNewW] = useState("");
   const [activeSection, setActiveSection] = useState("weight");
   const [newMeasure, setNewMeasure] = useState({ waist:"", hips:"", chest:"", leftArm:"", rightArm:"" });
@@ -2279,9 +2275,9 @@ const TrackTab = ({ profile, entries, setEntries, measurements, setMeasurements 
 
   return (
     <div>
-      <div style={{ display:"flex", gap:6, marginBottom:16, overflowX:"auto" }}>
-        {[["weight","Weight"],["measurements","Measurements"],["stats","Stats"]].map(([k,l])=>(
-          <Chip key={k} color={C.purple} active={activeSection===k} onClick={()=>setActiveSection(k)}>{l}</Chip>
+      <div style={{ display:"flex", background:C.card, border:`1px solid ${C.border}`, borderRadius:12, padding:3, marginBottom:12, gap:2 }}>
+        {[["weight","Weight"],["measurements","Measurements"],["stats","Stats"],["workouts","Workouts"]].map(([k,l])=>(
+          <button key={k} onClick={()=>setActiveSection(k)} style={{ flex:1, background:activeSection===k?C.purple:"transparent", color:activeSection===k?"#fff":C.muted, border:"none", borderRadius:10, padding:"8px 0", fontSize:12, fontWeight:600, cursor:"pointer", fontFamily:FONT, transition:"all 0.2s" }}>{l}</button>
         ))}
       </div>
 
@@ -2390,6 +2386,34 @@ const TrackTab = ({ profile, entries, setEntries, measurements, setMeasurements 
           <Row label="Pace" value={`${getPace(profile.paceId||"normal").kgPerWk} kg/week`} />
           <Row label="Estimated weeks" value={`${Math.ceil(profile.targetLbs/getPace(profile.paceId||"normal").lbs)} weeks`} last />
         </Section>
+      </>}
+
+      {activeSection==="workouts"&&<>
+        {(()=>{
+          const historyWeeks = Array.from({length:4},(_,i)=>{
+            const start=new Date(); start.setDate(start.getDate()-start.getDay()+1-(i*7));
+            const count=Array.from({length:7},(__,j)=>{ const d=new Date(start); d.setDate(d.getDate()+j); const k=d.toISOString().split("T")[0]; return workoutLog[k]?1:0; }).reduce((a,b)=>a+b,0);
+            return {label:i===0?"This week":i===1?"Last week":`${i+1}w ago`,count};
+          }).reverse();
+          const target = profile.workoutsPerWeek||3;
+          const totalLogged = Object.keys(workoutLog).length;
+          const totalWeeks = Math.max(1, Math.ceil(totalLogged/target));
+          return <>
+            <div style={{ display:"flex", gap:8, marginBottom:16 }}>
+              <StatBox label="Total workouts" val={totalLogged} color={C.green} />
+              <StatBox label="This week" val={`${historyWeeks[3]?.count||0}/${target}`} color={C.accent} />
+              <StatBox label="Last week" val={`${historyWeeks[2]?.count||0}/${target}`} color={C.purple} />
+            </div>
+            <Section title="Weekly History">
+              {historyWeeks.map((w,i)=><Row key={i} label={w.label} value={`${w.count} / ${target}`} color={w.count>=target?C.green:w.count>0?C.accent:C.muted} last={i===historyWeeks.length-1} />)}
+            </Section>
+            {Object.entries(workoutLog).length>0&&<Section title="Recent Sessions">
+              {Object.entries(workoutLog).slice(-8).reverse().map(([date,w],i,arr)=>(
+                <Row key={date} label={fmtDate(date)} value={w.type?.replace("-"," ")||"workout"} color={C.accent} last={i===arr.length-1} />
+              ))}
+            </Section>}
+          </>;
+        })()}
       </>}
     </div>
   );
@@ -3520,7 +3544,7 @@ function AppInner() {
         {tab==="Today"&&<TodayTab profile={profile} entries={entries} mealLog={mealLog} workoutLog={workoutLog} water={water} setWater={setWater} journal={journal} setJournal={setJournal} measurements={measurements} />}
         {tab==="Meals"&&<MealsTab profile={profile} favourites={favourites} setFavourites={setFavourites} removed={removed} setRemoved={setRemoved} mealLog={mealLog} setMealLog={setMealLog} isPro={effectiveIsPro} onUpgrade={()=>setShowPaywall(true)} shownMeals={todaysMeals} setShownMeals={setTodaysMeals} />}
         {tab==="Train"&&(effectiveIsPro ? <TrainTab profile={profile} workoutLog={workoutLog} setWorkoutLog={setWorkoutLog} setProfile={setProfile} savedWorkout={todaysWorkout} setSavedWorkout={setTodaysWorkout} /> : <LockedTab feature="Workout tracking, lift tracker and rest day planner" onUpgrade={()=>setShowPaywall(true)} />)}
-        {tab==="Track"&&(effectiveIsPro ? <TrackTab profile={profile} entries={entries} setEntries={fn=>setEntries(typeof fn==="function"?fn(entries):fn)} measurements={measurements} setMeasurements={setMeasurements} /> : <LockedTab feature="Progress tracking, measurements and body stats" onUpgrade={()=>setShowPaywall(true)} />)}
+        {tab==="Track"&&(effectiveIsPro ? <TrackTab profile={profile} entries={entries} setEntries={fn=>setEntries(typeof fn==="function"?fn(entries):fn)} measurements={measurements} setMeasurements={setMeasurements} workoutLog={workoutLog} /> : <LockedTab feature="Progress tracking, measurements and body stats" onUpgrade={()=>setShowPaywall(true)} />)}
         {tab==="Coach"&&(effectiveIsPro ? <CoachTab profile={profile} setProfile={setProfile} /> : <LockedTab feature="AI personal coach" onUpgrade={()=>setShowPaywall(true)} />)}
         {tab==="Profile"&&<ProfileTab profile={profile} setProfile={setProfile} onReset={handleReset} isDark={isDark} darkOverride={darkOverride} setDarkOverride={setDarkOverride} isPro={effectiveIsPro} proData={proData} onUpgrade={()=>setShowPaywall(true)} user={user} onShowAuth={()=>setShowAuth(true)} />}
 
