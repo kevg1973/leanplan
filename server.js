@@ -153,8 +153,22 @@ app.post("/api/generate-meals", async (req, res) => {
     profile?.dietType || "omnivore",
     profile?.dairyPref === "dairy_free" ? "strictly dairy-free (use coconut yoghurt, soya milk, dairy-free alternatives)" : 
     profile?.dairyPref === "lactose_free" ? "lactose-free dairy only" : "dairy ok",
-    profile?.glutenPref === "gluten_free" ? "strictly gluten-free (use tamari not soy sauce, GF oats, rice/corn alternatives)" : "gluten ok",
+    profile?.glutenPref === "gluten_free" ? "STRICTLY GLUTEN-FREE — absolutely no wheat, barley, rye, or regular oats. Use rice, quinoa, buckwheat, certified GF oats only if explicitly labelled gluten-free, corn/maize, potatoes. Use tamari instead of soy sauce." : "gluten ok",
   ].filter(Boolean).join(", ");
+
+  const isGlutenFree = profile?.glutenPref === "gluten_free";
+  const isDairyFree = profile?.dairyPref === "dairy_free";
+
+  // Conditional safe staples based on dietary needs
+  const safeCarbs = isGlutenFree
+    ? "rice, quinoa, buckwheat, sweet potato, potatoes, rice cakes, corn tortillas (certified GF)"
+    : "oats, rice, quinoa, sweet potato, wholegrain bread, pasta";
+  const safeDairy = isDairyFree
+    ? "coconut yoghurt, soya milk, oat milk (check GF if needed), dairy-free alternatives"
+    : "yoghurt, milk, cheese";
+  const budgetStaples = isGlutenFree
+    ? "eggs, rice, quinoa, chicken breast, tinned tomatoes, tinned beans, frozen veg, sweet potato, spinach, broccoli, rice cakes"
+    : "oats, eggs, rice, chicken breast, tinned tomatoes, tinned beans, frozen veg, sweet potato, spinach, broccoli";
 
   const cookTime = { quick:"15 minutes max", moderate:"30 minutes", enjoy:"up to 60 minutes" }[profile?.cookingTime] || "30 minutes";
   const styleFilter = style !== "all" ? `Meal style: ${style}.` : "";
@@ -177,7 +191,7 @@ CRITICAL RULES:
 4. Meals must be in order: breakfast, morning snack, lunch, afternoon snack, dinner
 5. Do NOT generate any of these meals (user has disliked them): ${dislikedMealNames.length > 0 ? dislikedMealNames.join(", ") : "none"}
 6. Each meal should be high protein (20g+ for main meals, 10g+ for snacks)
-7. Use simple whole foods — chicken, eggs, rice, oats, vegetables, legumes etc
+7. Use simple whole foods — chicken, eggs, ${safeCarbs}, vegetables, legumes etc
 
 Return this exact JSON structure:
 {
@@ -283,8 +297,22 @@ app.post("/api/generate-meal-plan", async (req, res) => {
     profile?.dietType || "omnivore",
     profile?.dairyPref === "dairy_free" ? "strictly dairy-free (use coconut yoghurt, soya milk, dairy-free alternatives)" :
     profile?.dairyPref === "lactose_free" ? "lactose-free dairy only" : "dairy ok",
-    profile?.glutenPref === "gluten_free" ? "strictly gluten-free (use tamari not soy sauce, GF oats, rice/corn alternatives)" : "gluten ok",
+    profile?.glutenPref === "gluten_free" ? "STRICTLY GLUTEN-FREE — absolutely no wheat, barley, rye, or regular oats. Use rice, quinoa, buckwheat, certified GF oats only if explicitly labelled gluten-free, corn/maize, potatoes. Use tamari instead of soy sauce." : "gluten ok",
   ].filter(Boolean).join(", ");
+
+  const isGlutenFree = profile?.glutenPref === "gluten_free";
+  const isDairyFree = profile?.dairyPref === "dairy_free";
+
+  // Conditional safe staples based on dietary needs
+  const safeCarbs = isGlutenFree
+    ? "rice, quinoa, buckwheat, sweet potato, potatoes, rice cakes, corn tortillas (certified GF)"
+    : "oats, rice, quinoa, sweet potato, wholegrain bread, pasta";
+  const safeDairy = isDairyFree
+    ? "coconut yoghurt, soya milk, oat milk (check GF if needed), dairy-free alternatives"
+    : "yoghurt, milk, cheese";
+  const budgetStaples = isGlutenFree
+    ? "eggs, rice, quinoa, chicken breast, tinned tomatoes, tinned beans, frozen veg, sweet potato, spinach, broccoli, rice cakes"
+    : "oats, eggs, rice, chicken breast, tinned tomatoes, tinned beans, frozen veg, sweet potato, spinach, broccoli";
 
   const cookTime = { quick:"15 minutes max", moderate:"30 minutes", enjoy:"up to 60 minutes" }[profile?.cookingTime] || "30 minutes";
   const styleFilter = style !== "all" ? `Meal style: ${style}.` : "";
@@ -323,6 +351,11 @@ CALORIE & MACRO TARGETS (MUST HIT THESE — this is the most important part):
 - Meal distribution: ${mealDistribution}
 - Each meal's cals, protein, carbs and fat fields MUST reflect real nutritional values that add up to the daily target
 
+ALLERGY & DIETARY HARD RULES (NEVER BREAK THESE):
+${isGlutenFree ? "⛔ GLUTEN-FREE: Do NOT use wheat, barley, rye, regular oats, bread, pasta, flour, couscous, bulgur, soy sauce, most cereals. Use rice, quinoa, buckwheat, certified GF oats, potatoes, tamari." : ""}
+${isDairyFree ? "⛔ DAIRY-FREE: Do NOT use milk, cheese, butter, cream, yoghurt, whey. Use coconut yoghurt, soya milk, oat milk, dairy-free alternatives." : ""}
+${(profile?.allergies?.length > 0) ? "⛔ ALLERGIES — absolutely exclude: " + profile.allergies.join(", ") : ""}
+
 CRITICAL RULES:
 1. ALL ingredients must be available in standard UK supermarkets (Tesco, Sainsbury's, Asda, Ocado) at reasonable prices
 2. No exotic or hard-to-find ingredients
@@ -330,13 +363,13 @@ CRITICAL RULES:
 4. Each day must have exactly 5 meals in order: breakfast, morning snack, lunch, afternoon snack, dinner
 5. Do NOT repeat meals across days — every meal must be unique
 6. Do NOT generate any of these meals (user has disliked them): ${dislikedMealNames.length > 0 ? dislikedMealNames.join(", ") : "none"}
-7. Use simple whole foods — chicken, eggs, rice, oats, vegetables, legumes etc
+7. Use simple whole foods — chicken, eggs, ${safeCarbs}, vegetables, legumes etc
 
 INGREDIENT EFFICIENCY (keeps shopping cost down):
 8. Use a MAXIMUM of 2-3 different meat/fish proteins across the ENTIRE plan (e.g. chicken breast + eggs + tinned tuna). Do NOT use a different protein every meal.
 9. Build around a core set of 15-20 base ingredients that repeat across days. Variety comes from preparation and seasoning, not new ingredients every day.
 10. Total unique ingredients across the whole plan: 30 or fewer.
-11. Use budget staples: oats, eggs, rice, chicken breast, tinned tomatoes, tinned beans, frozen veg, sweet potato, spinach, broccoli.
+11. Use budget staples: ${budgetStaples}.
 
 BATCH COOKING:
 12. ${batchCookNote}
