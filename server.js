@@ -172,6 +172,16 @@ app.post("/api/generate-meals", async (req, res) => {
 
   console.log(`Meal plan targets — TDEE:${tdee} Target:${dailyCalTarget}cal Protein:${dailyProteinTarget}g Goal:${goal} Pace:${profile?.paceId}`);
 
+  // Supplement notes — incorporate into meals if relevant
+  const usesProteinPowder = profile?.supplementsInterested?.includes("protein") || false;
+  const usesCreatine = profile?.supplementsInterested?.includes("creatine") || false;
+  const supplementMealNote = (() => {
+    const notes = [];
+    if (usesProteinPowder) notes.push("Include at least one protein shake or smoothie per day using pea/soya protein powder (the user has this and wants to use it). Good for morning snack or post-workout.");
+    if (usesCreatine) notes.push("User takes creatine — one meal or snack can include a note to stir 5g creatine into it (e.g. coconut yoghurt, smoothie).");
+    return notes.length > 0 ? notes.join(" ") : null;
+  })();
+
   const cookTime = { quick:"15 minutes max", moderate:"30 minutes", enjoy:"up to 60 minutes" }[profile?.cookingTime] || "30 minutes";
   const styleFilter = style !== "all" ? `Meal style: ${style}.` : "";
 
@@ -193,7 +203,8 @@ CRITICAL RULES:
 4. Meals must be in order: breakfast, morning snack, lunch, afternoon snack, dinner
 5. Do NOT generate any of these meals (user has disliked them): ${dislikedMealNames.length > 0 ? dislikedMealNames.join(", ") : "none"}
 6. Each meal should be high protein (20g+ for main meals, 10g+ for snacks)
-7. Use simple whole foods — chicken, eggs, ${safeCarbs}, vegetables, legumes etc
+7. Use simple whole foods — chicken, eggs, ${safeCarbs}, vegetables, legumes, fruit etc
+8. Snacks MUST include fruit — bananas, berries, apples, oranges are all perfect. Every snack should have a fruit component unless it's a protein shake.
 
 Return this exact JSON structure:
 {
@@ -344,6 +355,16 @@ app.post("/api/generate-meal-plan", async (req, res) => {
 
   console.log(`Meal plan targets — TDEE:${tdee} Target:${dailyCalTarget}cal Protein:${dailyProteinTarget}g Goal:${goal} Pace:${profile?.paceId}`);
 
+  // Supplement notes — incorporate into meals if relevant
+  const usesProteinPowder = profile?.supplementsInterested?.includes("protein") || false;
+  const usesCreatine = profile?.supplementsInterested?.includes("creatine") || false;
+  const supplementMealNote = (() => {
+    const notes = [];
+    if (usesProteinPowder) notes.push("Include at least one protein shake or smoothie per day using pea/soya protein powder (the user has this and wants to use it). Good for morning snack or post-workout.");
+    if (usesCreatine) notes.push("User takes creatine — one meal or snack can include a note to stir 5g creatine into it (e.g. coconut yoghurt, smoothie).");
+    return notes.length > 0 ? notes.join(" ") : null;
+  })();
+
   const cookTime = { quick:"15 minutes max", moderate:"30 minutes", enjoy:"up to 60 minutes" }[profile?.cookingTime] || "30 minutes";
   const styleFilter = style !== "all" ? `Meal style: ${style}.` : "";
 
@@ -374,7 +395,10 @@ PERSONAL PROFILE:
 - Workouts per week: ${profile?.workoutsPerWeek || 3}
 ${styleFilter}
 
-CALORIE & MACRO TARGETS (MUST HIT THESE — this is the most important part):
+${supplementMealNote ? `SUPPLEMENTS TO INCORPORATE:
+${supplementMealNote}
+
+` : ""}CALORIE & MACRO TARGETS (MUST HIT THESE — this is the most important part):
 - Daily calorie target: ${dailyCalTarget ? dailyCalTarget + " calories" : "approximately 1700 calories"}
 - Daily protein target: ${dailyProteinTarget ? dailyProteinTarget + "g minimum" : "at least 130g"}
 - Macro split: ${macroGuidance}
@@ -393,16 +417,17 @@ CRITICAL RULES:
 4. Each day must have exactly 5 meals in order: breakfast, morning snack, lunch, afternoon snack, dinner
 5. Do NOT repeat meals across days — every meal must be unique
 6. Do NOT generate any of these meals (user has disliked them): ${dislikedMealNames.length > 0 ? dislikedMealNames.join(", ") : "none"}
-7. Use simple whole foods — chicken, eggs, ${safeCarbs}, vegetables, legumes etc
+7. Use simple whole foods — chicken, eggs, ${safeCarbs}, vegetables, legumes, fruit etc
+8. Snacks MUST include fruit — bananas, berries, apples, oranges are all perfect. Every snack should have a fruit component unless it's a protein shake.
 
 INGREDIENT EFFICIENCY (keeps shopping cost down):
-8. Use a MAXIMUM of 2-3 different meat/fish proteins across the ENTIRE plan (e.g. chicken breast + eggs + tinned tuna). Do NOT use a different protein every meal.
-9. Build around a core set of 15-20 base ingredients that repeat across days. Variety comes from preparation and seasoning, not new ingredients every day.
-10. Total unique ingredients across the whole plan: 30 or fewer.
-11. Use budget staples: ${budgetStaples}.
+9. Use a MAXIMUM of 2-3 different meat/fish proteins across the ENTIRE plan (e.g. chicken breast + eggs + tinned tuna). Do NOT use a different protein every meal.
+10. Build around a core set of 15-20 base ingredients that repeat across days. Variety comes from preparation and seasoning, not new ingredients every day.
+11. Total unique ingredients across the whole plan: 30 or fewer.
+12. Use budget staples: ${budgetStaples}. Also include seasonal fruit: bananas, apples, berries, oranges.
 
 BATCH COOKING:
-12. ${batchCookNote}
+13. ${batchCookNote}
 
 Return this exact JSON structure:
 {
