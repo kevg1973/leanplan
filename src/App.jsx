@@ -721,7 +721,7 @@ const PacePicker = ({ value, onChange, targetLbs }) => {
 };
 
 // ── Onboarding ────────────────────────────────────────────────────────────────
-const TOTAL_STEPS = 14;
+const TOTAL_STEPS = 15;
 
 // Scroll picker component
 
@@ -869,7 +869,7 @@ const Onboarding = ({ onDone }) => {
     dietType:"omnivore", dairyPref:"dairy_free",
     glutenPref:"gluten_free", milkAlt:"soya",
     allergies:[], dislikes:[],
-    cookingTime:"moderate", sleepQuality:"average",
+    cookingTime:"moderate", sleepQuality:"average", mealPlanDays:5,
     activityLevel:"moderate",
     supplementsOpen:"maybe", supplementsInterested:[],
   });
@@ -1102,8 +1102,25 @@ const Onboarding = ({ onDone }) => {
         <OBtn onClick={next}>Continue →</OBtn>
       </div>}
 
-      {/* Step 13 — Supplements */}
-      {step===13&&<div style={{ flex:1, display:"flex", flexDirection:"column", padding:"0 24px 48px", overflowY:"auto" }}>
+      {/* Step 13 — Meal planning frequency */}
+      {step===13&&<div style={{ flex:1, display:"flex", flexDirection:"column", padding:"0 24px 48px" }}>
+        <Header step={step} />
+        <div style={{ flex:1, paddingTop:8 }}>
+          <h2 style={{ color:"#fff", fontSize:28, fontWeight:800, margin:"0 0 8px", lineHeight:1.2 }}>How would you like your meal planning to work?</h2>
+          <p style={{ color:"rgba(255,255,255,0.5)", fontSize:14, marginBottom:8, lineHeight:1.6 }}>LeanPlan will generate a complete meal plan for your chosen period, then automatically build your shopping list from it — so you know exactly what to buy before you start.</p>
+          <div style={{ background:"rgba(0,122,255,0.12)", border:"1px solid rgba(0,122,255,0.3)", borderRadius:12, padding:"12px 14px", marginBottom:24 }}>
+            <p style={{ color:"#0a84ff", fontSize:12, fontWeight:700, margin:"0 0 4px" }}>💡 HOW IT WORKS</p>
+            <p style={{ color:"rgba(255,255,255,0.7)", fontSize:12, lineHeight:1.6, margin:0 }}>Generate your plan → get your shopping list → go shopping → follow your meals. Simple.</p>
+          </div>
+          <OOption label="Every day" desc="I'll plan one day at a time, or I already have food in" selected={data.mealPlanDays===1} onClick={()=>{ update("mealPlanDays",1); setTimeout(next,300); }} />
+          <OOption label="3 days" desc="I shop a couple of times a week" selected={data.mealPlanDays===3} onClick={()=>{ update("mealPlanDays",3); setTimeout(next,300); }} />
+          <OOption label="5 days" desc="I do one big weekday shop" selected={data.mealPlanDays===5} onClick={()=>{ update("mealPlanDays",5); setTimeout(next,300); }} />
+          <OOption label="7 days" desc="I do one big weekly shop" selected={data.mealPlanDays===7} onClick={()=>{ update("mealPlanDays",7); setTimeout(next,300); }} />
+        </div>
+      </div>}
+
+      {/* Step 14 — Supplements */}
+      {step===14&&<div style={{ flex:1, display:"flex", flexDirection:"column", padding:"0 24px 48px", overflowY:"auto" }}>
         <Header step={step} />
         <h2 style={{ color:"#fff", fontSize:26, fontWeight:800, margin:"0 0 8px" }}>Are you open to supplements?</h2>
         <p style={{ color:"rgba(255,255,255,0.5)", fontSize:14, marginBottom:20 }}>Especially useful if you're over 40. We'll only recommend what's relevant to you.</p>
@@ -1127,8 +1144,8 @@ const Onboarding = ({ onDone }) => {
         </div>
       </div>}
 
-      {/* Step 14 — Equipment & building plan */}
-      {step===14&&<div style={{ flex:1, display:"flex", flexDirection:"column", padding:"0 24px 48px" }}>
+      {/* Step 15 — Equipment & building plan */}
+      {step===15&&<div style={{ flex:1, display:"flex", flexDirection:"column", padding:"0 24px 48px" }}>
         <Header step={step} />
         <div style={{ flex:1, paddingTop:8 }}>
           <h2 style={{ color:"#fff", fontSize:32, fontWeight:800, margin:"0 0 8px" }}>What equipment do you have?</h2>
