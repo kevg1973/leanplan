@@ -1777,9 +1777,9 @@ const MealsTab =({ profile, favourites, setFavourites, removed, setRemoved, meal
 
   return (
     <div>
-      <div style={{ display:"flex", gap:6, marginBottom:10, overflowX:"auto", paddingBottom:2 }}>
+      <div style={{ display:"flex", background:C.card, border:`1px solid ${C.border}`, borderRadius:12, padding:3, marginBottom:12, gap:2 }}>
         {[["meals","Meals"],["shopping","Shopping"],["supps","Supplements"]].map(([k,l])=>(
-          <Chip key={k} color={C.accent} active={section===k} onClick={()=>setSection(k)}>{l}</Chip>
+          <button key={k} onClick={()=>setSection(k)} style={{ flex:1, background:section===k?C.accent:"transparent", color:section===k?"#fff":C.muted, border:"none", borderRadius:10, padding:"8px 0", fontSize:13, fontWeight:600, cursor:"pointer", fontFamily:FONT, transition:"all 0.2s" }}>{l}</button>
         ))}
       </div>
 
@@ -1820,7 +1820,7 @@ const MealsTab =({ profile, favourites, setFavourites, removed, setRemoved, meal
 
         {/* Compact meal style + generate row */}
         <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:16, padding:"12px 14px", marginBottom:12 }}>
-          <div style={{ display:"flex", gap:6, overflowX:"auto", paddingBottom:2, marginBottom:10, scrollbarWidth:"none" }}>
+          <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:10 }}>
             {["all","balanced","high-protein","mediterranean","budget-friendly"].map(s=><Chip key={s} color={C.accent} active={style===s} onClick={()=>setStyle(s)}>{s}</Chip>)}
           </div>
           {isPro ? (
