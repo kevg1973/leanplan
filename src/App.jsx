@@ -1968,6 +1968,10 @@ const TrainTab = ({ profile, workoutLog, setWorkoutLog, setProfile, savedWorkout
     setLifts(updated);
     localStorage.setItem("leanplan_lifts", JSON.stringify(updated));
     setLoggedWeights(lw => ({...lw, [exName]: true}));
+    // Auto-log the workout on first exercise saved
+    if (!workoutLog[todayKey()] && activeWorkout) {
+      setWorkoutLog(wl=>({...wl,[todayKey()]:{type:selectedType,date:todayKey(),time:new Date().toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"})}}));
+    }
   };
   const getLastLift = (exName) => {
     const entries = lifts[exName];
@@ -2081,15 +2085,7 @@ const TrainTab = ({ profile, workoutLog, setWorkoutLog, setProfile, savedWorkout
           </div>
         </Card>
 
-        <Card style={{ background:`linear-gradient(145deg, ${C.accent}08, ${C.purple}08)` }}>
-          <p style={{ color:C.muted, fontSize:12, fontWeight:600, letterSpacing:"0.06em", marginBottom:12 }}>LOG TODAY'S WORKOUT</p>
-          <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:14 }}>
-            {Object.entries(WORKOUTS).map(([key,val])=><Chip key={key} color={val.color} active={selectedType===key} onClick={()=>setSelectedType(key)}>{key.replace("-"," ")}</Chip>)}
-          </div>
-          <Btn onClick={()=>logWorkout(selectedType)} color={WORKOUTS[selectedType].color} style={{ width:"100%" }}>
-            {workoutLog[today]?"↻ Update Today":"✦ Start Today's Workout"}
-          </Btn>
-        </Card>
+
       </>}
 
       {view==="workout"&&<>
@@ -2198,8 +2194,7 @@ const TrainTab = ({ profile, workoutLog, setWorkoutLog, setProfile, savedWorkout
             <p style={{ color:C.text, fontSize:13, lineHeight:1.75, margin:0 }}>{activeWorkout.note}</p>
           </Card>
           <div style={{ display:"flex", gap:8 }}>
-            <Btn onClick={()=>setActiveWorkout(null)} outline color={C.accent} style={{ flex:1 }}>← Back</Btn>
-            {!workoutLog[today]&&<Btn onClick={()=>logWorkout(selectedType)} color={C.green} style={{ flex:2 }}>✓ Log This Workout</Btn>}
+            <Btn onClick={()=>setActiveWorkout(null)} outline color={C.accent} style={{ width:"100%" }}>← Back to workout selection</Btn>
           </div>
         </>}
       </>}
