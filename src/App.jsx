@@ -3174,7 +3174,13 @@ function AppInner() {
   const effectiveIsPro = isPro || isTrialActive();
   const [proData, setProData] = useState(null);
   const [showPaywall, setShowPaywall] = useState(false);
-  const [todaysMeals, setTodaysMeals] = useState(null);
+  const [todaysMeals, setTodaysMeals] = useState(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem("leanplan_todays_meals") || "null");
+      if (saved?.date === new Date().toISOString().split("T")[0]) return saved.meals;
+    } catch(e){}
+    return null;
+  });
   const [todaysWorkout, setTodaysWorkout] = useState(null);
   const [entries, setEntries] = useState([]);
   const [favourites, setFavourites] = useState([]);
@@ -3218,6 +3224,7 @@ function AppInner() {
     const timer = setTimeout(()=>{
       setTodaysMeals(null);
       setTodaysWorkout(null);
+      localStorage.removeItem("leanplan_todays_meals");
     }, msUntilMidnight());
     return () => clearTimeout(timer);
   }, []);
@@ -3542,7 +3549,13 @@ function AppInner() {
         {!effectiveIsPro && <ProBanner onUpgrade={()=>setShowPaywall(true)} />}
 
         {tab==="Today"&&<TodayTab profile={profile} entries={entries} mealLog={mealLog} workoutLog={workoutLog} water={water} setWater={setWater} journal={journal} setJournal={setJournal} measurements={measurements} />}
-        {tab==="Meals"&&<MealsTab profile={profile} favourites={favourites} setFavourites={setFavourites} removed={removed} setRemoved={setRemoved} mealLog={mealLog} setMealLog={setMealLog} isPro={effectiveIsPro} onUpgrade={()=>setShowPaywall(true)} shownMeals={todaysMeals} setShownMeals={setTodaysMeals} />}
+        {tab==="Meals"&&<MealsTab profile={profile} favourites={favourites} setFavourites={setFavourites} removed={removed} setRemoved={setRemoved} mealLog={mealLog} setMealLog={setMealLog} isPro={effectiveIsPro} onUpgrade={()=>setShowPaywall(true)} shownMeals={todaysMeals} setShownMeals={(meals)=>{
+          setTodaysMeals(meals);
+          try {
+            if (meals) localStorage.setItem("leanplan_todays_meals", JSON.stringify({ date: new Date().toISOString().split("T")[0], meals }));
+            else localStorage.removeItem("leanplan_todays_meals");
+          } catch(e){}
+        }} />}
         {tab==="Train"&&(effectiveIsPro ? <TrainTab profile={profile} workoutLog={workoutLog} setWorkoutLog={setWorkoutLog} setProfile={setProfile} savedWorkout={todaysWorkout} setSavedWorkout={setTodaysWorkout} /> : <LockedTab feature="Workout tracking, lift tracker and rest day planner" onUpgrade={()=>setShowPaywall(true)} />)}
         {tab==="Track"&&(effectiveIsPro ? <TrackTab profile={profile} entries={entries} setEntries={fn=>setEntries(typeof fn==="function"?fn(entries):fn)} measurements={measurements} setMeasurements={setMeasurements} workoutLog={workoutLog} /> : <LockedTab feature="Progress tracking, measurements and body stats" onUpgrade={()=>setShowPaywall(true)} />)}
         {tab==="Coach"&&(effectiveIsPro ? <CoachTab profile={profile} setProfile={setProfile} /> : <LockedTab feature="AI personal coach" onUpgrade={()=>setShowPaywall(true)} />)}
