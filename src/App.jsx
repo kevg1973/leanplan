@@ -666,7 +666,7 @@ const Chip = ({ children, color=C.accent, active, onClick }) => {
     return luminance > 0.6 ? "#555" : color;
   })();
   return (
-    <span onClick={onClick} style={{ background:active?color:`${color}12`, color:active?"#fff":inactiveTextColor, border:`1.5px solid ${active?color:`${color}55`}`, borderRadius:99, padding:"6px 14px", fontSize:13, fontWeight:600, cursor:onClick?"pointer":"default", transition:"all 0.2s", display:"inline-block" }}>{children}</span>
+    <span onClick={onClick} style={{ background:active?color:`${color}12`, color:active?"#fff":inactiveTextColor, border:`1.5px solid ${active?color:`${color}55`}`, borderRadius:99, padding:"5px 12px", fontSize:12, fontWeight:600, cursor:onClick?"pointer":"default", transition:"all 0.2s", display:"inline-block", whiteSpace:"nowrap", flexShrink:0 }}>{children}</span>
   );
 };
 
@@ -1777,7 +1777,7 @@ const MealsTab =({ profile, favourites, setFavourites, removed, setRemoved, meal
 
   return (
     <div>
-      <div style={{ display:"flex", gap:6, marginBottom:16, overflowX:"auto", paddingBottom:2 }}>
+      <div style={{ display:"flex", gap:6, marginBottom:10, overflowX:"auto", paddingBottom:2 }}>
         {[["meals","Meals"],["shopping","Shopping"],["supps","Supplements"]].map(([k,l])=>(
           <Chip key={k} color={C.accent} active={section===k} onClick={()=>setSection(k)}>{l}</Chip>
         ))}
@@ -3485,7 +3485,7 @@ function AppInner() {
     <div style={{ background:C.bg, minHeight:"100vh", fontFamily:FONT, color:C.text, width:"100%", overflowX:"hidden" }}>
       <style>{`* { box-sizing:border-box; margin:0; padding:0; } input,select,textarea { outline:none; } html,body { width:100%; overflow-x:hidden; background:${C.bg}; font-family:${FONT}; color-scheme:${isDark?"dark":"light"}; } #root { width:100%; } ::-webkit-scrollbar { width:4px; } ::-webkit-scrollbar-thumb { background:${C.divider}; border-radius:4px; } ::placeholder { color:${C.muted}; }`}</style>
 
-      <div style={{ padding:"52px 18px 12px", background:isDark?"rgba(0,0,0,0.85)":"rgba(242,242,247,0.95)", backdropFilter:"blur(20px)", WebkitBackdropFilter:"blur(20px)", borderBottom:`1px solid ${C.border}`, position:"sticky", top:0, zIndex:10, width:"100%" }}>
+      <div style={{ padding:"44px 18px 10px", background:isDark?"rgba(0,0,0,0.85)":"rgba(242,242,247,0.95)", backdropFilter:"blur(20px)", WebkitBackdropFilter:"blur(20px)", borderBottom:`1px solid ${C.border}`, position:"sticky", top:0, zIndex:10, width:"100%" }}>
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
           <div>
             <div style={{ display:"flex", alignItems:"center" }}>
