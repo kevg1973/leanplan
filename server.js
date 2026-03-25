@@ -170,6 +170,8 @@ app.post("/api/generate-meals", async (req, res) => {
     ? "eggs, rice, quinoa, chicken breast, tinned tomatoes, tinned beans, frozen veg, sweet potato, spinach, broccoli, rice cakes"
     : "oats, eggs, rice, chicken breast, tinned tomatoes, tinned beans, frozen veg, sweet potato, spinach, broccoli";
 
+  console.log(`Meal plan targets — TDEE:${tdee} Target:${dailyCalTarget}cal Protein:${dailyProteinTarget}g Goal:${goal} Pace:${profile?.paceId}`);
+
   const cookTime = { quick:"15 minutes max", moderate:"30 minutes", enjoy:"up to 60 minutes" }[profile?.cookingTime] || "30 minutes";
   const styleFilter = style !== "all" ? `Meal style: ${style}.` : "";
 
@@ -259,28 +261,49 @@ app.post("/api/generate-meal-plan", async (req, res) => {
   // Calorie target based on goal + pace
   const paceDeficits = { slow: 275, normal: 500, fast: 750, vfast: 1000 };
   const deficit = paceDeficits[profile?.paceId] || 500;
+
+  // Has the user set a weight loss target? Use pace as primary driver if so
+  const hasWeightTarget = profile?.targetLbs > 0;
+
   let dailyCalTarget = null;
   if (tdee) {
-    if (goal === "lose_weight") dailyCalTarget = Math.max(1200, tdee - deficit);
-    else if (goal === "build_muscle") dailyCalTarget = tdee + 300;
-    else if (goal === "get_fitter") dailyCalTarget = tdee - 100;
-    else dailyCalTarget = tdee - 200; // all of the above
+    if (goal === "lose_weight") {
+      dailyCalTarget = Math.max(1200, tdee - deficit);
+    } else if (goal === "build_muscle") {
+      dailyCalTarget = tdee + 300;
+    } else if (goal === "get_fitter") {
+      dailyCalTarget = tdee - 150;
+    } else {
+      // "all of the above" — if they have a weight target and pace, honour the deficit
+      // You can lose fat AND build muscle in a modest deficit with high protein + strength training
+      if (hasWeightTarget && profile?.paceId) {
+        dailyCalTarget = Math.max(1400, tdee - deficit);
+      } else {
+        dailyCalTarget = tdee - 200;
+      }
+    }
   }
 
   // Protein target based on goal and bodyweight
+  // Higher protein is essential when in a deficit to preserve/build muscle
   let dailyProteinTarget = null;
   if (weightKg) {
-    if (goal === "lose_weight") dailyProteinTarget = Math.round(weightKg * 2.2); // high protein to preserve muscle
-    else if (goal === "build_muscle") dailyProteinTarget = Math.round(weightKg * 2.0);
-    else dailyProteinTarget = Math.round(weightKg * 1.8);
+    if (goal === "lose_weight" || goal === "all") {
+      dailyProteinTarget = Math.round(weightKg * 2.2); // high protein preserves muscle in deficit
+    } else if (goal === "build_muscle") {
+      dailyProteinTarget = Math.round(weightKg * 2.0);
+    } else {
+      dailyProteinTarget = Math.round(weightKg * 1.8);
+    }
   }
 
   // Macro split guidance
   const macroGuidance = (() => {
     if (goal === "build_muscle") return "Higher carbs (40%), high protein (35%), moderate fat (25%). Calorie surplus.";
     if (goal === "lose_weight") return "Moderate carbs (35%), high protein (40%), moderate fat (25%). Calorie deficit.";
-    if (goal === "get_fitter") return "Balanced — carbs (40%), protein (30%), fat (30%). Slight deficit.";
-    return "Balanced — carbs (35%), protein (35%), fat (30%).";
+    if (goal === "get_fitter") return "Balanced carbs (40%), protein (30%), fat (30%). Slight deficit.";
+    // all of the above — body recomposition approach
+    return "High protein (40%), moderate carbs (35%), moderate fat (25%). Modest calorie deficit — enough to lose fat while supporting muscle retention with strength training.";
   })();
 
   // Meal calorie distribution (5 meals)
@@ -318,6 +341,8 @@ app.post("/api/generate-meal-plan", async (req, res) => {
   const budgetStaples = isGlutenFree
     ? "eggs, rice, quinoa, chicken breast, tinned tomatoes, tinned beans, frozen veg, sweet potato, spinach, broccoli, rice cakes"
     : "oats, eggs, rice, chicken breast, tinned tomatoes, tinned beans, frozen veg, sweet potato, spinach, broccoli";
+
+  console.log(`Meal plan targets — TDEE:${tdee} Target:${dailyCalTarget}cal Protein:${dailyProteinTarget}g Goal:${goal} Pace:${profile?.paceId}`);
 
   const cookTime = { quick:"15 minutes max", moderate:"30 minutes", enjoy:"up to 60 minutes" }[profile?.cookingTime] || "30 minutes";
   const styleFilter = style !== "all" ? `Meal style: ${style}.` : "";
