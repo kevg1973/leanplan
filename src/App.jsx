@@ -1656,34 +1656,13 @@ const MealCarousel = ({ meals, favourites, likedMeals, mealLog, today, onLike, o
   );
 };
 
-const MealsTab =({ profile, favourites, setFavourites, removed, setRemoved, mealLog, setMealLog, isPro, isTrial, onUpgrade, shownMeals, setShownMeals }) => {
+const MealsTab = ({ profile, favourites, setFavourites, removed, setRemoved, mealLog, setMealLog, isPro, onUpgrade, mealPlan, onSaveMealPlan }) => {
   const [style, setStyle] = useState("all");
-  const shown = shownMeals;
-  const setShown = setShownMeals;
-  const [expanded, setExpanded] = useState(null);
-  const [viewFavs, setViewFavs] = useState(false);
-  const [shoppingDays, setShoppingDays] = useState(7);
-  const [shoppingList, setShoppingList] = useState(null);
-  const [checked, setChecked] = useState({});
   const [section, setSection] = useState("meals");
   const [suppOpen, setSuppOpen] = useState(null);
   const [generating, setGenerating] = useState(false);
   const [generateError, setGenerateError] = useState(null);
-  const MAX_GENERATIONS = 999;
-  const [genCount, setGenCount] = useState(() => {
-    try {
-      const saved = JSON.parse(localStorage.getItem("leanplan_gen_count") || "{}");
-      if (saved.date !== todayKey()) return 0;
-      if (saved.count <= 3) return 0;
-      return saved.count || 0;
-    } catch { return 0; }
-  });
-
-  const incrementGenCount = () => {
-    const newCount = genCount + 1;
-    setGenCount(newCount);
-    localStorage.setItem("leanplan_gen_count", JSON.stringify({ date: todayKey(), count: newCount }));
-  };
+  const [checked, setChecked] = useState({});
   const [dislikedMeals, setDislikedMeals] = useState(() => {
     try { return JSON.parse(localStorage.getItem("leanplan_disliked_meals") || "[]"); } catch { return []; }
   });
@@ -1691,98 +1670,56 @@ const MealsTab =({ profile, favourites, setFavourites, removed, setRemoved, meal
     try { return JSON.parse(localStorage.getItem("leanplan_liked_meals") || "[]"); } catch { return []; }
   });
 
+  const planDays = profile?.mealPlanDays || 5;
   const today = todayKey();
   const tdee = calcTDEE(profile);
   const pace = getPace(profile.paceId||"normal");
   const targetCals = tdee ? tdee - Math.round(pace.lbs*500) : 1700;
 
-  const available = filterMeals(profile, removed);
-  const filtered = style==="all"?available:available.filter(m=>m.tags.includes(style));
-  const favMeals = ALL_MEALS.filter(m=>favourites.includes(m.id));
+  // Which day are we viewing — default to today
+  const [selectedDate, setSelectedDate] = useState(today);
+  const planDayDates = mealPlan?.days?.map(d=>d.date) || [];
+  const selectedDay = mealPlan?.days?.find(d=>d.date===selectedDate) || mealPlan?.days?.[0] || null;
+  const shownMeals = selectedDay?.meals || null;
+
   const todayLogged = mealLog[today]||[];
   const todayCals = todayLogged.reduce((a,m)=>a+m.cals,0);
   const todayProt = todayLogged.reduce((a,m)=>a+m.protein,0);
 
-  const getMealType = m => m.type || m.tags?.find(t=>["breakfast","lunch","dinner","snack"].includes(t)) || "snack";
-
-  const saveLikedMeals = (meals) => {
-    setLikedMeals(meals);
-    localStorage.setItem("leanplan_liked_meals", JSON.stringify(meals));
-  };
-  const saveDislikedMeals = (meals) => {
-    setDislikedMeals(meals);
-    localStorage.setItem("leanplan_disliked_meals", JSON.stringify(meals));
-  };
-
+  const saveLikedMeals = (meals) => { setLikedMeals(meals); localStorage.setItem("leanplan_liked_meals", JSON.stringify(meals)); };
+  const saveDislikedMeals = (meals) => { setDislikedMeals(meals); localStorage.setItem("leanplan_disliked_meals", JSON.stringify(meals)); };
   const likeMeal = (m) => {
-    if (!likedMeals.find(l=>l.name===m.name)) {
-      saveLikedMeals([...likedMeals, {name:m.name, id:m.id}]);
-    }
+    if (!likedMeals.find(l=>l.name===m.name)) saveLikedMeals([...likedMeals, {name:m.name, id:m.id}]);
     setFavourites(f=>f.includes(m.id)?f:[...f,m.id]);
   };
-
-  const [showRegenerateNudge, setShowRegenerateNudge] = useState(false);
-
   const dislikeMeal = (m) => {
     saveDislikedMeals([...dislikedMeals.filter(d=>d!==m.name), m.name]);
-    setShown(s=>s?s.filter(x=>x.id!==m.id):s);
-    setShowRegenerateNudge(true);
   };
 
-  // AI generation for Pro users
-  const generateAI = async () => {
-    if (genCount >= MAX_GENERATIONS) return;
+  const generatePlan = async () => {
     setGenerating(true);
     setGenerateError(null);
     try {
-      const res = await fetch("/api/generate-meals", {
+      const res = await fetch("/api/generate-meal-plan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          profile,
-          dislikedMealNames: dislikedMeals,
-          style,
-        }),
+        body: JSON.stringify({ profile, dislikedMealNames: dislikedMeals, style, days: planDays }),
       });
       const data = await res.json();
       if (data.error) throw new Error(data.error);
-      setShown(data.meals);
-      setExpanded(null);
-      incrementGenCount();
-      setShowRegenerateNudge(false);
+      const plan = { days: data.days, generatedDate: today, style };
+      onSaveMealPlan(plan);
+      setSelectedDate(today);
     } catch(err) {
-      setGenerateError("Could not generate meals. Please try again.");
+      setGenerateError("Could not generate meal plan. Please try again.");
       console.error(err);
     }
     setGenerating(false);
   };
 
-  // Fallback generation for free users (from hardcoded library)
-  const generateLocal = () => {
-    if (genCount >= MAX_GENERATIONS) return;
-    incrementGenCount();
-    setShowRegenerateNudge(false);
-    const pool=filtered.length>0?filtered:available;
-    const byType = {
-      breakfast: [...pool].filter(m=>getMealType(m)==="breakfast").sort(()=>Math.random()-0.5),
-      snack:     [...pool].filter(m=>getMealType(m)==="snack").sort(()=>Math.random()-0.5),
-      lunch:     [...pool].filter(m=>getMealType(m)==="lunch").sort(()=>Math.random()-0.5),
-      dinner:    [...pool].filter(m=>getMealType(m)==="dinner").sort(()=>Math.random()-0.5),
-    };
-    const ordered = [byType.breakfast[0],byType.snack[0],byType.lunch[0],byType.snack[1]||byType.snack[0],byType.dinner[0]].filter(Boolean);
-    setShown(ordered.length>=3?ordered:[...pool].sort(()=>Math.random()-0.5).slice(0,4));
-    setExpanded(null);
-  };
-
-  const generate = isPro ? generateAI : generateLocal;
-
-  const toggleFav = id => setFavourites(f=>f.includes(id)?f.filter(x=>x!==id):[...f,id]);
-  const removeM = id => { setRemoved(r=>[...r,id]); setShown(s=>s?s.filter(m=>m.id!==id):s); };
   const logMeal = m => {
     const currentCals = (mealLog[today]||[]).reduce((a,x)=>a+x.cals,0);
     const newTotal = currentCals + m.cals;
-    const tdee = calcTDEE(profile);
-    const pace = getPace(profile.paceId||"normal");
     const target = tdee ? tdee - Math.round(pace.lbs*500) : 1800;
     if (tdee && newTotal > target * 1.1) {
       const ok = window.confirm(`⚠️ Calorie Warning\n\nLogging this meal will bring your total to ${newTotal} calories — ${Math.round(((newTotal/target)-1)*100)}% over your daily target of ${target}.\n\nLog it anyway?`);
@@ -1791,6 +1728,39 @@ const MealsTab =({ profile, favourites, setFavourites, removed, setRemoved, meal
     setMealLog(ml=>({...ml,[today]:[...(ml[today]||[]),{id:m.id,name:m.name,cals:m.cals,protein:m.protein,carbs:m.carbs,fat:m.fat,time:new Date().toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"})}]}));
   };
   const removeMealLog = (i) => setMealLog(ml=>({...ml,[today]:(ml[today]||[]).filter((_,idx)=>idx!==i)}));
+
+  // Build shopping list from all plan days
+  const buildShoppingList = () => {
+    if (!mealPlan?.days) return [];
+    const allItems = {};
+    mealPlan.days.forEach(day => {
+      day.meals.forEach(meal => {
+        meal.items.forEach(item => {
+          // Normalise item name — strip amounts in brackets
+          const name = item.replace(/\s*\([^)]*\)/g, "").trim().toLowerCase();
+          const display = item.replace(/\s*\([^)]*\)/g, "").trim();
+          const amountMatch = item.match(/\(([^)]+)\)/);
+          const amount = amountMatch ? amountMatch[1] : "";
+          if (!allItems[name]) allItems[name] = { display, amounts: [], meals: [] };
+          if (amount) allItems[name].amounts.push(amount);
+          allItems[name].meals.push(meal.name);
+        });
+      });
+    });
+    return Object.values(allItems);
+  };
+
+  const shoppingItems = buildShoppingList();
+
+  // Format date for display
+  const fmtPlanDate = (dateStr) => {
+    const d = new Date(dateStr + "T12:00:00");
+    const todayD = new Date(today + "T12:00:00");
+    const diff = Math.round((d - todayD) / (1000*60*60*24));
+    if (diff === 0) return "Today";
+    if (diff === 1) return "Tomorrow";
+    return d.toLocaleDateString("en-GB", {weekday:"short", day:"numeric", month:"short"});
+  };
 
   return (
     <div>
@@ -1815,7 +1785,6 @@ const MealsTab =({ profile, favourites, setFavourites, removed, setRemoved, meal
             <div key={i} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"5px 0", borderBottom:i<todayLogged.length-1?`1px solid ${C.border}`:"none" }}>
               <div><span style={{ color:C.text, fontSize:13 }}>{m.name}</span><span style={{ color:C.muted, fontSize:11, marginLeft:8 }}>{m.time}</span></div>
               <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-        {syncing && <div style={{ width:8, height:8, borderRadius:99, background:C.green, animation:"pulse 1s ease-in-out infinite" }} title="Syncing..." />}
                 <span style={{ color:C.muted, fontSize:12 }}>{m.cals}cal</span>
                 <button onClick={()=>removeMealLog(i)} style={{ background:"none", border:"none", color:C.red, cursor:"pointer", fontSize:14 }}>×</button>
               </div>
@@ -1823,61 +1792,51 @@ const MealsTab =({ profile, favourites, setFavourites, removed, setRemoved, meal
           ))}
         </Card>}
 
-        {/* Favourites */}
-        {favMeals.length>0&&<div onClick={()=>setViewFavs(v=>!v)} style={{ background:`${C.yellow}15`, border:`1px solid ${C.yellow}33`, borderRadius:12, padding:"10px 14px", marginBottom:12, cursor:"pointer", display:"flex", justifyContent:"space-between" }}>
-          <div style={{ display:"flex", alignItems:"center", gap:6 }}><Icon name="starFill" size={15} color={C.orange} /><span style={{ color:C.orange, fontWeight:600, fontSize:14 }}>{favMeals.length} favourite{favMeals.length!==1?"s":""}</span></div>
-          <span style={{ color:C.muted, fontSize:13 }}>{viewFavs?"▲":"▼"}</span>
-        </div>}
-        {viewFavs&&favMeals.map(m=><Card key={m.id} style={{ borderColor:`${C.yellow}44` }}>
-          <div style={{ display:"flex", justifyContent:"space-between" }}>
-            <p style={{ color:C.text, fontWeight:600, margin:0 }}>{m.name}</p>
-            <button onClick={()=>toggleFav(m.id)} style={{ background:"none", border:"none", color:C.orange, cursor:"pointer", fontSize:13, fontFamily:FONT }}>★ Unfav</button>
-          </div>
-        </Card>)}
-
-        {/* Compact meal style + generate row */}
+        {/* Generate / plan controls */}
         <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:16, padding:"12px 14px", marginBottom:12 }}>
           <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:10 }}>
             {["all","balanced","high-protein","mediterranean","budget-friendly"].map(s=><Chip key={s} color={C.accent} active={style===s} onClick={()=>setStyle(s)}>{s}</Chip>)}
           </div>
           {isPro ? (
             <div>
-              <Btn onClick={generate} disabled={generating} style={{ width:"100%", padding:"11px 0", fontSize:15, marginBottom:4 }}>
-                {generating ? "✦ Generating..." : "✦ Generate Today's Meals with AI"}
+              <Btn onClick={generatePlan} disabled={generating} style={{ width:"100%", padding:"11px 0", fontSize:15, marginBottom:4 }}>
+                {generating ? "✦ Generating your plan..." : mealPlan ? `↻ Regenerate ${planDays}-day plan` : `✦ Generate my ${planDays}-day meal plan`}
               </Btn>
-              <p style={{ color:C.muted, fontSize:11, textAlign:"center", margin:0 }}>{MAX_GENERATIONS - genCount} generation{MAX_GENERATIONS - genCount !== 1 ? "s" : ""} remaining today</p>
-              {generating && (
-                <div style={{ background:C.sectionBg, borderRadius:14, padding:"12px", marginTop:8, textAlign:"center" }}>
-                  <MealLoadingIndicator />
-                </div>
-              )}
+              {mealPlan && <p style={{ color:C.muted, fontSize:11, textAlign:"center", margin:0 }}>Plan generated {fmtDate(mealPlan.generatedDate)} · {mealPlan.days?.length} days</p>}
+              {generating && <div style={{ background:C.sectionBg, borderRadius:14, padding:"12px", marginTop:8, textAlign:"center" }}><MealLoadingIndicator /></div>}
               {generateError && <p style={{ color:C.red, fontSize:13, textAlign:"center", marginTop:6 }}>{generateError}</p>}
               {dislikedMeals.length>0&&<p style={{ color:C.muted, fontSize:11, textAlign:"center", marginTop:4 }}>Avoiding {dislikedMeals.length} disliked meal{dislikedMeals.length!==1?"s":""} · <span onClick={()=>saveDislikedMeals([])} style={{ color:C.accent, cursor:"pointer" }}>Reset</span></p>}
             </div>
           ) : (
             <div>
-              <Btn onClick={generate} style={{ width:"100%", padding:"11px 0", marginBottom:6 }}>✦ Generate from our meal library</Btn>
-              <Btn onClick={onUpgrade} color="#5856d6" style={{ width:"100%", padding:"11px 0" }}>✦ Unlock AI Meal Generation — Pro</Btn>
+              <Btn onClick={onUpgrade} color="#5856d6" style={{ width:"100%", padding:"11px 0" }}>✦ Unlock AI Meal Planning — Pro</Btn>
+              <p style={{ color:C.muted, fontSize:12, textAlign:"center", marginTop:6 }}>Generate a full {planDays}-day meal plan with shopping list</p>
             </div>
           )}
         </div>
 
-        {shown&&<>
-          {/* Totals + regen combined row */}
-          <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:8, background:C.card, border:`1px solid ${C.border}`, borderRadius:14, padding:"8px 12px" }}>
-            <span style={{ color:C.accent, fontWeight:700, fontSize:13 }}>{shown.reduce((a,m)=>a+m.cals,0)} kcal</span>
-            <span style={{ color:C.muted, fontSize:12 }}>·</span>
-            <span style={{ color:C.green, fontWeight:600, fontSize:13 }}>{shown.reduce((a,m)=>a+m.protein,0)}g protein</span>
-            <span style={{ color:C.muted, fontSize:12 }}>·</span>
-            <span style={{ color:C.orange, fontWeight:600, fontSize:13 }}>{shown.reduce((a,m)=>a+m.carbs,0)}g carbs</span>
-            <div style={{ flex:1 }} />
-            <button onClick={generate} disabled={generating||genCount>=MAX_GENERATIONS} style={{ background:"none", border:"none", color:(generating||genCount>=MAX_GENERATIONS)?C.muted:C.accent, fontSize:12, fontWeight:700, cursor:(generating||genCount>=MAX_GENERATIONS)?"default":"pointer", fontFamily:FONT, padding:"2px 6px" }}>↻</button>
-            <button onClick={()=>setShown(null)} style={{ background:"none", border:"none", color:C.muted, fontSize:12, cursor:"pointer", fontFamily:FONT, padding:"2px 6px" }}>✕</button>
+        {/* Day picker */}
+        {mealPlan?.days && mealPlan.days.length > 1 && (
+          <div style={{ display:"flex", gap:6, overflowX:"auto", marginBottom:12, paddingBottom:2, scrollbarWidth:"none" }}>
+            {mealPlan.days.map(d => (
+              <button key={d.date} onClick={()=>setSelectedDate(d.date)} style={{ flexShrink:0, background:selectedDate===d.date?C.accent:C.card, border:`1px solid ${selectedDate===d.date?C.accent:C.border}`, borderRadius:10, padding:"6px 12px", color:selectedDate===d.date?"#fff":d.date===today?C.accent:C.text, fontSize:12, fontWeight:selectedDate===d.date||d.date===today?700:400, cursor:"pointer", fontFamily:FONT, whiteSpace:"nowrap" }}>
+                {fmtPlanDate(d.date)}
+              </button>
+            ))}
           </div>
+        )}
 
-          {/* Swipeable meal carousel */}
+        {/* Meals for selected day */}
+        {shownMeals&&<>
+          <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:8, background:C.card, border:`1px solid ${C.border}`, borderRadius:14, padding:"8px 12px" }}>
+            <span style={{ color:C.accent, fontWeight:700, fontSize:13 }}>{shownMeals.reduce((a,m)=>a+m.cals,0)} kcal</span>
+            <span style={{ color:C.muted, fontSize:12 }}>·</span>
+            <span style={{ color:C.green, fontWeight:600, fontSize:13 }}>{shownMeals.reduce((a,m)=>a+m.protein,0)}g protein</span>
+            <span style={{ color:C.muted, fontSize:12 }}>·</span>
+            <span style={{ color:C.orange, fontWeight:600, fontSize:13 }}>{shownMeals.reduce((a,m)=>a+m.carbs,0)}g carbs</span>
+          </div>
           <MealCarousel
-            meals={shown}
+            meals={shownMeals}
             favourites={favourites}
             likedMeals={likedMeals}
             mealLog={mealLog}
@@ -1888,54 +1847,61 @@ const MealsTab =({ profile, favourites, setFavourites, removed, setRemoved, meal
             onRemoveLog={removeMealLog}
             targetCals={targetCals}
           />
-
-          {removed.length>0&&<div style={{ textAlign:"center", marginTop:8 }}><span onClick={()=>setRemoved([])} style={{ color:C.muted, fontSize:12, cursor:"pointer", textDecoration:"underline" }}>Restore {removed.length} removed meal{removed.length!==1?"s":""}</span></div>}
-          {showRegenerateNudge&&<div style={{ background:`${C.accent}10`, border:`1px solid ${C.accent}33`, borderRadius:14, padding:"12px 16px", display:"flex", justifyContent:"space-between", alignItems:"center", marginTop:8 }}>
-            <p style={{ color:C.text, fontSize:13, margin:0 }}>Want a fresh meal plan?</p>
-            <button onClick={()=>{ setShowRegenerateNudge(false); generate(); }} disabled={generating||genCount>=MAX_GENERATIONS} style={{ background:genCount>=MAX_GENERATIONS?C.muted:C.accent, border:"none", borderRadius:99, padding:"6px 14px", color:"#fff", fontSize:13, fontWeight:700, cursor:(generating||genCount>=MAX_GENERATIONS)?"default":"pointer", fontFamily:FONT }}>
-              {genCount>=MAX_GENERATIONS ? "Limit reached" : "↻ Regenerate"}
-            </button>
-          </div>}
         </>}
+
+        {!mealPlan && !generating && isPro && (
+          <div style={{ textAlign:"center", padding:"32px 20px", background:C.card, border:`1px solid ${C.border}`, borderRadius:16 }}>
+            <div style={{ fontSize:40, marginBottom:12 }}>🍽️</div>
+            <p style={{ color:C.text, fontWeight:700, fontSize:16, margin:"0 0 6px" }}>No meal plan yet</p>
+            <p style={{ color:C.muted, fontSize:13, lineHeight:1.6, margin:"0 0 16px" }}>Generate your {planDays}-day plan above, then head to Shopping for your ingredients list.</p>
+          </div>
+        )}
       </>}
 
       {section==="shopping"&&<>
-        <Card>
-          <p style={{ color:C.muted, fontSize:12, fontWeight:600, letterSpacing:"0.06em", marginBottom:10 }}>SHOPPING LIST — GF &amp; DAIRY-FREE</p>
-          <div style={{ display:"flex", gap:8, marginBottom:14, alignItems:"center" }}>
-            <span style={{ color:C.muted }}>For</span>
-            {[3,5,7].map(d=><Chip key={d} color={C.green} active={shoppingDays===d} onClick={()=>setShoppingDays(d)}>{d} days</Chip>)}
+        {!mealPlan ? (
+          <div style={{ textAlign:"center", padding:"40px 20px", background:C.card, border:`1px solid ${C.border}`, borderRadius:16 }}>
+            <div style={{ fontSize:40, marginBottom:12 }}>🛒</div>
+            <p style={{ color:C.text, fontWeight:700, fontSize:16, margin:"0 0 8px" }}>Generate your meal plan first</p>
+            <p style={{ color:C.muted, fontSize:13, lineHeight:1.6, margin:"0 0 20px" }}>Your shopping list is built automatically from your meal plan. Head to Meals and generate your {planDays}-day plan, then come back here.</p>
+            <Btn onClick={()=>setSection("meals")} color={C.accent} style={{ padding:"10px 24px" }}>← Go to Meals</Btn>
           </div>
-          {isPro
-            ? <Btn onClick={()=>{setShoppingList(SHOPPING[shoppingDays]);setChecked({});}} color={C.green} style={{ width:"100%" }}>✦ Generate List</Btn>
-            : <Btn onClick={onUpgrade} color="#5856d6" style={{ width:"100%" }}>✦ Unlock Shopping Lists — Pro</Btn>
-          }
-        </Card>
-        {shoppingList&&<>
-          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12, padding:"0 4px" }}>
-            <span style={{ color:C.text, fontWeight:600 }}>{shoppingDays}-day list</span>
-            <Chip color={C.green}>{shoppingList.cost}</Chip>
-          </div>
-          {shoppingList.cats.map((cat,ci)=><Section key={ci} title={cat.name}>
-            {cat.items.map((item,ii)=>{
-              const k=`${ci}-${ii}`;
-              return <div key={ii} onClick={()=>setChecked(c=>({...c,[k]:!c[k]}))} style={{ display:"flex", alignItems:"center", gap:12, padding:"12px 16px", borderBottom:ii<cat.items.length-1?`1px solid ${C.border}`:"none", cursor:"pointer", opacity:checked[k]?0.35:1 }}>
-                <div style={{ width:22, height:22, borderRadius:99, flexShrink:0, background:checked[k]?C.green:"transparent", border:`2px solid ${checked[k]?C.green:C.divider}`, display:"flex", alignItems:"center", justifyContent:"center" }}>
-                  {checked[k]&&<span style={{ color:"#fff", fontSize:12, fontWeight:700 }}>✓</span>}
-                </div>
-                <div style={{ flex:1 }}>
-                  <span style={{ color:C.text, fontSize:15, textDecoration:checked[k]?"line-through":"none" }}>{item.i}</span>
-                  {item.n&&<span style={{ color:C.muted, fontSize:12, marginLeft:6 }}>({item.n})</span>}
-                </div>
-                <span style={{ color:C.muted, fontSize:13 }}>{item.q}</span>
-              </div>;
-            })}
-          </Section>)}
-          <Card style={{ background:`${C.green}08`, borderColor:`${C.green}22` }}>
-            <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:6 }}><Icon name="tip" size={14} color={C.green} /><p style={{ color:C.green, fontSize:12, fontWeight:700, margin:0 }}>SMART SHOPPING</p></div>
-            <p style={{ color:C.text, fontSize:13, lineHeight:1.7, margin:0 }}>{shoppingList.tip}</p>
-          </Card>
-        </>}
+        ) : (
+          <>
+            <Card style={{ background:`${C.green}08`, borderColor:`${C.green}33` }}>
+              <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:6 }}>
+                <Icon name="bag" size={14} color={C.green} />
+                <p style={{ color:C.green, fontSize:12, fontWeight:700, margin:0 }}>SHOPPING LIST — {mealPlan.days.length}-DAY PLAN</p>
+              </div>
+              <p style={{ color:C.text, fontSize:13, lineHeight:1.6, margin:"0 0 4px" }}>Based on your meal plan from {fmtDate(mealPlan.generatedDate)}.</p>
+              <p style={{ color:C.muted, fontSize:12, margin:0 }}>{shoppingItems.length} ingredients · Tap to check off as you shop</p>
+            </Card>
+
+            {shoppingItems.length > 0 && (
+              <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:16, overflow:"hidden" }}>
+                {shoppingItems.map((item, i) => {
+                  const k = `item-${i}`;
+                  return (
+                    <div key={i} onClick={()=>setChecked(c=>({...c,[k]:!c[k]}))} style={{ display:"flex", alignItems:"center", gap:12, padding:"12px 16px", borderBottom:i<shoppingItems.length-1?`1px solid ${C.border}`:"none", cursor:"pointer", opacity:checked[k]?0.4:1 }}>
+                      <div style={{ width:22, height:22, borderRadius:99, flexShrink:0, background:checked[k]?C.green:"transparent", border:`2px solid ${checked[k]?C.green:C.divider}`, display:"flex", alignItems:"center", justifyContent:"center" }}>
+                        {checked[k]&&<span style={{ color:"#fff", fontSize:11, fontWeight:700 }}>✓</span>}
+                      </div>
+                      <div style={{ flex:1 }}>
+                        <span style={{ color:C.text, fontSize:14, fontWeight:500, textDecoration:checked[k]?"line-through":"none" }}>{item.display}</span>
+                        {item.amounts.length > 0 && <span style={{ color:C.muted, fontSize:12, marginLeft:6 }}>({item.amounts[0]})</span>}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            <div style={{ display:"flex", gap:8, marginTop:12 }}>
+              <button onClick={()=>setChecked({})} style={{ flex:1, background:"none", border:`1px solid ${C.border}`, borderRadius:10, padding:"8px 0", color:C.muted, fontSize:13, cursor:"pointer", fontFamily:FONT }}>Reset ticks</button>
+              <button onClick={()=>setSection("meals")} style={{ flex:1, background:"none", border:`1px solid ${C.accent}`, borderRadius:10, padding:"8px 0", color:C.accent, fontSize:13, fontWeight:600, cursor:"pointer", fontFamily:FONT }}>↻ New plan</button>
+            </div>
+          </>
+        )}
       </>}
 
       {section==="supps"&&<>
@@ -3201,13 +3167,28 @@ function AppInner() {
   const effectiveIsPro = isPro || isTrialActive();
   const [proData, setProData] = useState(null);
   const [showPaywall, setShowPaywall] = useState(false);
-  const [todaysMeals, setTodaysMeals] = useState(() => {
+  const [mealPlan, setMealPlan] = useState(() => {
     try {
-      const saved = JSON.parse(localStorage.getItem("leanplan_todays_meals") || "null");
-      if (saved?.date === new Date().toISOString().split("T")[0]) return saved.meals;
+      const saved = JSON.parse(localStorage.getItem("leanplan_meal_plan") || "null");
+      if (saved?.generatedDate) {
+        // Check plan still has future/today dates
+        const today = new Date().toISOString().split("T")[0];
+        const hasFuture = saved.days?.some(d => d.date >= today);
+        if (hasFuture) return saved;
+      }
     } catch(e){}
     return null;
   });
+  const saveMealPlan = (plan) => {
+    setMealPlan(plan);
+    try {
+      if (plan) localStorage.setItem("leanplan_meal_plan", JSON.stringify(plan));
+      else localStorage.removeItem("leanplan_meal_plan");
+    } catch(e){}
+  };
+  // todaysMeals derived from mealPlan for backward compat
+  const todayKey2 = new Date().toISOString().split("T")[0];
+  const todaysMeals = mealPlan?.days?.find(d => d.date === todayKey2)?.meals || null;
   const [todaysWorkout, setTodaysWorkout] = useState(null);
   const [entries, setEntries] = useState([]);
   const [favourites, setFavourites] = useState([]);
@@ -3249,9 +3230,8 @@ function AppInner() {
       return midnight - now;
     };
     const timer = setTimeout(()=>{
-      setTodaysMeals(null);
       setTodaysWorkout(null);
-      localStorage.removeItem("leanplan_todays_meals");
+      // Don't clear mealPlan at midnight - it spans multiple days
     }, msUntilMidnight());
     return () => clearTimeout(timer);
   }, []);
@@ -3576,13 +3556,7 @@ function AppInner() {
         {!effectiveIsPro && <ProBanner onUpgrade={()=>setShowPaywall(true)} />}
 
         {tab==="Today"&&<TodayTab profile={profile} entries={entries} mealLog={mealLog} workoutLog={workoutLog} water={water} setWater={setWater} journal={journal} setJournal={setJournal} measurements={measurements} />}
-        {tab==="Meals"&&<MealsTab profile={profile} favourites={favourites} setFavourites={setFavourites} removed={removed} setRemoved={setRemoved} mealLog={mealLog} setMealLog={setMealLog} isPro={effectiveIsPro} onUpgrade={()=>setShowPaywall(true)} shownMeals={todaysMeals} setShownMeals={(meals)=>{
-          setTodaysMeals(meals);
-          try {
-            if (meals) localStorage.setItem("leanplan_todays_meals", JSON.stringify({ date: new Date().toISOString().split("T")[0], meals }));
-            else localStorage.removeItem("leanplan_todays_meals");
-          } catch(e){}
-        }} />}
+        {tab==="Meals"&&<MealsTab profile={profile} favourites={favourites} setFavourites={setFavourites} removed={removed} setRemoved={setRemoved} mealLog={mealLog} setMealLog={setMealLog} isPro={effectiveIsPro} onUpgrade={()=>setShowPaywall(true)} mealPlan={mealPlan} onSaveMealPlan={saveMealPlan} />}
         {tab==="Train"&&(effectiveIsPro ? <TrainTab profile={profile} workoutLog={workoutLog} setWorkoutLog={setWorkoutLog} setProfile={setProfile} savedWorkout={todaysWorkout} setSavedWorkout={setTodaysWorkout} /> : <LockedTab feature="Workout tracking, lift tracker and rest day planner" onUpgrade={()=>setShowPaywall(true)} />)}
         {tab==="Track"&&(effectiveIsPro ? <TrackTab profile={profile} entries={entries} setEntries={fn=>setEntries(typeof fn==="function"?fn(entries):fn)} measurements={measurements} setMeasurements={setMeasurements} workoutLog={workoutLog} /> : <LockedTab feature="Progress tracking, measurements and body stats" onUpgrade={()=>setShowPaywall(true)} />)}
         {tab==="Coach"&&(effectiveIsPro ? <CoachTab profile={profile} setProfile={setProfile} /> : <LockedTab feature="AI personal coach" onUpgrade={()=>setShowPaywall(true)} />)}

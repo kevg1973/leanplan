@@ -220,6 +220,97 @@ Return this exact JSON structure:
   }
 });
 
+// ── AI Multi-day Meal Plan Generation ────────────────────────────────────────
+app.post("/api/generate-meal-plan", async (req, res) => {
+  const { profile, dislikedMealNames = [], style = "all", days = 5 } = req.body;
+
+  const dietNotes = [
+    profile?.dietType || "omnivore",
+    profile?.dairyPref === "dairy_free" ? "strictly dairy-free (use coconut yoghurt, soya milk, dairy-free alternatives)" :
+    profile?.dairyPref === "lactose_free" ? "lactose-free dairy only" : "dairy ok",
+    profile?.glutenPref === "gluten_free" ? "strictly gluten-free (use tamari not soy sauce, GF oats, rice/corn alternatives)" : "gluten ok",
+  ].filter(Boolean).join(", ");
+
+  const cookTime = { quick:"15 minutes max", moderate:"30 minutes", enjoy:"up to 60 minutes" }[profile?.cookingTime] || "30 minutes";
+  const styleFilter = style !== "all" ? `Meal style: ${style}.` : "";
+
+  // Generate date keys for the plan
+  const dateKeys = Array.from({length: days}, (_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() + i);
+    return d.toISOString().split("T")[0];
+  });
+
+  const prompt = `Generate a ${days}-day meal plan for this person. Return ONLY valid JSON, no other text.
+
+User profile:
+- Diet: ${dietNotes}
+- Allergies: ${profile?.allergies?.join(", ") || "none"}
+- Dislikes: ${profile?.dislikes?.join(", ") || "none"}
+- Cooking time: ${cookTime} per meal
+- Goal: ${profile?.goal?.replace(/_/g," ") || "lose weight"}
+- Age: ${profile?.age || "adult"}
+${styleFilter}
+
+CRITICAL RULES:
+1. ALL ingredients must be available in standard UK supermarkets (Tesco, Sainsbury's, Asda, Ocado)
+2. No exotic or hard-to-find ingredients
+3. No ingredients the user dislikes or is allergic to
+4. Each day must have exactly 5 meals in order: breakfast, morning snack, lunch, afternoon snack, dinner
+5. Do NOT repeat meals across days — every meal must be unique
+6. Do NOT generate any of these meals (user has disliked them): ${dislikedMealNames.length > 0 ? dislikedMealNames.join(", ") : "none"}
+7. Each meal should be high protein (20g+ for main meals, 10g+ for snacks)
+8. Use simple whole foods — chicken, eggs, rice, oats, vegetables, legumes etc
+9. Where possible, reuse ingredients across days to keep the shopping list efficient
+
+Return this exact JSON structure:
+{
+  "days": [
+    {
+      "date": "${dateKeys[0]}",
+      "meals": [
+        {
+          "id": "ai_[unique_6_char_id]",
+          "name": "Meal Name",
+          "type": "breakfast|snack|lunch|dinner",
+          "time": "8:00 AM",
+          "cals": 400,
+          "protein": 30,
+          "carbs": 35,
+          "fat": 12,
+          "items": ["ingredient 1 (amount)", "ingredient 2 (amount)"],
+          "method": "Step by step cooking instructions",
+          "tags": ["balanced", "gf", "df"]
+        }
+      ]
+    }
+  ]
+}
+
+Generate ${days} days with dates: ${dateKeys.join(", ")}`;
+
+  try {
+    const response = await client.messages.create({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 8000,
+      messages: [{ role: "user", content: prompt }],
+    });
+
+    const text = response.content[0]?.text || "";
+    const clean = text.replace(/```json|```/g, "").trim();
+    const parsed = JSON.parse(clean);
+
+    if (!parsed.days || !Array.isArray(parsed.days)) {
+      throw new Error("Invalid meal plan structure returned");
+    }
+
+    res.json({ days: parsed.days });
+  } catch (err) {
+    console.error("Meal plan generation error:", err.message);
+    res.status(500).json({ error: "Failed to generate meal plan" });
+  }
+});
+
 // ── Chat endpoint ─────────────────────────────────────────────────────────────
 app.post("/api/chat", async (req, res) => {
   const { messages, profile } = req.body;
