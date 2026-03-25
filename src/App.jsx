@@ -721,7 +721,7 @@ const PacePicker = ({ value, onChange, targetLbs }) => {
 };
 
 // ── Onboarding ────────────────────────────────────────────────────────────────
-const TOTAL_STEPS = 15;
+const TOTAL_STEPS = 16;
 
 // Scroll picker component
 
@@ -1102,8 +1102,20 @@ const Onboarding = ({ onDone }) => {
         <OBtn onClick={next}>Continue →</OBtn>
       </div>}
 
-      {/* Step 13 — Meal planning frequency */}
+      {/* Step 13 — Cooking time */}
       {step===13&&<div style={{ flex:1, display:"flex", flexDirection:"column", padding:"0 24px 48px" }}>
+        <Header step={step} />
+        <div style={{ flex:1, paddingTop:8 }}>
+          <h2 style={{ color:"#fff", fontSize:28, fontWeight:800, margin:"0 0 8px" }}>How long do you want to spend cooking?</h2>
+          <p style={{ color:"rgba(255,255,255,0.5)", fontSize:14, marginBottom:24 }}>We'll generate recipes that fit your schedule</p>
+          <OOption label="Quick — 15 minutes" desc="Minimal prep, simple assembly. Ideal for busy days." selected={data.cookingTime==="quick"} onClick={()=>{ update("cookingTime","quick"); setTimeout(next,300); }} />
+          <OOption label="Moderate — 30 minutes" desc="Proper cooking without anything too complex." selected={data.cookingTime==="moderate"} onClick={()=>{ update("cookingTime","moderate"); setTimeout(next,300); }} />
+          <OOption label="I enjoy cooking — up to 1 hour" desc="Happy to try more involved recipes." selected={data.cookingTime==="enjoy"} onClick={()=>{ update("cookingTime","enjoy"); setTimeout(next,300); }} />
+        </div>
+      </div>}
+
+      {/* Step 14 — Meal planning frequency */}
+      {step===14&&<div style={{ flex:1, display:"flex", flexDirection:"column", padding:"0 24px 48px" }}>
         <Header step={step} />
         <div style={{ flex:1, paddingTop:8 }}>
           <h2 style={{ color:"#fff", fontSize:28, fontWeight:800, margin:"0 0 8px", lineHeight:1.2 }}>How would you like your meal planning to work?</h2>
@@ -1120,7 +1132,7 @@ const Onboarding = ({ onDone }) => {
       </div>}
 
       {/* Step 14 — Supplements */}
-      {step===14&&<div style={{ flex:1, display:"flex", flexDirection:"column", padding:"0 24px 48px", overflowY:"auto" }}>
+      {step===15&&<div style={{ flex:1, display:"flex", flexDirection:"column", padding:"0 24px 48px", overflowY:"auto" }}>
         <Header step={step} />
         <h2 style={{ color:"#fff", fontSize:26, fontWeight:800, margin:"0 0 8px" }}>Are you open to supplements?</h2>
         <p style={{ color:"rgba(255,255,255,0.5)", fontSize:14, marginBottom:20 }}>Especially useful if you're over 40. We'll only recommend what's relevant to you.</p>
@@ -1144,8 +1156,8 @@ const Onboarding = ({ onDone }) => {
         </div>
       </div>}
 
-      {/* Step 15 — Equipment & building plan */}
-      {step===15&&<div style={{ flex:1, display:"flex", flexDirection:"column", padding:"0 24px 48px" }}>
+      {/* Step 16 — Equipment & building plan */}
+      {step===16&&<div style={{ flex:1, display:"flex", flexDirection:"column", padding:"0 24px 48px" }}>
         <Header step={step} />
         <div style={{ flex:1, paddingTop:8 }}>
           <h2 style={{ color:"#fff", fontSize:32, fontWeight:800, margin:"0 0 8px" }}>What equipment do you have?</h2>
@@ -1905,7 +1917,13 @@ const MealsTab = ({ profile, favourites, setFavourites, removed, setRemoved, mea
                 <p style={{ color:C.green, fontSize:12, fontWeight:700, margin:0 }}>SHOPPING LIST — {mealPlan.days.length}-DAY PLAN</p>
               </div>
               <p style={{ color:C.text, fontSize:13, lineHeight:1.6, margin:"0 0 4px" }}>Based on your meal plan from {fmtDate(mealPlan.generatedDate)}.</p>
-              <p style={{ color:C.muted, fontSize:12, margin:0 }}>{totalItems} ingredients across {shoppingCategories.length} categories · Tap to check off</p>
+              {(()=>{
+                const unchecked = totalItems - Object.values(checked).filter(Boolean).length;
+                const costPerDay = 4.5;
+                const planLen = mealPlan?.days?.length || 5;
+                const estCost = `~£${(costPerDay * planLen).toFixed(0)}–£${(costPerDay * planLen * 1.3).toFixed(0)}`;
+                return <p style={{ color:C.muted, fontSize:12, margin:0 }}>{totalItems} ingredients · {unchecked} remaining · Est. {estCost}</p>;
+              })()}
             </Card>
 
             {shoppingCategories.length > 0 && shoppingCategories.map((cat, ci) => (
@@ -2524,6 +2542,26 @@ const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDar
         </div>
       </>}
 
+      {editing==="cookingtime"&&<>
+        <p style={{ color:C.muted, fontSize:14, marginBottom:20 }}>How long are you happy to spend preparing a meal? This affects the recipes we generate for you.</p>
+        {[
+          ["quick",   "Quick",           "15 minutes max — minimal prep, simple assembly"],
+          ["moderate","Moderate",        "Around 30 minutes — proper cooking but nothing complex"],
+          ["enjoy",   "I enjoy cooking", "Up to an hour — happy to try more involved recipes"],
+        ].map(([val, label, desc]) => (
+          <div key={val} onClick={()=>setTempData(d=>({...d, cookingTime:val}))} style={{ background:tempData.cookingTime===val?`${C.accent}12`:C.card, border:`1.5px solid ${tempData.cookingTime===val?C.accent:C.border}`, borderRadius:14, padding:"14px 16px", marginBottom:10, cursor:"pointer", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+            <div>
+              <p style={{ color:C.text, fontWeight:600, fontSize:15, margin:0 }}>{label}</p>
+              <p style={{ color:C.muted, fontSize:13, margin:"2px 0 0" }}>{desc}</p>
+            </div>
+            {tempData.cookingTime===val && <span style={{ color:C.accent, fontSize:18 }}>✓</span>}
+          </div>
+        ))}
+        <div style={{ background:`${C.accent}10`, border:`1px solid ${C.accent}22`, borderRadius:12, padding:"10px 14px", marginTop:4 }}>
+          <p style={{ color:C.accent, fontSize:13, margin:0 }}>💡 Regenerate your meal plan after saving to apply the new cooking time.</p>
+        </div>
+      </>}
+
       {editing==="mealplan"&&<>
         <p style={{ color:C.muted, fontSize:14, marginBottom:20 }}>How many days would you like your meal plan to cover? Your shopping list is built from the full plan.</p>
         {[
@@ -2579,12 +2617,13 @@ const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDar
         <Row label="Equipment" value={profile.equipment?.length>0?`${profile.equipment.length} items`:"Not set"} onClick={()=>startEdit("fitness")} last />
       </Section>
 
-      <Section title="Diet">
+      <Section title="Diet & Meals">
         <Row label="Diet type" value={profile.dietType||"omnivore"} onClick={()=>startEdit("diet")} />
         <Row label="Dairy" value={profile.dairyPref?.replace("_"," ")||"Not set"} onClick={()=>startEdit("diet")} />
         <Row label="Gluten" value={profile.glutenPref?.replace("_"," ")||"Not set"} onClick={()=>startEdit("diet")} />
         <Row label="Allergies" value={profile.allergies?.length>0?`${profile.allergies.length} selected`:"None"} onClick={()=>startEdit("allergies")} />
         <Row label="Dislikes" value={profile.dislikes?.length>0?`${profile.dislikes.length} foods`:"None"} onClick={()=>startEdit("dislikes")} />
+        <Row label="Cooking time" value={{"quick":"Quick (15 min)","moderate":"Moderate (30 min)","enjoy":"I enjoy cooking (1hr)"}[profile.cookingTime||"moderate"]} onClick={()=>startEdit("cookingtime")} />
         <Row label="Meal plan length" value={`${profile.mealPlanDays||5} days`} onClick={()=>startEdit("mealplan")} last />
       </Section>
 

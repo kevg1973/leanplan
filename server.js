@@ -253,7 +253,7 @@ User profile:
 ${styleFilter}
 
 CRITICAL RULES:
-1. ALL ingredients must be available in standard UK supermarkets (Tesco, Sainsbury's, Asda, Ocado)
+1. ALL ingredients must be available in standard UK supermarkets (Tesco, Sainsbury's, Asda, Ocado) at reasonable prices
 2. No exotic or hard-to-find ingredients
 3. No ingredients the user dislikes or is allergic to
 4. Each day must have exactly 5 meals in order: breakfast, morning snack, lunch, afternoon snack, dinner
@@ -261,7 +261,13 @@ CRITICAL RULES:
 6. Do NOT generate any of these meals (user has disliked them): ${dislikedMealNames.length > 0 ? dislikedMealNames.join(", ") : "none"}
 7. Each meal should be high protein (20g+ for main meals, 10g+ for snacks)
 8. Use simple whole foods — chicken, eggs, rice, oats, vegetables, legumes etc
-9. Where possible, reuse ingredients across days to keep the shopping list efficient
+
+INGREDIENT EFFICIENCY RULES (very important for keeping shopping costs down):
+9. Use a MAXIMUM of 2-3 different meat or fish proteins across the ENTIRE plan (e.g. chicken breast + eggs, or chicken breast + tinned tuna + eggs). Do NOT use a different protein every meal.
+10. Build the plan around a core set of 15-20 base ingredients that repeat across multiple days. Variety comes from HOW ingredients are prepared and seasoned, not from buying entirely different foods every day.
+11. The total unique ingredient count across the whole ${days}-day plan must be 30 or fewer.
+12. Batch-cook friendly: if a recipe uses chicken breast on day 1, use leftover chicken in day 2's lunch.
+13. Use budget-friendly staples: oats, eggs, rice, chicken breast, tinned tomatoes, tinned beans, frozen veg, sweet potato, spinach, broccoli.
 
 Return this exact JSON structure:
 {
