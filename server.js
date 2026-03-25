@@ -293,10 +293,15 @@ app.post("/api/generate-meal-plan", async (req, res) => {
     return `breakfast ~${b} cal, morning snack ~${s} cal, lunch ~${l} cal, afternoon snack ~${s} cal, dinner ~${d} cal`;
   })();
 
+  const milkNote = profile?.milkAlt
+    ? `preferred milk alternative: ${profile.milkAlt} milk (use this in all recipes, smoothies, porridge, coffee)`
+    : profile?.dairyPref === "dairy_free" ? "dairy-free milk (soya or oat)" : null;
+
   const dietNotes = [
     profile?.dietType || "omnivore",
-    profile?.dairyPref === "dairy_free" ? "strictly dairy-free (use coconut yoghurt, soya milk, dairy-free alternatives)" :
+    profile?.dairyPref === "dairy_free" ? "strictly dairy-free (use coconut yoghurt, dairy-free alternatives)" :
     profile?.dairyPref === "lactose_free" ? "lactose-free dairy only" : "dairy ok",
+    milkNote,
     profile?.glutenPref === "gluten_free" ? "STRICTLY GLUTEN-FREE — absolutely no wheat, barley, rye, or regular oats. Use rice, quinoa, buckwheat, certified GF oats only if explicitly labelled gluten-free, corn/maize, potatoes. Use tamari instead of soy sauce." : "gluten ok",
   ].filter(Boolean).join(", ");
 

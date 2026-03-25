@@ -1075,27 +1075,40 @@ const Onboarding = ({ onDone }) => {
       </div>}
 
       {/* Step 12 — Dietary preferences */}
-      {step===12&&<div style={{ flex:1, display:"flex", flexDirection:"column", padding:"0 24px 48px" }}>
+      {step===12&&<div style={{ flex:1, display:"flex", flexDirection:"column", padding:"0 24px 48px", overflowY:"auto" }}>
         <Header step={step} />
         <div style={{ flex:1, paddingTop:8 }}>
           <h2 style={{ color:"#fff", fontSize:32, fontWeight:800, margin:"0 0 8px" }}>Dietary preferences</h2>
-          <p style={{ color:"rgba(255,255,255,0.5)", fontSize:16, marginBottom:24 }}>We'll make sure your meals avoid anything that doesn't work for you</p>
-          <div style={{ marginBottom:20 }}>
-            <p style={{ color:"rgba(255,255,255,0.6)", fontSize:13, fontWeight:600, letterSpacing:"0.06em", marginBottom:12 }}>DAIRY</p>
+          <p style={{ color:"rgba(255,255,255,0.5)", fontSize:15, marginBottom:20 }}>We'll make sure your meals avoid anything that doesn't work for you</p>
+          <div style={{ marginBottom:18 }}>
+            <p style={{ color:"rgba(255,255,255,0.6)", fontSize:12, fontWeight:600, letterSpacing:"0.06em", marginBottom:10 }}>DAIRY</p>
             <div style={{ display:"flex", flexWrap:"wrap" }}>
               {[["full_dairy","Full dairy"],["lactose_free","Lactose-free"],["dairy_free","Dairy-free"]].map(([v,l])=><OChip key={v} label={l} selected={data.dairyPref===v} onClick={()=>update("dairyPref",v)} />)}
             </div>
           </div>
-          <div style={{ marginBottom:20 }}>
-            <p style={{ color:"rgba(255,255,255,0.6)", fontSize:13, fontWeight:600, letterSpacing:"0.06em", marginBottom:12 }}>GLUTEN</p>
+          {(data.dairyPref==="dairy_free"||data.dairyPref==="lactose_free")&&<div style={{ marginBottom:18 }}>
+            <p style={{ color:"rgba(255,255,255,0.6)", fontSize:12, fontWeight:600, letterSpacing:"0.06em", marginBottom:10 }}>MILK ALTERNATIVE</p>
+            <div style={{ display:"flex", flexWrap:"wrap" }}>
+              {[["soya","Soya"],["oat","Oat"],["almond","Almond"],["coconut","Coconut"],["rice","Rice"]].map(([v,l])=><OChip key={v} label={l} selected={data.milkAlt===v} onClick={()=>update("milkAlt",v)} />)}
+            </div>
+          </div>}
+          <div style={{ marginBottom:18 }}>
+            <p style={{ color:"rgba(255,255,255,0.6)", fontSize:12, fontWeight:600, letterSpacing:"0.06em", marginBottom:10 }}>GLUTEN</p>
             <div style={{ display:"flex", flexWrap:"wrap" }}>
               {[["regular","Regular"],["gluten_free","Gluten-free"]].map(([v,l])=><OChip key={v} label={l} selected={data.glutenPref===v} onClick={()=>update("glutenPref",v)} />)}
             </div>
           </div>
-          <div style={{ marginBottom:24 }}>
-            <p style={{ color:"rgba(255,255,255,0.6)", fontSize:13, fontWeight:600, letterSpacing:"0.06em", marginBottom:12 }}>ALLERGIES</p>
+          <div style={{ marginBottom:18 }}>
+            <p style={{ color:"rgba(255,255,255,0.6)", fontSize:12, fontWeight:600, letterSpacing:"0.06em", marginBottom:10 }}>ALLERGIES</p>
             <div style={{ display:"flex", flexWrap:"wrap" }}>
               {ALLERGENS.map(a=><OChip key={a} label={a} selected={data.allergies.includes(a)} onClick={()=>toggleArr("allergies",a)} />)}
+            </div>
+          </div>
+          <div style={{ marginBottom:18 }}>
+            <p style={{ color:"rgba(255,255,255,0.6)", fontSize:12, fontWeight:600, letterSpacing:"0.06em", marginBottom:10 }}>FOODS I DON'T LIKE</p>
+            <p style={{ color:"rgba(255,255,255,0.4)", fontSize:12, marginBottom:10 }}>These will never appear in your meal plan</p>
+            <div style={{ display:"flex", flexWrap:"wrap" }}>
+              {DISLIKES_LIST.map(d=><OChip key={d} label={d} selected={data.dislikes.includes(d)} onClick={()=>toggleArr("dislikes",d)} />)}
             </div>
           </div>
         </div>
@@ -2542,6 +2555,19 @@ const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDar
         </div>
       </>}
 
+      {editing==="milkalt"&&<>
+        <p style={{ color:C.muted, fontSize:14, marginBottom:20 }}>Which milk alternative do you prefer? This will be used in recipes, smoothies and cereals.</p>
+        {[["soya","Soya milk","High protein, neutral taste"],["oat","Oat milk","Creamy, naturally sweet — check GF if needed"],["almond","Almond milk","Light, mild nutty flavour"],["coconut","Coconut milk","Rich and creamy, great for cooking"],["rice","Rice milk","Mild and slightly sweet, thinner texture"]].map(([val,label,desc])=>(
+          <div key={val} onClick={()=>setTempData(d=>({...d,milkAlt:val}))} style={{ background:tempData.milkAlt===val?`${C.accent}12`:C.card, border:`1.5px solid ${tempData.milkAlt===val?C.accent:C.border}`, borderRadius:14, padding:"12px 16px", marginBottom:10, cursor:"pointer", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+            <div>
+              <p style={{ color:C.text, fontWeight:600, fontSize:15, margin:0 }}>{label}</p>
+              <p style={{ color:C.muted, fontSize:13, margin:"2px 0 0" }}>{desc}</p>
+            </div>
+            {tempData.milkAlt===val && <span style={{ color:C.accent, fontSize:18 }}>✓</span>}
+          </div>
+        ))}
+      </>}
+
       {editing==="cookingtime"&&<>
         <p style={{ color:C.muted, fontSize:14, marginBottom:20 }}>How long are you happy to spend preparing a meal? This affects the recipes we generate for you.</p>
         {[
@@ -2620,6 +2646,7 @@ const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDar
       <Section title="Diet & Meals">
         <Row label="Diet type" value={profile.dietType||"omnivore"} onClick={()=>startEdit("diet")} />
         <Row label="Dairy" value={profile.dairyPref?.replace("_"," ")||"Not set"} onClick={()=>startEdit("diet")} />
+        {(profile.dairyPref==="dairy_free"||profile.dairyPref==="lactose_free")&&<Row label="Milk alternative" value={profile.milkAlt||"Not set"} onClick={()=>startEdit("milkalt")} />}
         <Row label="Gluten" value={profile.glutenPref?.replace("_"," ")||"Not set"} onClick={()=>startEdit("diet")} />
         <Row label="Allergies" value={profile.allergies?.length>0?`${profile.allergies.length} selected`:"None"} onClick={()=>startEdit("allergies")} />
         <Row label="Dislikes" value={profile.dislikes?.length>0?`${profile.dislikes.length} foods`:"None"} onClick={()=>startEdit("dislikes")} />
