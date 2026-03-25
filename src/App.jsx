@@ -2523,6 +2523,29 @@ const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDar
           {DISLIKES_LIST.map(d=><Chip key={d} color={C.orange} active={tempData.dislikes.includes(d)} onClick={()=>toggleArr("dislikes",d)}>{d}</Chip>)}
         </div>
       </>}
+
+      {editing==="mealplan"&&<>
+        <p style={{ color:C.muted, fontSize:14, marginBottom:20 }}>How many days would you like your meal plan to cover? Your shopping list is built from the full plan.</p>
+        {[
+          [1, "Every day", "Plan one day at a time"],
+          [3, "3 days", "Shop a couple of times a week"],
+          [5, "5 days", "One big weekday shop"],
+          [7, "7 days", "One big weekly shop"],
+        ].map(([days, label, desc]) => (
+          <div key={days} onClick={()=>setTempData(d=>({...d, mealPlanDays:days}))} style={{ background:tempData.mealPlanDays===days?`${C.accent}12`:C.card, border:`1.5px solid ${tempData.mealPlanDays===days?C.accent:C.border}`, borderRadius:14, padding:"14px 16px", marginBottom:10, cursor:"pointer", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+            <div>
+              <p style={{ color:C.text, fontWeight:600, fontSize:15, margin:0 }}>{label}</p>
+              <p style={{ color:C.muted, fontSize:13, margin:"2px 0 0" }}>{desc}</p>
+            </div>
+            {tempData.mealPlanDays===days && <span style={{ color:C.accent, fontSize:18 }}>✓</span>}
+          </div>
+        ))}
+        {tempData.mealPlanDays !== (profile.mealPlanDays||5) && (
+          <div style={{ background:`${C.orange}12`, border:`1px solid ${C.orange}33`, borderRadius:12, padding:"10px 14px", marginTop:4 }}>
+            <p style={{ color:C.orange, fontSize:13, margin:0 }}>⚠️ After saving, regenerate your meal plan in the Meals tab to apply the new length.</p>
+          </div>
+        )}
+      </>}
     </div>
   );
 
@@ -2561,7 +2584,8 @@ const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDar
         <Row label="Dairy" value={profile.dairyPref?.replace("_"," ")||"Not set"} onClick={()=>startEdit("diet")} />
         <Row label="Gluten" value={profile.glutenPref?.replace("_"," ")||"Not set"} onClick={()=>startEdit("diet")} />
         <Row label="Allergies" value={profile.allergies?.length>0?`${profile.allergies.length} selected`:"None"} onClick={()=>startEdit("allergies")} />
-        <Row label="Dislikes" value={profile.dislikes?.length>0?`${profile.dislikes.length} foods`:"None"} onClick={()=>startEdit("dislikes")} last />
+        <Row label="Dislikes" value={profile.dislikes?.length>0?`${profile.dislikes.length} foods`:"None"} onClick={()=>startEdit("dislikes")} />
+        <Row label="Meal plan length" value={`${profile.mealPlanDays||5} days`} onClick={()=>startEdit("mealplan")} last />
       </Section>
 
       <Section title="Appearance">
