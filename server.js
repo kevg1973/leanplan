@@ -366,7 +366,18 @@ app.post("/api/generate-meal-plan", async (req, res) => {
   })();
 
   const cookTime = { quick:"15 minutes max", moderate:"30 minutes", enjoy:"up to 60 minutes" }[profile?.cookingTime] || "30 minutes";
-  const styleFilter = style !== "all" ? `Meal style: ${style}.` : "";
+  // Expand budget-friendly into concrete rules
+  const styleFilter = (() => {
+    if (style === "all") return "";
+    if (style === "budget-friendly") return `BUDGET-FRIENDLY RULES (strict):
+- Proteins: use ONLY eggs, chicken breast, chicken thighs, tinned tuna, tinned salmon, tinned beans, lentils, tofu. Absolutely NO salmon fillets, prawns, beef steak, lamb or any premium fish.
+- Veg: prefer frozen veg (peas, mixed veg, spinach, broccoli) over fresh where possible. Fresh veg only if cheap (carrots, cabbage, onion, sweet potato, courgette).
+- No premium ingredients: no pine nuts, no specialty cheese, no fresh herbs beyond basics, no pre-made sauces.
+- Snacks must be simple and cheap: banana, apple, rice cakes with peanut butter, boiled eggs, tinned tuna.
+- Batch cook maximally: every dinner should produce enough for next day's lunch.
+- Use tinned tomatoes, tinned beans, dried lentils as base for multiple meals.`;
+    return `Meal style: ${style}.`;
+  })();
 
   // Generate date keys for the plan
   const dateKeys = Array.from({length: days}, (_, i) => {

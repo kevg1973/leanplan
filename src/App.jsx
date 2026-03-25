@@ -1932,10 +1932,7 @@ const MealsTab = ({ profile, favourites, setFavourites, removed, setRemoved, mea
               <p style={{ color:C.text, fontSize:13, lineHeight:1.6, margin:"0 0 4px" }}>Based on your meal plan from {fmtDate(mealPlan.generatedDate)}.</p>
               {(()=>{
                 const unchecked = totalItems - Object.values(checked).filter(Boolean).length;
-                const costPerDay = 4.5;
-                const planLen = mealPlan?.days?.length || 5;
-                const estCost = `~£${(costPerDay * planLen).toFixed(0)}–£${(costPerDay * planLen * 1.3).toFixed(0)}`;
-                return <p style={{ color:C.muted, fontSize:12, margin:0 }}>{totalItems} ingredients · {unchecked} remaining · Est. {estCost}</p>;
+                return <p style={{ color:C.muted, fontSize:12, margin:0 }}>{totalItems} ingredients · {unchecked} to buy</p>;
               })()}
             </Card>
 
