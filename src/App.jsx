@@ -1954,8 +1954,26 @@ const TrainTab = ({ profile, workoutLog, setWorkoutLog, setProfile, savedWorkout
   const activeExercises = savedWorkout?.exercises || [];
   const setActiveWorkout = (w) => setSavedWorkout(w ? { workout:w, exercises:savedWorkout?.exercises||[] } : null);
   const setActiveExercises = (e) => setSavedWorkout(prev => prev ? { ...prev, exercises:e } : null);
-  const [view, setView] = useState("calendar");
+  const [view, setView] = useState("workout");
   const [expandedEx, setExpandedEx] = useState(null);
+  const [loggedWeights, setLoggedWeights] = useState({});
+  const [liftInputs, setLiftInputs] = useState({});
+  const [lifts, setLifts] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("leanplan_lifts")||"{}" ); } catch { return {}; }
+  });
+  const saveLift = (exName, weight, reps, sets) => {
+    if (!weight) return;
+    const entry = { date:todayKey(), weight:parseFloat(weight), reps:parseInt(reps)||0, sets:parseInt(sets)||3, timestamp:Date.now() };
+    const updated = {...lifts, [exName]: [...(lifts[exName]||[]), entry].slice(-20)};
+    setLifts(updated);
+    localStorage.setItem("leanplan_lifts", JSON.stringify(updated));
+    setLoggedWeights(lw => ({...lw, [exName]: true}));
+  };
+  const getLastLift = (exName) => {
+    const entries = lifts[exName];
+    if (!entries || entries.length === 0) return null;
+    return entries[entries.length - 1];
+  };
   const today = todayKey();
 
   const days = Array.from({length:7},(_,i)=>{ const d=new Date(); d.setDate(d.getDate()-d.getDay()+1+i); return d; });
@@ -1999,7 +2017,7 @@ const TrainTab = ({ profile, workoutLog, setWorkoutLog, setProfile, savedWorkout
   return (
     <div>
       <div style={{ display:"flex", background:C.card, border:`1px solid ${C.border}`, borderRadius:12, padding:3, marginBottom:12, gap:2 }}>
-        {[["calendar","Calendar"],["workout","Workout"],["lifts","Lifts"]].map(([k,l])=>(
+        {[["workout","Workout"],["calendar","Programme"],["lifts","Progress"]].map(([k,l])=>(
           <button key={k} onClick={()=>setView(k)} style={{ flex:1, background:view===k?C.accent:"transparent", color:view===k?"#fff":C.muted, border:"none", borderRadius:10, padding:"8px 0", fontSize:13, fontWeight:600, cursor:"pointer", fontFamily:FONT, transition:"all 0.2s" }}>{l}</button>
         ))}
       </div>
@@ -2094,15 +2112,22 @@ const TrainTab = ({ profile, workoutLog, setWorkoutLog, setProfile, savedWorkout
           {activeExercises.map((ex,i)=>{
             const isExp = expandedEx === i;
             const fullEx = EXERCISE_DB.find(e=>e.name===ex.name);
-            return <Card key={i} style={{ borderLeft:`3px solid ${activeWorkout.color}` }}>
+            const lastLift = getLastLift(ex.name);
+            const isLogged = loggedWeights[ex.name];
+            const inputs = liftInputs[ex.name] || { weight:"", reps: String(ex.reps?.split("-")?.[0]||"10"), sets: String(ex.sets||"3") };
+            const setInput = (field, val) => setLiftInputs(li => ({...li, [ex.name]: {...(li[ex.name]||{weight:"",reps:String(ex.reps?.split("-")?.[0]||"10"),sets:String(ex.sets||"3")}), [field]: val}}));
+            return <Card key={i} style={{ borderLeft:`3px solid ${isLogged ? C.green : activeWorkout.color}` }}>
               <div onClick={()=>setExpandedEx(isExp?null:i)} style={{ cursor:"pointer" }}>
                 <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:8 }}>
                   <div style={{ flex:1 }}>
-                    <p style={{ color:activeWorkout.color, fontWeight:700, fontSize:16, margin:0 }}>{i+1}. {ex.name}</p>
+                    <div style={{ display:"flex", alignItems:"center", gap:6 }}>
+                      <p style={{ color:isLogged?C.green:activeWorkout.color, fontWeight:700, fontSize:16, margin:0 }}>{i+1}. {ex.name}</p>
+                      {isLogged&&<span style={{ color:C.green, fontSize:13 }}>✓</span>}
+                    </div>
                     <span style={{ color:C.muted, fontSize:12 }}>{ex.equipment} · {ex.muscle}</span>
                     {fullEx?.muscles&&<p style={{ color:C.muted, fontSize:11, margin:"2px 0 0" }}>🎯 {fullEx.muscles}</p>}
                   </div>
-                  <div style={{ background:`${activeWorkout.color}15`, borderRadius:10, padding:"8px 12px", textAlign:"right", flexShrink:0 }}>
+                  <div style={{ background:`${isLogged?C.green:activeWorkout.color}15`, borderRadius:10, padding:"8px 12px", textAlign:"right", flexShrink:0 }}>
                     <div style={{ color:C.text, fontSize:16, fontWeight:700 }}>{ex.sets} × {ex.reps}</div>
                     <div style={{ color:C.muted, fontSize:11 }}>Rest: {ex.rest}</div>
                   </div>
@@ -2110,6 +2135,40 @@ const TrainTab = ({ profile, workoutLog, setWorkoutLog, setProfile, savedWorkout
                 {ex.tip&&<div style={{ background:C.sectionBg, borderRadius:8, padding:"8px 12px", fontSize:12, color:C.textSec, borderLeft:`3px solid ${C.yellow}`, marginBottom:6 }}>💬 {ex.tip}</div>}
                 <p style={{ color:C.accent, fontSize:12, fontWeight:600, margin:0 }}>{isExp?"▲ Hide instructions":"▼ How to do this exercise"}</p>
               </div>
+
+              {/* Inline weight logger — always visible */}
+              <div style={{ marginTop:12, paddingTop:12, borderTop:`1px solid ${C.border}` }}>
+                {lastLift&&!isLogged&&<p style={{ color:C.muted, fontSize:11, margin:"0 0 8px" }}>Last time: <span style={{ color:C.accent, fontWeight:600 }}>{lastLift.weight}kg × {lastLift.reps} reps</span></p>}
+                {isLogged ? (
+                  <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                    <div style={{ flex:1, background:`${C.green}10`, border:`1px solid ${C.green}33`, borderRadius:10, padding:"8px 12px" }}>
+                      <span style={{ color:C.green, fontSize:13, fontWeight:600 }}>✓ Logged: {inputs.weight}kg × {inputs.reps} reps × {inputs.sets} sets</span>
+                    </div>
+                    <button onClick={()=>setLoggedWeights(lw=>({...lw,[ex.name]:false}))} style={{ background:"none", border:"none", color:C.muted, fontSize:12, cursor:"pointer", fontFamily:FONT, padding:"4px 6px" }}>Edit</button>
+                  </div>
+                ) : (
+                  <div>
+                    <div style={{ display:"flex", gap:6, marginBottom:8 }}>
+                      <div style={{ flex:1 }}>
+                        <p style={{ color:C.muted, fontSize:11, margin:"0 0 4px", fontWeight:600 }}>KG</p>
+                        <input type="number" value={inputs.weight} onChange={e=>setInput("weight",e.target.value)} placeholder={lastLift?`${lastLift.weight}`:"0"} style={{ width:"100%", background:C.sectionBg, border:`1px solid ${C.border}`, borderRadius:8, padding:"8px 10px", fontSize:14, fontFamily:FONT, color:C.text, outline:"none" }} />
+                      </div>
+                      <div style={{ flex:1 }}>
+                        <p style={{ color:C.muted, fontSize:11, margin:"0 0 4px", fontWeight:600 }}>REPS</p>
+                        <input type="number" value={inputs.reps} onChange={e=>setInput("reps",e.target.value)} placeholder="10" style={{ width:"100%", background:C.sectionBg, border:`1px solid ${C.border}`, borderRadius:8, padding:"8px 10px", fontSize:14, fontFamily:FONT, color:C.text, outline:"none" }} />
+                      </div>
+                      <div style={{ flex:1 }}>
+                        <p style={{ color:C.muted, fontSize:11, margin:"0 0 4px", fontWeight:600 }}>SETS</p>
+                        <input type="number" value={inputs.sets} onChange={e=>setInput("sets",e.target.value)} placeholder="3" style={{ width:"100%", background:C.sectionBg, border:`1px solid ${C.border}`, borderRadius:8, padding:"8px 10px", fontSize:14, fontFamily:FONT, color:C.text, outline:"none" }} />
+                      </div>
+                    </div>
+                    <button onClick={()=>saveLift(ex.name, inputs.weight, inputs.reps, inputs.sets)} disabled={!inputs.weight} style={{ width:"100%", background:inputs.weight?C.green:C.sectionBg, border:"none", borderRadius:10, padding:"9px 0", color:inputs.weight?"#fff":C.muted, fontSize:13, fontWeight:700, cursor:inputs.weight?"pointer":"default", fontFamily:FONT, transition:"all 0.2s" }}>
+                      Log Weight
+                    </button>
+                  </div>
+                )}
+              </div>
+
               {isExp&&fullEx&&<div style={{ marginTop:12 }}>
                 <div style={{ background:C.sectionBg, borderRadius:10, padding:"12px 14px", marginBottom:8 }}>
                   <p style={{ color:C.muted, fontSize:11, fontWeight:700, letterSpacing:"0.06em", marginBottom:8 }}>STEP-BY-STEP</p>
@@ -2145,65 +2204,21 @@ const TrainTab = ({ profile, workoutLog, setWorkoutLog, setProfile, savedWorkout
         </>}
       </>}
 
-      {view==="lifts"&&<LiftTracker workoutLog={workoutLog} />}
+      {view==="lifts"&&<LiftTracker lifts={lifts} setLifts={setLifts} workoutLog={workoutLog} />}
     </div>
   );
 };
 
 // ── LIFT TRACKER ──────────────────────────────────────────────────────────────
-const LiftTracker = ({ workoutLog }) => {
-  const [lifts, setLifts] = useState(() => {
-    try { return JSON.parse(localStorage.getItem("leanplan_lifts")||"{}"); } catch { return {}; }
-  });
-  const [addingLift, setAddingLift] = useState(false);
-  const [liftName, setLiftName] = useState("");
-  const [liftWeight, setLiftWeight] = useState("");
-  const [liftReps, setLiftReps] = useState("");
-  const [liftSets, setLiftSets] = useState("3");
-
-  useEffect(()=>{
-    localStorage.setItem("leanplan_lifts", JSON.stringify(lifts));
-  },[lifts]);
-
-  const addEntry = () => {
-    if (!liftName||!liftWeight) return;
-    const entry = { date:todayKey(), weight:parseFloat(liftWeight), reps:parseInt(liftReps)||0, sets:parseInt(liftSets)||3, timestamp:Date.now() };
-    setLifts(l=>({...l,[liftName]:[...(l[liftName]||[]),entry].slice(-20)}));
-    setLiftWeight(""); setLiftReps(""); setAddingLift(false);
-  };
-
-  const commonLifts = ["Dumbbell Bench Press","Lat Pulldown","Leg Press","Seated Cable Row","Dumbbell Shoulder Press","Romanian Deadlift","Goblet Squat","Bicep Curl"];
-
+const LiftTracker = ({ lifts={}, setLifts, workoutLog }) => {
   return (
     <div>
       <Card style={{ background:`${C.indigo}08`, borderColor:`${C.indigo}22` }}>
-        <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:6 }}><Icon name="barbell" size={14} color={C.indigo} /><p style={{ color:C.indigo, fontSize:12, fontWeight:700, margin:0 }}>LIFT TRACKER</p></div>
-        <p style={{ color:C.text, fontSize:13, lineHeight:1.6, margin:0 }}>Log your weights to track progressive overload — the key to getting stronger over time.</p>
+        <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:6 }}><Icon name="barbell" size={14} color={C.indigo} /><p style={{ color:C.indigo, fontSize:12, fontWeight:700, margin:0 }}>PROGRESS</p></div>
+        <p style={{ color:C.text, fontSize:13, lineHeight:1.6, margin:0 }}>Log weights on each exercise during your workout — your progress appears here automatically.</p>
       </Card>
 
-      {!addingLift&&<Btn onClick={()=>setAddingLift(true)} color={C.indigo} style={{ width:"100%", marginBottom:16 }}>+ Log Today's Lifts</Btn>}
-
-      {addingLift&&<Card>
-        <p style={{ color:C.muted, fontSize:12, fontWeight:600, letterSpacing:"0.06em", marginBottom:12 }}>LOG A LIFT</p>
-        <div style={{ marginBottom:10 }}>
-          <p style={{ color:C.muted, fontSize:13, marginBottom:6 }}>Exercise</p>
-          <select value={liftName} onChange={e=>setLiftName(e.target.value)} style={{ background:C.sectionBg, border:`1px solid ${C.border}`, borderRadius:10, color:liftName?C.text:C.muted, padding:"12px 14px", fontFamily:FONT, fontSize:15, outline:"none", width:"100%" }}>
-            <option value="">Select exercise...</option>
-            {commonLifts.map(l=><option key={l} value={l}>{l}</option>)}
-          </select>
-        </div>
-        <div style={{ display:"flex", gap:8, marginBottom:14 }}>
-          <div style={{ flex:1 }}><p style={{ color:C.muted, fontSize:13, marginBottom:6 }}>Weight (kg)</p><TInput value={liftWeight} onChange={e=>setLiftWeight(e.target.value)} placeholder="e.g. 20" type="number" /></div>
-          <div style={{ flex:1 }}><p style={{ color:C.muted, fontSize:13, marginBottom:6 }}>Reps</p><TInput value={liftReps} onChange={e=>setLiftReps(e.target.value)} placeholder="e.g. 10" type="number" /></div>
-          <div style={{ flex:1 }}><p style={{ color:C.muted, fontSize:13, marginBottom:6 }}>Sets</p><TInput value={liftSets} onChange={e=>setLiftSets(e.target.value)} placeholder="e.g. 3" type="number" /></div>
-        </div>
-        <div style={{ display:"flex", gap:8 }}>
-          <Btn onClick={()=>setAddingLift(false)} outline color={C.muted} small style={{ flex:1 }}>Cancel</Btn>
-          <Btn onClick={addEntry} disabled={!liftName||!liftWeight} color={C.indigo} style={{ flex:2 }}>Save Lift</Btn>
-        </div>
-      </Card>}
-
-      {Object.keys(lifts).length===0&&!addingLift&&<Card><p style={{ color:C.muted, fontSize:14, textAlign:"center", margin:0 }}>No lifts logged yet. Start tracking to see your progress!</p></Card>}
+      {Object.keys(lifts).length===0&&<Card><p style={{ color:C.muted, fontSize:14, textAlign:"center", margin:0 }}>No lifts logged yet. Start a workout and log your weights on each exercise!</p></Card>}
 
       {Object.entries(lifts).map(([name,entries])=>{
         const latest=entries[entries.length-1];
