@@ -1521,14 +1521,13 @@ const MealCarousel = ({ meals, favourites, likedMeals, mealLog, today, onLike, o
   const cardStyle = {
     background: mc.grad,
     borderRadius: 24,
-    padding: "22px 20px 20px",
-    marginBottom: 12,
+    padding: "16px 16px 14px",
+    marginBottom: 10,
     position: "relative",
     overflow: "hidden",
     transform: `translateX(${Math.max(-30, Math.min(30, dragDelta * 0.15))}px)`,
     transition: animDir ? "transform 0.18s ease, opacity 0.18s ease" : "transform 0.05s ease",
     opacity: animDir ? 0 : 1,
-    minHeight: 340,
     display: "flex",
     flexDirection: "column",
     boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
@@ -1560,61 +1559,56 @@ const MealCarousel = ({ meals, favourites, likedMeals, mealLog, today, onLike, o
         <div style={{ position:"absolute", bottom:-20, left:-20, width:100, height:100, borderRadius:"50%", background:`${mc.accent}08`, pointerEvents:"none" }} />
 
         {/* Meal type label */}
-        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14 }}>
-          <span style={{ color:mc.accent, fontSize:12, fontWeight:700, letterSpacing:"0.08em", background:`${mc.accent}18`, padding:"4px 10px", borderRadius:99 }}>{mc.label.toUpperCase()}</span>
-          <span style={{ color:"rgba(255,255,255,0.5)", fontSize:12 }}>{m.time}</span>
+        {/* Meal type label */}
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
+          <span style={{ color:mc.accent, fontSize:11, fontWeight:700, letterSpacing:"0.08em", background:`${mc.accent}18`, padding:"3px 9px", borderRadius:99 }}>{mc.label.toUpperCase()}</span>
+          <span style={{ color:"rgba(255,255,255,0.5)", fontSize:11 }}>{m.time}</span>
         </div>
 
         {/* Meal name */}
-        <h3 style={{ color:"#fff", fontSize:22, fontWeight:800, margin:"0 0 6px", lineHeight:1.2, letterSpacing:"-0.01em" }}>{m.name}</h3>
+        <h3 style={{ color:"#fff", fontSize:18, fontWeight:800, margin:"0 0 8px", lineHeight:1.2, letterSpacing:"-0.01em" }}>{m.name}</h3>
 
         {/* Macros row */}
-        <div style={{ display:"flex", gap:10, marginBottom:16 }}>
-          <div style={{ background:"rgba(255,255,255,0.08)", borderRadius:12, padding:"8px 14px", flex:1, textAlign:"center" }}>
-            <div style={{ color:mc.accent, fontSize:18, fontWeight:800 }}>{m.cals}</div>
-            <div style={{ color:"rgba(255,255,255,0.5)", fontSize:10, fontWeight:600, letterSpacing:"0.04em" }}>KCAL</div>
+        <div style={{ display:"flex", gap:5, marginBottom:10 }}>
+          <div style={{ background:"rgba(255,255,255,0.08)", borderRadius:10, padding:"5px 6px", flex:1, textAlign:"center" }}>
+            <div style={{ color:mc.accent, fontSize:14, fontWeight:800 }}>{m.cals}</div>
+            <div style={{ color:"rgba(255,255,255,0.5)", fontSize:9, fontWeight:600, letterSpacing:"0.04em" }}>KCAL</div>
           </div>
-          <div style={{ background:"rgba(255,255,255,0.08)", borderRadius:12, padding:"8px 14px", flex:1, textAlign:"center" }}>
-            <div style={{ color:"#34d399", fontSize:18, fontWeight:800 }}>{m.protein}g</div>
-            <div style={{ color:"rgba(255,255,255,0.5)", fontSize:10, fontWeight:600, letterSpacing:"0.04em" }}>PROTEIN</div>
+          <div style={{ background:"rgba(255,255,255,0.08)", borderRadius:10, padding:"5px 6px", flex:1, textAlign:"center" }}>
+            <div style={{ color:"#34d399", fontSize:14, fontWeight:800 }}>{m.protein}g</div>
+            <div style={{ color:"rgba(255,255,255,0.5)", fontSize:9, fontWeight:600, letterSpacing:"0.04em" }}>PROTEIN</div>
           </div>
-          <div style={{ background:"rgba(255,255,255,0.08)", borderRadius:12, padding:"8px 14px", flex:1, textAlign:"center" }}>
-            <div style={{ color:"#818cf8", fontSize:18, fontWeight:800 }}>{m.carbs}g</div>
-            <div style={{ color:"rgba(255,255,255,0.5)", fontSize:10, fontWeight:600, letterSpacing:"0.04em" }}>CARBS</div>
+          <div style={{ background:"rgba(255,255,255,0.08)", borderRadius:10, padding:"5px 6px", flex:1, textAlign:"center" }}>
+            <div style={{ color:"#818cf8", fontSize:14, fontWeight:800 }}>{m.carbs}g</div>
+            <div style={{ color:"rgba(255,255,255,0.5)", fontSize:9, fontWeight:600, letterSpacing:"0.04em" }}>CARBS</div>
           </div>
-          <div style={{ background:"rgba(255,255,255,0.08)", borderRadius:12, padding:"8px 14px", flex:1, textAlign:"center" }}>
-            <div style={{ color:"#fb923c", fontSize:18, fontWeight:800 }}>{m.fat}g</div>
-            <div style={{ color:"rgba(255,255,255,0.5)", fontSize:10, fontWeight:600, letterSpacing:"0.04em" }}>FAT</div>
+          <div style={{ background:"rgba(255,255,255,0.08)", borderRadius:10, padding:"5px 6px", flex:1, textAlign:"center" }}>
+            <div style={{ color:"#fb923c", fontSize:14, fontWeight:800 }}>{m.fat}g</div>
+            <div style={{ color:"rgba(255,255,255,0.5)", fontSize:9, fontWeight:600, letterSpacing:"0.04em" }}>FAT</div>
           </div>
         </div>
 
-        {/* Ingredients */}
-        <div style={{ flex:1, marginBottom:14 }}>
-          {m.items.slice(0, showMethod ? 0 : 5).map((item,j) => (
-            <div key={j} style={{ display:"flex", alignItems:"center", gap:8, padding:"4px 0", borderBottom: j < Math.min(m.items.length,5)-1 ? "1px solid rgba(255,255,255,0.06)" : "none" }}>
-              <div style={{ width:5, height:5, borderRadius:"50%", background:mc.accent, flexShrink:0 }} />
-              <span style={{ color:"rgba(255,255,255,0.8)", fontSize:13 }}>{item}</span>
+        {/* Ingredients + method — scrollable internally */}
+        <div style={{ overflowY:"auto", maxHeight:140, marginBottom:8, WebkitOverflowScrolling:"touch" }}>
+          {!showMethod && m.items.map((item,j) => (
+            <div key={j} style={{ display:"flex", alignItems:"center", gap:8, padding:"3px 0", borderBottom: j < m.items.length-1 ? "1px solid rgba(255,255,255,0.06)" : "none" }}>
+              <div style={{ width:4, height:4, borderRadius:"50%", background:mc.accent, flexShrink:0 }} />
+              <span style={{ color:"rgba(255,255,255,0.8)", fontSize:12 }}>{item}</span>
             </div>
+          ))}
+          {showMethod && m.method.split("\n").map((step,i) => (
+            <p key={i} style={{ color:"rgba(255,255,255,0.8)", fontSize:12, lineHeight:1.6, margin:"0 0 4px" }}>{step}</p>
           ))}
         </div>
 
-        {/* Method (expandable) */}
-        <div>
-          <button
-            onClick={()=>setShowMethod(v=>!v)}
-            style={{ background:"rgba(255,255,255,0.08)", border:"none", borderRadius:10, padding:"8px 14px", color:mc.accent, fontSize:12, fontWeight:700, cursor:"pointer", fontFamily:FONT, width:"100%", textAlign:"left", marginBottom: showMethod?10:0, display:"flex", justifyContent:"space-between", alignItems:"center" }}
-          >
-            <span>📋 How to make this</span>
-            <span style={{ opacity:0.6 }}>{showMethod?"▲":"▼"}</span>
-          </button>
-          {showMethod && (
-            <div style={{ background:"rgba(0,0,0,0.3)", borderRadius:12, padding:"12px 14px" }}>
-              {m.method.split("\n").map((step,i) => (
-                <p key={i} style={{ color:"rgba(255,255,255,0.8)", fontSize:13, lineHeight:1.7, margin:"0 0 6px" }}>{step}</p>
-              ))}
-            </div>
-          )}
-        </div>
+        {/* Method toggle */}
+        <button
+          onClick={()=>setShowMethod(v=>!v)}
+          style={{ background:"rgba(255,255,255,0.08)", border:"none", borderRadius:10, padding:"7px 12px", color:mc.accent, fontSize:12, fontWeight:700, cursor:"pointer", fontFamily:FONT, width:"100%", textAlign:"left", display:"flex", justifyContent:"space-between", alignItems:"center" }}
+        >
+          <span>{showMethod ? "🥗 Show ingredients" : "📋 How to make this"}</span>
+          <span style={{ opacity:0.6 }}>{showMethod?"▲":"▼"}</span>
+        </button>
       </div>
 
       {/* Action buttons */}
@@ -1824,55 +1818,44 @@ const MealsTab =({ profile, favourites, setFavourites, removed, setRemoved, meal
           </div>
         </Card>)}
 
-        <Card>
-          <p style={{ color:C.muted, fontSize:12, fontWeight:600, letterSpacing:"0.06em", marginBottom:10 }}>MEAL STYLE</p>
-          <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:14 }}>
+        {/* Compact meal style + generate row */}
+        <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:16, padding:"12px 14px", marginBottom:12 }}>
+          <div style={{ display:"flex", gap:6, overflowX:"auto", paddingBottom:2, marginBottom:10, scrollbarWidth:"none" }}>
             {["all","balanced","high-protein","mediterranean","budget-friendly"].map(s=><Chip key={s} color={C.accent} active={style===s} onClick={()=>setStyle(s)}>{s}</Chip>)}
           </div>
           {isPro ? (
             <div>
-              {genCount < MAX_GENERATIONS ? (
-                <Btn onClick={generate} disabled={generating} style={{ width:"100%", marginBottom:8 }}>
-                  {generating ? "✦ Generating your meals..." : `✦ Generate Today's Meals with AI`}
-                </Btn>
-              ) : (
-                <div style={{ background:C.sectionBg, borderRadius:14, padding:"12px 16px", marginBottom:8, textAlign:"center" }}>
-                  <p style={{ color:C.muted, fontSize:13, fontWeight:600, margin:"0 0 2px" }}>Daily limit reached</p>
-                  <p style={{ color:C.muted, fontSize:12, margin:0 }}>You've used all 3 generations today. Come back tomorrow for fresh meals! 🌅</p>
-                </div>
-              )}
+              <Btn onClick={generate} disabled={generating} style={{ width:"100%", padding:"11px 0", fontSize:15, marginBottom:4 }}>
+                {generating ? "✦ Generating..." : "✦ Generate Today's Meals with AI"}
+              </Btn>
+              <p style={{ color:C.muted, fontSize:11, textAlign:"center", margin:0 }}>{MAX_GENERATIONS - genCount} generation{MAX_GENERATIONS - genCount !== 1 ? "s" : ""} remaining today</p>
               {generating && (
-                <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:14, padding:"16px", marginTop:8, textAlign:"center" }}>
+                <div style={{ background:C.sectionBg, borderRadius:14, padding:"12px", marginTop:8, textAlign:"center" }}>
                   <MealLoadingIndicator />
                 </div>
               )}
               {generateError && <p style={{ color:C.red, fontSize:13, textAlign:"center", marginTop:6 }}>{generateError}</p>}
-              {dislikedMeals.length>0&&<p style={{ color:C.muted, fontSize:11, textAlign:"center" }}>Avoiding {dislikedMeals.length} disliked meal{dislikedMeals.length!==1?"s":""} · <span onClick={()=>saveDislikedMeals([])} style={{ color:C.accent, cursor:"pointer" }}>Reset</span></p>}
+              {dislikedMeals.length>0&&<p style={{ color:C.muted, fontSize:11, textAlign:"center", marginTop:4 }}>Avoiding {dislikedMeals.length} disliked meal{dislikedMeals.length!==1?"s":""} · <span onClick={()=>saveDislikedMeals([])} style={{ color:C.accent, cursor:"pointer" }}>Reset</span></p>}
             </div>
           ) : (
             <div>
-              <Btn onClick={generate} style={{ width:"100%", marginBottom:8 }}>✦ Generate from our meal library</Btn>
-              <Btn onClick={onUpgrade} color="#5856d6" style={{ width:"100%" }}>✦ Unlock AI Meal Generation — Pro</Btn>
+              <Btn onClick={generate} style={{ width:"100%", padding:"11px 0", marginBottom:6 }}>✦ Generate from our meal library</Btn>
+              <Btn onClick={onUpgrade} color="#5856d6" style={{ width:"100%", padding:"11px 0" }}>✦ Unlock AI Meal Generation — Pro</Btn>
             </div>
           )}
-        </Card>
+        </div>
 
         {shown&&<>
-          {/* Daily totals bar */}
-          <div style={{ display:"flex", gap:8, marginBottom:12 }}>
-            <StatBox label="Total Cals" val={shown.reduce((a,m)=>a+m.cals,0)} color={C.accent} />
-            <StatBox label="Protein" val={`${shown.reduce((a,m)=>a+m.protein,0)}g`} color={C.green} />
-            <StatBox label="Carbs" val={`${shown.reduce((a,m)=>a+m.carbs,0)}g`} color={C.orange} />
-          </div>
-
-          {/* Regenerate / clear row */}
-          <div style={{ display:"flex", gap:8, marginBottom:14 }}>
-            <button onClick={generate} disabled={generating||genCount>=MAX_GENERATIONS} style={{ flex:1, background:"none", border:`1px solid ${C.border}`, borderRadius:10, padding:"8px 0", color:(generating||genCount>=MAX_GENERATIONS)?C.muted:C.accent, fontSize:13, fontWeight:600, cursor:(generating||genCount>=MAX_GENERATIONS)?"default":"pointer", fontFamily:FONT }}>
-              {generating ? "Generating..." : genCount>=MAX_GENERATIONS ? "Limit reached" : "↻ Regenerate"}
-            </button>
-            <button onClick={()=>setShown(null)} style={{ background:"none", border:`1px solid ${C.border}`, borderRadius:10, padding:"8px 14px", color:C.muted, fontSize:13, cursor:"pointer", fontFamily:FONT }}>
-              ✕ Clear
-            </button>
+          {/* Totals + regen combined row */}
+          <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:8, background:C.card, border:`1px solid ${C.border}`, borderRadius:14, padding:"8px 12px" }}>
+            <span style={{ color:C.accent, fontWeight:700, fontSize:13 }}>{shown.reduce((a,m)=>a+m.cals,0)} kcal</span>
+            <span style={{ color:C.muted, fontSize:12 }}>·</span>
+            <span style={{ color:C.green, fontWeight:600, fontSize:13 }}>{shown.reduce((a,m)=>a+m.protein,0)}g protein</span>
+            <span style={{ color:C.muted, fontSize:12 }}>·</span>
+            <span style={{ color:C.orange, fontWeight:600, fontSize:13 }}>{shown.reduce((a,m)=>a+m.carbs,0)}g carbs</span>
+            <div style={{ flex:1 }} />
+            <button onClick={generate} disabled={generating||genCount>=MAX_GENERATIONS} style={{ background:"none", border:"none", color:(generating||genCount>=MAX_GENERATIONS)?C.muted:C.accent, fontSize:12, fontWeight:700, cursor:(generating||genCount>=MAX_GENERATIONS)?"default":"pointer", fontFamily:FONT, padding:"2px 6px" }}>↻</button>
+            <button onClick={()=>setShown(null)} style={{ background:"none", border:"none", color:C.muted, fontSize:12, cursor:"pointer", fontFamily:FONT, padding:"2px 6px" }}>✕</button>
           </div>
 
           {/* Swipeable meal carousel */}
