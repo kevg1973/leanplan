@@ -427,6 +427,7 @@ CRITICAL RULES:
 3. No ingredients the user dislikes or is allergic to
 4. Each day must have exactly 5 meals in order: breakfast, morning snack, lunch, afternoon snack, dinner
 5. Do NOT repeat meals across days — every meal must be unique
+6. Do NOT use the same main protein source more than once on the same day. If chicken appears at lunch, dinner must use a different protein (eggs, fish, beans, lentils). Variety within a day is essential.
 6. Do NOT generate any of these meals (user has disliked them): ${dislikedMealNames.length > 0 ? dislikedMealNames.join(", ") : "none"}
 7. Use simple whole foods — chicken, eggs, ${safeCarbs}, vegetables, legumes, fruit etc
 8. Snacks MUST include fruit — bananas, berries, apples, oranges are all perfect. Every snack should have a fruit component unless it's a protein shake.
