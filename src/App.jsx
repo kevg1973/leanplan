@@ -3612,6 +3612,12 @@ function AppInner() {
   const pct = Math.min(100,Math.round((lost/profile.targetLbs)*100));
   const TAB_COLORS = {Today:"#007aff",Meals:"#34c759",Train:"#5ac8fa",Track:"#af52de",Coach:"#ff2d55",Profile:"#ff9500"};
 
+  const RESET_KEYS = [
+    "leanplan_v4", "leanplan_lifts", "leanplan_pro", "leanplan_device_id",
+    "leanplan_trial_start", "leanplan_gen_count", "leanplan_disliked_meals",
+    "leanplan_liked_meals", "leanplan_meal_plan", "leanplan_todays_meals",
+  ];
+
   const handleReset = () => {
     const savedPro = localStorage.getItem("leanplan_pro");
     const hasRealSub = savedPro && JSON.parse(savedPro)?.customerId && JSON.parse(savedPro)?.customerId !== "bypass";
@@ -3621,26 +3627,16 @@ function AppInner() {
         "Reset your fitness data and start fresh?\n\n✓ Your Pro subscription will be kept\n✓ All workout, meal and progress data will be cleared\n✓ You can set up a new goal in onboarding\n\nTap OK to reset your data."
       );
       if (!choice) return;
-      // Clear fitness data but keep Pro status
-      localStorage.removeItem("leanplan_v4");
-      localStorage.removeItem("leanplan_lifts");
-      localStorage.removeItem("leanplan_trial_start");
-      localStorage.removeItem("leanplan_pro");
-      localStorage.removeItem("leanplan_gen_count");
-      localStorage.removeItem("leanplan_disliked_meals");
-      localStorage.removeItem("leanplan_liked_meals");
+      RESET_KEYS.forEach(k => localStorage.removeItem(k));
       setProfile(null); setEntries([]); setFavourites([]); setRemoved([]);
       setMealLog({}); setWorkoutLog({}); setWater({}); setJournal({}); setMeasurements([]);
-      setIsPro(false); setProData(null);
+      setIsPro(false); setProData(null); setMealPlan(null);
     } else {
       if (!window.confirm("Reset all data? This cannot be undone.")) return;
-      localStorage.removeItem("leanplan_v4");
-      localStorage.removeItem("leanplan_lifts");
-      localStorage.removeItem("leanplan_pro");
-      localStorage.removeItem("leanplan_device_id");
+      RESET_KEYS.forEach(k => localStorage.removeItem(k));
       setProfile(null); setEntries([]); setFavourites([]); setRemoved([]);
       setMealLog({}); setWorkoutLog({}); setWater({}); setJournal({}); setMeasurements([]);
-      setIsPro(false); setProData(null);
+      setIsPro(false); setProData(null); setMealPlan(null);
     }
   };
 
