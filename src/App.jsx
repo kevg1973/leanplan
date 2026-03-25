@@ -1730,27 +1730,58 @@ const MealsTab = ({ profile, favourites, setFavourites, removed, setRemoved, mea
   const removeMealLog = (i) => setMealLog(ml=>({...ml,[today]:(ml[today]||[]).filter((_,idx)=>idx!==i)}));
 
   // Build shopping list from all plan days
+  const AISLE_RULES = [
+    { name:"🥩 Meat & Fish",    color:"#ff453a", keywords:["chicken","turkey","beef","lamb","pork","mince","steak","salmon","tuna","cod","haddock","prawn","shrimp","bacon","sausage","fish fillet","tilapia","mackerel"] },
+    { name:"🥚 Eggs & Dairy",   color:"#ff9f0a", keywords:["egg","milk","yoghurt","yogurt","cheese","butter","cream","kefir","quark","soya milk","oat milk","almond milk","coconut milk","coconut yoghurt","dairy-free"] },
+    { name:"🥦 Vegetables",     color:"#30d158", keywords:["broccoli","spinach","kale","lettuce","pepper","courgette","carrot","onion","garlic","tomato","cucumber","celery","leek","cabbage","cauliflower","asparagus","mushroom","aubergine","sweet potato","potato","pea","corn","sweetcorn","bean sprout","spring onion","chilli","ginger","beetroot","parsnip","squash","avocado","edamame","pak choi"] },
+    { name:"🍎 Fruit",          color:"#ff375f", keywords:["banana","apple","berry","blueberry","strawberry","raspberry","mango","orange","lemon","lime","grape","melon","peach","plum","pear","pineapple","kiwi","date","dried fruit","raisin"] },
+    { name:"🍚 Carbs & Grains", color:"#818cf8", keywords:["rice","pasta","quinoa","oat","bread","tortilla","wrap","noodle","couscous","bulgur","barley","rye","cracker","rice cake","cereal","granola","flour","gf oat","porridge"] },
+    { name:"🥫 Tins & Jars",    color:"#f59e0b", keywords:["tin","tinned","canned","chopped tomato","kidney bean","chickpea","lentil","black bean","cannellini","coconut cream","stock","broth","passata","tomato puree","pesto","curry paste","tahini","almond butter","peanut butter","jam","honey"] },
+    { name:"🫙 Cupboard",       color:"#5ac8fa", keywords:["olive oil","coconut oil","tamari","soy sauce","vinegar","worcester","mustard","mayo","ketchup","hot sauce","seasoning","herb","spice","cumin","paprika","turmeric","oregano","basil","cinnamon","salt","pepper","bay leaf","chilli flake","nutritional yeast","baking"] },
+    { name:"🥜 Snacks & Nuts",  color:"#bf5af2", keywords:["nut","almond","cashew","walnut","pecan","pistachio","seed","sunflower","pumpkin seed","hummus","protein bar","protein powder","snack","popcorn","dark chocolate","rice cake"] },
+    { name:"💊 Supplements",    color:"#0a84ff", keywords:["creatine","vitamin","supplement","omega","magnesium","protein powder","whey","pea protein"] },
+  ];
+
+  const categoriseItem = (name) => {
+    const lower = name.toLowerCase();
+    for (const aisle of AISLE_RULES) {
+      if (aisle.keywords.some(k => lower.includes(k))) return aisle.name;
+    }
+    return "🛍️ Other";
+  };
+
   const buildShoppingList = () => {
-    if (!mealPlan?.days) return [];
+    if (!mealPlan?.days) return {};
     const allItems = {};
     mealPlan.days.forEach(day => {
       day.meals.forEach(meal => {
         meal.items.forEach(item => {
-          // Normalise item name — strip amounts in brackets
-          const name = item.replace(/\s*\([^)]*\)/g, "").trim().toLowerCase();
-          const display = item.replace(/\s*\([^)]*\)/g, "").trim();
+          const stripped = item.replace(/\s*\([^)]*\)/g, "").trim();
+          const key = stripped.toLowerCase();
           const amountMatch = item.match(/\(([^)]+)\)/);
           const amount = amountMatch ? amountMatch[1] : "";
-          if (!allItems[name]) allItems[name] = { display, amounts: [], meals: [] };
-          if (amount) allItems[name].amounts.push(amount);
-          allItems[name].meals.push(meal.name);
+          if (!allItems[key]) allItems[key] = { display: stripped, amounts: [], category: categoriseItem(stripped) };
+          if (amount && !allItems[key].amounts.includes(amount)) allItems[key].amounts.push(amount);
         });
       });
     });
-    return Object.values(allItems);
+    // Group by category
+    const grouped = {};
+    Object.values(allItems).forEach(item => {
+      if (!grouped[item.category]) grouped[item.category] = [];
+      grouped[item.category].push(item);
+    });
+    // Sort categories by aisle order
+    const order = [...AISLE_RULES.map(a=>a.name), "🛍️ Other"];
+    return order.filter(cat => grouped[cat]).map(cat => ({
+      name: cat,
+      color: AISLE_RULES.find(a=>a.name===cat)?.color || C.muted,
+      items: grouped[cat]
+    }));
   };
 
-  const shoppingItems = buildShoppingList();
+  const shoppingCategories = buildShoppingList();
+  const totalItems = shoppingCategories.reduce((a,c)=>a+c.items.length, 0);
 
   // Format date for display
   const fmtPlanDate = (dateStr) => {
@@ -1874,27 +1905,34 @@ const MealsTab = ({ profile, favourites, setFavourites, removed, setRemoved, mea
                 <p style={{ color:C.green, fontSize:12, fontWeight:700, margin:0 }}>SHOPPING LIST — {mealPlan.days.length}-DAY PLAN</p>
               </div>
               <p style={{ color:C.text, fontSize:13, lineHeight:1.6, margin:"0 0 4px" }}>Based on your meal plan from {fmtDate(mealPlan.generatedDate)}.</p>
-              <p style={{ color:C.muted, fontSize:12, margin:0 }}>{shoppingItems.length} ingredients · Tap to check off as you shop</p>
+              <p style={{ color:C.muted, fontSize:12, margin:0 }}>{totalItems} ingredients across {shoppingCategories.length} categories · Tap to check off</p>
             </Card>
 
-            {shoppingItems.length > 0 && (
-              <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:16, overflow:"hidden" }}>
-                {shoppingItems.map((item, i) => {
-                  const k = `item-${i}`;
-                  return (
-                    <div key={i} onClick={()=>setChecked(c=>({...c,[k]:!c[k]}))} style={{ display:"flex", alignItems:"center", gap:12, padding:"12px 16px", borderBottom:i<shoppingItems.length-1?`1px solid ${C.border}`:"none", cursor:"pointer", opacity:checked[k]?0.4:1 }}>
-                      <div style={{ width:22, height:22, borderRadius:99, flexShrink:0, background:checked[k]?C.green:"transparent", border:`2px solid ${checked[k]?C.green:C.divider}`, display:"flex", alignItems:"center", justifyContent:"center" }}>
-                        {checked[k]&&<span style={{ color:"#fff", fontSize:11, fontWeight:700 }}>✓</span>}
+            {shoppingCategories.length > 0 && shoppingCategories.map((cat, ci) => (
+              <div key={ci} style={{ marginBottom:12 }}>
+                <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:6, paddingLeft:2 }}>
+                  <div style={{ width:8, height:8, borderRadius:99, background:cat.color, flexShrink:0 }} />
+                  <span style={{ color:C.muted, fontSize:11, fontWeight:700, letterSpacing:"0.06em" }}>{cat.name.toUpperCase()}</span>
+                  <span style={{ color:C.muted, fontSize:11 }}>· {cat.items.length} items</span>
+                </div>
+                <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:14, overflow:"hidden" }}>
+                  {cat.items.map((item, ii) => {
+                    const k = `${ci}-${ii}`;
+                    return (
+                      <div key={ii} onClick={()=>setChecked(c=>({...c,[k]:!c[k]}))} style={{ display:"flex", alignItems:"center", gap:12, padding:"11px 14px", borderBottom:ii<cat.items.length-1?`1px solid ${C.border}`:"none", cursor:"pointer", opacity:checked[k]?0.4:1 }}>
+                        <div style={{ width:22, height:22, borderRadius:99, flexShrink:0, background:checked[k]?cat.color:"transparent", border:`2px solid ${checked[k]?cat.color:C.divider}`, display:"flex", alignItems:"center", justifyContent:"center", transition:"all 0.15s" }}>
+                          {checked[k]&&<span style={{ color:"#fff", fontSize:11, fontWeight:700 }}>✓</span>}
+                        </div>
+                        <div style={{ flex:1 }}>
+                          <span style={{ color:C.text, fontSize:14, textDecoration:checked[k]?"line-through":"none" }}>{item.display}</span>
+                          {item.amounts.length > 0 && <span style={{ color:C.muted, fontSize:12, marginLeft:6 }}>({item.amounts[0]})</span>}
+                        </div>
                       </div>
-                      <div style={{ flex:1 }}>
-                        <span style={{ color:C.text, fontSize:14, fontWeight:500, textDecoration:checked[k]?"line-through":"none" }}>{item.display}</span>
-                        {item.amounts.length > 0 && <span style={{ color:C.muted, fontSize:12, marginLeft:6 }}>({item.amounts[0]})</span>}
-                      </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
-            )}
+            ))}
 
             <div style={{ display:"flex", gap:8, marginTop:12 }}>
               <button onClick={()=>setChecked({})} style={{ flex:1, background:"none", border:`1px solid ${C.border}`, borderRadius:10, padding:"8px 0", color:C.muted, fontSize:13, cursor:"pointer", fontFamily:FONT }}>Reset ticks</button>
