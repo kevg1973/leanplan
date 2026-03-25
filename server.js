@@ -224,6 +224,61 @@ Return this exact JSON structure:
 app.post("/api/generate-meal-plan", async (req, res) => {
   const { profile, dislikedMealNames = [], style = "all", days = 5 } = req.body;
 
+  // ── Calculate TDEE ─────────────────────────────────────────────────────────
+  const calcTDEE = (p) => {
+    if (!p?.heightCm || !p?.startWeightLbs || !p?.age) return null;
+    const weightKg = p.startWeightLbs * 0.453592;
+    const heightCm = parseFloat(p.heightCm);
+    const age = parseFloat(p.age);
+    const bmr = p.sex === "female"
+      ? (10 * weightKg) + (6.25 * heightCm) - (5 * age) - 161
+      : (10 * weightKg) + (6.25 * heightCm) - (5 * age) + 5;
+    const activityMult = { 2:1.375, 3:1.55, 4:1.725, 5:1.9 }[p.workoutsPerWeek] || 1.55;
+    return Math.round(bmr * activityMult);
+  };
+
+  // ── Calculate targets ──────────────────────────────────────────────────────
+  const tdee = calcTDEE(profile);
+  const goal = profile?.goal || "lose_weight";
+  const weightKg = profile?.startWeightLbs ? profile.startWeightLbs * 0.453592 : null;
+
+  // Calorie target based on goal + pace
+  const paceDeficits = { slow: 275, normal: 500, fast: 750, vfast: 1000 };
+  const deficit = paceDeficits[profile?.paceId] || 500;
+  let dailyCalTarget = null;
+  if (tdee) {
+    if (goal === "lose_weight") dailyCalTarget = Math.max(1200, tdee - deficit);
+    else if (goal === "build_muscle") dailyCalTarget = tdee + 300;
+    else if (goal === "get_fitter") dailyCalTarget = tdee - 100;
+    else dailyCalTarget = tdee - 200; // all of the above
+  }
+
+  // Protein target based on goal and bodyweight
+  let dailyProteinTarget = null;
+  if (weightKg) {
+    if (goal === "lose_weight") dailyProteinTarget = Math.round(weightKg * 2.2); // high protein to preserve muscle
+    else if (goal === "build_muscle") dailyProteinTarget = Math.round(weightKg * 2.0);
+    else dailyProteinTarget = Math.round(weightKg * 1.8);
+  }
+
+  // Macro split guidance
+  const macroGuidance = (() => {
+    if (goal === "build_muscle") return "Higher carbs (40%), high protein (35%), moderate fat (25%). Calorie surplus.";
+    if (goal === "lose_weight") return "Moderate carbs (35%), high protein (40%), moderate fat (25%). Calorie deficit.";
+    if (goal === "get_fitter") return "Balanced — carbs (40%), protein (30%), fat (30%). Slight deficit.";
+    return "Balanced — carbs (35%), protein (35%), fat (30%).";
+  })();
+
+  // Meal calorie distribution (5 meals)
+  const mealDistribution = (() => {
+    if (!dailyCalTarget) return "breakfast ~25%, snacks ~10% each, lunch ~25%, dinner ~30%";
+    const b = Math.round(dailyCalTarget * 0.25);
+    const s = Math.round(dailyCalTarget * 0.10);
+    const l = Math.round(dailyCalTarget * 0.25);
+    const d = Math.round(dailyCalTarget * 0.30);
+    return `breakfast ~${b} cal, morning snack ~${s} cal, lunch ~${l} cal, afternoon snack ~${s} cal, dinner ~${d} cal`;
+  })();
+
   const dietNotes = [
     profile?.dietType || "omnivore",
     profile?.dairyPref === "dairy_free" ? "strictly dairy-free (use coconut yoghurt, soya milk, dairy-free alternatives)" :
@@ -241,16 +296,32 @@ app.post("/api/generate-meal-plan", async (req, res) => {
     return d.toISOString().split("T")[0];
   });
 
+  // Build batch-cook instruction based on days
+  const batchCookNote = days >= 3
+    ? `BATCH COOKING: On day 1, cook double portions of the main protein (e.g. chicken breast) so it can be used cold/reheated in day 2 lunch. On day 3, batch cook a base (e.g. rice or quinoa) for days 3-4. Note which meals use leftovers by adding "(using leftover X from day Y)" to the meal name.`
+    : `Cook enough protein at dinner for next day's lunch where possible.`;
+
   const prompt = `Generate a ${days}-day meal plan for this person. Return ONLY valid JSON, no other text.
 
-User profile:
+PERSONAL PROFILE:
+- Sex: ${profile?.sex || "not specified"}
+- Age: ${profile?.age || "adult"}
+- Weight: ${weightKg ? weightKg.toFixed(1) + "kg" : "not specified"}
+- Height: ${profile?.heightCm ? profile.heightCm + "cm" : "not specified"}
+- Goal: ${goal.replace(/_/g," ")}
 - Diet: ${dietNotes}
 - Allergies: ${profile?.allergies?.join(", ") || "none"}
 - Dislikes: ${profile?.dislikes?.join(", ") || "none"}
-- Cooking time: ${cookTime} per meal
-- Goal: ${profile?.goal?.replace(/_/g," ") || "lose weight"}
-- Age: ${profile?.age || "adult"}
+- Cooking time per meal: ${cookTime}
+- Workouts per week: ${profile?.workoutsPerWeek || 3}
 ${styleFilter}
+
+CALORIE & MACRO TARGETS (MUST HIT THESE — this is the most important part):
+- Daily calorie target: ${dailyCalTarget ? dailyCalTarget + " calories" : "approximately 1700 calories"}
+- Daily protein target: ${dailyProteinTarget ? dailyProteinTarget + "g minimum" : "at least 130g"}
+- Macro split: ${macroGuidance}
+- Meal distribution: ${mealDistribution}
+- Each meal's cals, protein, carbs and fat fields MUST reflect real nutritional values that add up to the daily target
 
 CRITICAL RULES:
 1. ALL ingredients must be available in standard UK supermarkets (Tesco, Sainsbury's, Asda, Ocado) at reasonable prices
@@ -259,15 +330,16 @@ CRITICAL RULES:
 4. Each day must have exactly 5 meals in order: breakfast, morning snack, lunch, afternoon snack, dinner
 5. Do NOT repeat meals across days — every meal must be unique
 6. Do NOT generate any of these meals (user has disliked them): ${dislikedMealNames.length > 0 ? dislikedMealNames.join(", ") : "none"}
-7. Each meal should be high protein (20g+ for main meals, 10g+ for snacks)
-8. Use simple whole foods — chicken, eggs, rice, oats, vegetables, legumes etc
+7. Use simple whole foods — chicken, eggs, rice, oats, vegetables, legumes etc
 
-INGREDIENT EFFICIENCY RULES (very important for keeping shopping costs down):
-9. Use a MAXIMUM of 2-3 different meat or fish proteins across the ENTIRE plan (e.g. chicken breast + eggs, or chicken breast + tinned tuna + eggs). Do NOT use a different protein every meal.
-10. Build the plan around a core set of 15-20 base ingredients that repeat across multiple days. Variety comes from HOW ingredients are prepared and seasoned, not from buying entirely different foods every day.
-11. The total unique ingredient count across the whole ${days}-day plan must be 30 or fewer.
-12. Batch-cook friendly: if a recipe uses chicken breast on day 1, use leftover chicken in day 2's lunch.
-13. Use budget-friendly staples: oats, eggs, rice, chicken breast, tinned tomatoes, tinned beans, frozen veg, sweet potato, spinach, broccoli.
+INGREDIENT EFFICIENCY (keeps shopping cost down):
+8. Use a MAXIMUM of 2-3 different meat/fish proteins across the ENTIRE plan (e.g. chicken breast + eggs + tinned tuna). Do NOT use a different protein every meal.
+9. Build around a core set of 15-20 base ingredients that repeat across days. Variety comes from preparation and seasoning, not new ingredients every day.
+10. Total unique ingredients across the whole plan: 30 or fewer.
+11. Use budget staples: oats, eggs, rice, chicken breast, tinned tomatoes, tinned beans, frozen veg, sweet potato, spinach, broccoli.
+
+BATCH COOKING:
+12. ${batchCookNote}
 
 Return this exact JSON structure:
 {
