@@ -1658,11 +1658,13 @@ const MealsTab =({ profile, favourites, setFavourites, removed, setRemoved, meal
   const [suppOpen, setSuppOpen] = useState(null);
   const [generating, setGenerating] = useState(false);
   const [generateError, setGenerateError] = useState(null);
-  const MAX_GENERATIONS = 3;
+  const MAX_GENERATIONS = 999;
   const [genCount, setGenCount] = useState(() => {
     try {
       const saved = JSON.parse(localStorage.getItem("leanplan_gen_count") || "{}");
-      return saved.date === todayKey() ? saved.count : 0;
+      if (saved.date !== todayKey()) return 0;
+      if (saved.count <= 3) return 0;
+      return saved.count || 0;
     } catch { return 0; }
   });
 
@@ -1839,7 +1841,6 @@ const MealsTab =({ profile, favourites, setFavourites, removed, setRemoved, meal
                   <p style={{ color:C.muted, fontSize:12, margin:0 }}>You've used all 3 generations today. Come back tomorrow for fresh meals! 🌅</p>
                 </div>
               )}
-              <p style={{ color:C.muted, fontSize:11, textAlign:"center", margin:"0 0 4px" }}>{MAX_GENERATIONS - genCount} generation{MAX_GENERATIONS - genCount !== 1 ? "s" : ""} remaining today</p>
               {generating && (
                 <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:14, padding:"16px", marginTop:8, textAlign:"center" }}>
                   <MealLoadingIndicator />
