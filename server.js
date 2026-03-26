@@ -1008,10 +1008,15 @@ app.post("/api/generate-meal-plan-v3", async (req, res) => {
 
   // Training day detection — distribute evenly across plan
   const trainDays = profile?.workoutsPerWeek || 3;
-  const isTrainingDay = (dayIndex) => {
-    const spacing = Math.round(days / Math.min(trainDays, days));
-    return (dayIndex % spacing) === 0;
-  };
+  const trainingDayIndices = (() => {
+    if (trainDays >= days) return new Set(Array.from({length:days},(_,i)=>i));
+    const indices = new Set();
+    for (let i = 0; i < trainDays; i++) {
+      indices.add(Math.min(Math.round(i * days / trainDays), days - 1));
+    }
+    return indices;
+  })();
+  const isTrainingDay = (dayIndex) => trainingDayIndices.has(dayIndex);
 
   // Generate date keys
   const dateKeys = Array.from({length: days}, (_, i) => {
