@@ -603,8 +603,7 @@ app.post("/api/generate-meal-plan-v2", async (req, res) => {
     isDairyFree ? `⛔ DAIRY-FREE: No milk, cheese, butter, cream, yoghurt, whey. Use coconut yoghurt, ${milkType}.` : "",
     profile?.allergies?.length > 0 ? `⛔ ALLERGIES — exclude completely: ${profile.allergies.join(", ")}` : "",
     profile?.dislikes?.length > 0 ? `⛔ DISLIKES — never include: ${profile.dislikes.join(", ")}` : "",
-  ].filter(Boolean).join("
-");
+  ].filter(Boolean).join("\n");
 
   // Budget-friendly style rules
   const budgetRules = style === "budget-friendly" ? `
