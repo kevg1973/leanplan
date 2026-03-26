@@ -505,6 +505,12 @@ const buildMealTemplate = (profile, days, usesProteinPowder) => {
     vegan:       ["tofu", "tempeh", "lentils", "chickpeas", "black beans", "kidney beans", "edamame"],
   };
 
+  // For vegetarians who aren't dairy-free, add dairy proteins
+  const isDairyFreeTemplate = profile?.dairyPref === "dairy_free";
+  if (dietType === "vegetarian" && !isDairyFreeTemplate) {
+    allProteins.vegetarian = ["eggs", "Greek yoghurt", "cottage cheese", "halloumi", "lentils", "chickpeas", "tofu"];
+  }
+
   let proteins = (allProteins[dietType] || allProteins.omnivore).filter(p => {
     if (dislikes.includes("fish") && ["tinned tuna","tinned salmon","cod","haddock","king prawns"].includes(p)) return false;
     if (dislikes.includes("oily fish") && ["tinned salmon","mackerel"].includes(p)) return false;
@@ -512,6 +518,7 @@ const buildMealTemplate = (profile, days, usesProteinPowder) => {
     if (dislikes.includes("pork") && ["pork"].includes(p)) return false;
     if (dislikes.includes("red meat") && ["lean beef mince","turkey mince"].includes(p)) return false;
     if (dislikes.includes("tofu") && p === "tofu") return false;
+    if (dislikes.includes("cottage cheese") && p === "cottage cheese") return false;
     return true;
   });
 
@@ -584,16 +591,24 @@ app.post("/api/generate-meal-plan-v2", async (req, res) => {
     else dailyCalTarget = Math.max(1400, tdee - (profile?.paceId ? deficit : 200));
   }
 
-  const dailyProteinTarget = weightKg
-    ? Math.round(weightKg * (goal === "build_muscle" ? 2.0 : 2.2))
-    : 130;
+  // Over-50s need more protein to prevent muscle loss (sarcopenia)
+  const ageNum = parseFloat(profile?.age) || 0;
+  const proteinMultiplier = ageNum >= 50
+    ? (goal === "build_muscle" ? 2.2 : 2.4)
+    : (goal === "build_muscle" ? 2.0 : 2.2);
+  const dailyProteinTarget = weightKg ? Math.round(weightKg * proteinMultiplier) : 130;
 
   const isGlutenFree = profile?.glutenPref === "gluten_free";
   const isDairyFree = profile?.dairyPref === "dairy_free";
   const usesProteinPowder = profile?.supplementsInterested?.includes("protein") || false;
   const usesCreatine = profile?.supplementsInterested?.includes("creatine") || false;
   const cookTime = { quick:"15 minutes max", moderate:"30 minutes", enjoy:"up to 60 minutes" }[profile?.cookingTime] || "30 minutes";
-  const milkType = profile?.milkAlt ? `${profile.milkAlt} milk` : isDairyFree ? "soya or oat milk" : "milk";
+  const isLactoseFree = profile?.dairyPref === "lactose_free";
+  const milkType = profile?.milkAlt
+    ? `${profile.milkAlt} milk`
+    : isDairyFree ? "soya or oat milk"
+    : isLactoseFree ? "lactose-free milk or oat milk"
+    : "milk";
   const safeCarbs = isGlutenFree
     ? "rice, quinoa, buckwheat, sweet potato, rice cakes, corn tortillas"
     : "oats, rice, quinoa, sweet potato, wholegrain bread";
@@ -601,9 +616,27 @@ app.post("/api/generate-meal-plan-v2", async (req, res) => {
   const dietaryHardRules = [
     isGlutenFree ? "⛔ GLUTEN-FREE: No wheat, barley, rye, regular oats, bread, pasta, flour, couscous, soy sauce. Use rice, quinoa, sweet potato, tamari." : "",
     isDairyFree ? `⛔ DAIRY-FREE: No milk, cheese, butter, cream, yoghurt, whey. Use coconut yoghurt, ${milkType}.` : "",
+    isLactoseFree ? `⛔ LACTOSE-FREE: No regular milk, soft cheese, cream, ice cream. Use ${milkType}, hard cheese (cheddar, parmesan are naturally low-lactose), lactose-free yoghurt. Butter is generally ok.` : "",
     profile?.allergies?.length > 0 ? `⛔ ALLERGIES — exclude completely: ${profile.allergies.join(", ")}` : "",
     profile?.dislikes?.length > 0 ? `⛔ DISLIKES — never include: ${profile.dislikes.join(", ")}` : "",
   ].filter(Boolean).join("\n");
+
+  // Age-specific guidance
+  const age = parseFloat(profile?.age) || 0;
+  const ageGuidance = (() => {
+    if (age >= 50) return `AGE-SPECIFIC GUIDANCE (${age} years old):
+- Higher protein is critical at this age to prevent muscle loss — prioritise protein at every meal
+- Smaller, more frequent meals are better tolerated than large ones
+- Include anti-inflammatory foods: oily fish, berries, leafy greens, olive oil
+- Calcium-rich foods important for bone density: sardines, leafy greens, fortified alternatives
+- Creatine is especially beneficial over 50 — include a note if creatine is being used
+- Avoid very high-fibre meals in one sitting — can cause discomfort`;
+    if (age >= 40) return `AGE-SPECIFIC GUIDANCE (${age} years old):
+- Protein needs are increasing — aim for protein at every meal
+- Include anti-inflammatory foods regularly: berries, oily fish, leafy greens
+- Metabolism is slowing — calorie targets are more important to stick to`;
+    return "";
+  })();
 
   // Budget-friendly style rules
   const budgetRules = style === "budget-friendly" ? `
@@ -641,7 +674,9 @@ PROFILE:
 ${dietaryHardRules ? `
 HARD DIETARY RULES:
 ${dietaryHardRules}` : ""}
-${budgetRules}
+${ageGuidance ? `
+${ageGuidance}
+` : ""}${budgetRules}
 
 TODAY'S MEAL TEMPLATE (follow this exactly):
 1. BREAKFAST (~${calBreakfast} cal): ${dayTemplate.breakfast}
