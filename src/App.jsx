@@ -2244,7 +2244,7 @@ const TrainTab = ({ profile, workoutLog, setWorkoutLog, setProfile, savedWorkout
         {!activeWorkout&&<Card>
           <p style={{ color:C.muted, fontSize:12, fontWeight:600, letterSpacing:"0.06em", marginBottom:12 }}>CHOOSE WORKOUT</p>
           <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:14 }}>
-            {Object.entries(WORKOUTS).map(([key,val])=><Chip key={key} color={val.color} active={selectedType===key} onClick={()=>setSelectedType(key)}>{key.replace("-"," ")}</Chip>)}
+            {Object.entries(WORKOUTS).map(([key,val])=><BigChip key={key} color={val.color} active={selectedType===key} onClick={()=>setSelectedType(key)}>{key.replace(/-/g," ")}</BigChip>)}
           </div>
           <Btn onClick={()=>buildAndShowWorkout(selectedType)} color={WORKOUTS[selectedType].color} style={{ width:"100%" }}>✦ Build My Workout</Btn>
         </Card>}
