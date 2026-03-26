@@ -1686,6 +1686,7 @@ const MealsTab = ({ profile, favourites, setFavourites, removed, setRemoved, mea
   const [section, setSection] = useState("meals");
   const [suppOpen, setSuppOpen] = useState(null);
   const [generating, setGenerating] = useState(false);
+  const [generateProgress, setGenerateProgress] = useState(null); // e.g. "Day 2 of 5"
   const [generateError, setGenerateError] = useState(null);
   const [checked, setChecked] = useState({});
   const [dislikedMeals, setDislikedMeals] = useState(() => {
@@ -1724,15 +1725,30 @@ const MealsTab = ({ profile, favourites, setFavourites, removed, setRemoved, mea
   const generatePlan = async () => {
     setGenerating(true);
     setGenerateError(null);
+    setGenerateProgress("Building your meal template...");
     try {
-      const res = await fetch("/api/generate-meal-plan", {
+      // Small delay so user sees the first progress message
+      await new Promise(r => setTimeout(r, 400));
+      setGenerateProgress(`Generating ${planDays}-day plan...`);
+
+      const res = await fetch("/api/generate-meal-plan-v2", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ profile, dislikedMealNames: dislikedMeals, style, days: planDays }),
       });
+
+      setGenerateProgress("Finalising your meals...");
       const data = await res.json();
       if (data.error) throw new Error(data.error);
-      const plan = { days: data.days, generatedDate: today, style };
+
+      const plan = {
+        days: data.days,
+        generatedDate: today,
+        style,
+        coreProteins: data.coreProteins,
+        dailyCalTarget: data.dailyCalTarget,
+        dailyProteinTarget: data.dailyProteinTarget,
+      };
       onSaveMealPlan(plan);
       setSelectedDate(today);
     } catch(err) {
@@ -1740,6 +1756,7 @@ const MealsTab = ({ profile, favourites, setFavourites, removed, setRemoved, mea
       console.error(err);
     }
     setGenerating(false);
+    setGenerateProgress(null);
   };
 
   const logMeal = m => {
@@ -1858,8 +1875,23 @@ const MealsTab = ({ profile, favourites, setFavourites, removed, setRemoved, mea
               <Btn onClick={generatePlan} disabled={generating} style={{ width:"100%", padding:"11px 0", fontSize:15, marginBottom:4 }}>
                 {generating ? "✦ Generating your plan..." : mealPlan ? `↻ Regenerate ${planDays}-day plan` : `✦ Generate my ${planDays}-day meal plan`}
               </Btn>
-              {mealPlan && <p style={{ color:C.muted, fontSize:11, textAlign:"center", margin:0 }}>Plan generated {fmtDate(mealPlan.generatedDate)} · {mealPlan.days?.length} days</p>}
-              {generating && <div style={{ background:C.sectionBg, borderRadius:14, padding:"12px", marginTop:8, textAlign:"center" }}><MealLoadingIndicator /></div>}
+              {mealPlan && <div style={{ textAlign:"center", marginTop:4 }}>
+                <p style={{ color:C.muted, fontSize:11, margin:"0 0 2px" }}>Plan generated {fmtDate(mealPlan.generatedDate)} · {mealPlan.days?.length} days</p>
+                {mealPlan.coreProteins && <p style={{ color:C.muted, fontSize:11, margin:0 }}>Core proteins: {mealPlan.coreProteins.join(", ")}</p>}
+              </div>}
+              {generating && (
+                <div style={{ background:C.sectionBg, borderRadius:14, padding:"14px 16px", marginTop:8 }}>
+                  <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:8 }}>
+                    <div style={{ display:"flex", gap:4 }}>
+                      {[0,1,2].map(i=>(
+                        <div key={i} style={{ width:7, height:7, borderRadius:99, background:C.accent, opacity:0.4, animation:`pulse 0.8s ease-in-out ${i*0.2}s infinite alternate` }} />
+                      ))}
+                    </div>
+                    <p style={{ color:C.text, fontSize:13, fontWeight:600, margin:0 }}>{generateProgress || "Generating..."}</p>
+                  </div>
+                  <p style={{ color:C.muted, fontSize:12, margin:0 }}>This takes 15–20 seconds — building a personalised plan just for you</p>
+                </div>
+              )}
               {generateError && <p style={{ color:C.red, fontSize:13, textAlign:"center", marginTop:6 }}>{generateError}</p>}
               {dislikedMeals.length>0&&<p style={{ color:C.muted, fontSize:11, textAlign:"center", marginTop:4 }}>Avoiding {dislikedMeals.length} disliked meal{dislikedMeals.length!==1?"s":""} · <span onClick={()=>saveDislikedMeals([])} style={{ color:C.accent, cursor:"pointer" }}>Reset</span></p>}
             </div>
