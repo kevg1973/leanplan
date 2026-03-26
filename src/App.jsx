@@ -1689,6 +1689,19 @@ const MealsTab = ({ profile, favourites, setFavourites, removed, setRemoved, mea
   const [generateProgress, setGenerateProgress] = useState(null); // e.g. "Day 2 of 5"
   const [generateError, setGenerateError] = useState(null);
   const [checked, setChecked] = useState({});
+  const [pantry, setPantry] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("leanplan_pantry") || "[]"); } catch { return []; }
+  });
+  const savePantry = (items) => {
+    setPantry(items);
+    localStorage.setItem("leanplan_pantry", JSON.stringify(items));
+  };
+  const togglePantry = (itemName) => {
+    const key = itemName.toLowerCase().trim();
+    const updated = pantry.includes(key) ? pantry.filter(p=>p!==key) : [...pantry, key];
+    savePantry(updated);
+  };
+  const isInPantry = (itemName) => pantry.includes(itemName.toLowerCase().trim());
   const [dislikedMeals, setDislikedMeals] = useState(() => {
     try { return JSON.parse(localStorage.getItem("leanplan_disliked_meals") || "[]"); } catch { return []; }
   });
@@ -1963,39 +1976,75 @@ const MealsTab = ({ profile, favourites, setFavourites, removed, setRemoved, mea
               </div>
               <p style={{ color:C.text, fontSize:13, lineHeight:1.6, margin:"0 0 4px" }}>Based on your meal plan from {fmtDate(mealPlan.generatedDate)}.</p>
               {(()=>{
-                const unchecked = totalItems - Object.values(checked).filter(Boolean).length;
-                return <p style={{ color:C.muted, fontSize:12, margin:0 }}>{totalItems} ingredients · {unchecked} to buy</p>;
+                const inPantryCount = shoppingCategories.reduce((a,cat)=>a+cat.items.filter(item=>isInPantry(item.display)).length, 0);
+                const toBuyCount = totalItems - inPantryCount;
+                const boughtCount = Object.values(checked).filter(Boolean).length;
+                return (
+                  <div style={{ display:"flex", gap:12, marginTop:2 }}>
+                    <span style={{ color:C.accent, fontSize:12, fontWeight:600 }}>🛒 {toBuyCount - boughtCount} to buy</span>
+                    <span style={{ color:C.green, fontSize:12 }}>✓ {boughtCount} bought</span>
+                    <span style={{ color:C.muted, fontSize:12 }}>🏠 {inPantryCount} in pantry</span>
+                  </div>
+                );
               })()}
             </Card>
 
-            {shoppingCategories.length > 0 && shoppingCategories.map((cat, ci) => (
-              <div key={ci} style={{ marginBottom:12 }}>
-                <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:6, paddingLeft:2 }}>
-                  <div style={{ width:8, height:8, borderRadius:99, background:cat.color, flexShrink:0 }} />
-                  <span style={{ color:C.muted, fontSize:11, fontWeight:700, letterSpacing:"0.06em" }}>{cat.name.toUpperCase()}</span>
-                  <span style={{ color:C.muted, fontSize:11 }}>· {cat.items.length} items</span>
-                </div>
-                <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:14, overflow:"hidden" }}>
-                  {cat.items.map((item, ii) => {
-                    const k = `${ci}-${ii}`;
-                    return (
-                      <div key={ii} onClick={()=>setChecked(c=>({...c,[k]:!c[k]}))} style={{ display:"flex", alignItems:"center", gap:12, padding:"11px 14px", borderBottom:ii<cat.items.length-1?`1px solid ${C.border}`:"none", cursor:"pointer", opacity:checked[k]?0.4:1 }}>
-                        <div style={{ width:22, height:22, borderRadius:99, flexShrink:0, background:checked[k]?cat.color:"transparent", border:`2px solid ${checked[k]?cat.color:C.divider}`, display:"flex", alignItems:"center", justifyContent:"center", transition:"all 0.15s" }}>
-                          {checked[k]&&<span style={{ color:"#fff", fontSize:11, fontWeight:700 }}>✓</span>}
+            {/* Pantry info tip */}
+            <div style={{ background:`${C.accent}10`, border:`1px solid ${C.accent}22`, borderRadius:12, padding:"10px 14px", marginBottom:12 }}>
+              <p style={{ color:C.accent, fontSize:12, fontWeight:700, margin:"0 0 2px" }}>🏠 Pantry items</p>
+              <p style={{ color:C.muted, fontSize:12, margin:0 }}>Tap 🏠 to mark items already in your cupboard — they'll be remembered next time you generate a plan.</p>
+            </div>
+
+            {shoppingCategories.length > 0 && shoppingCategories.map((cat, ci) => {
+              const visibleItems = cat.items;
+              if (visibleItems.length === 0) return null;
+              const catInPantry = visibleItems.filter(item=>isInPantry(item.display)).length;
+              return (
+                <div key={ci} style={{ marginBottom:12 }}>
+                  <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:6, paddingLeft:2 }}>
+                    <div style={{ width:8, height:8, borderRadius:99, background:cat.color, flexShrink:0 }} />
+                    <span style={{ color:C.muted, fontSize:11, fontWeight:700, letterSpacing:"0.06em" }}>{cat.name.toUpperCase()}</span>
+                    <span style={{ color:C.muted, fontSize:11 }}>· {visibleItems.length - catInPantry} to buy{catInPantry>0?`, ${catInPantry} in pantry`:""}</span>
+                  </div>
+                  <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:14, overflow:"hidden" }}>
+                    {visibleItems.map((item, ii) => {
+                      const k = `${ci}-${ii}`;
+                      const inPantry = isInPantry(item.display);
+                      const bought = checked[k];
+                      return (
+                        <div key={ii} style={{ display:"flex", alignItems:"center", gap:10, padding:"11px 14px", borderBottom:ii<visibleItems.length-1?`1px solid ${C.border}`:"none", opacity:inPantry?0.45:1, background:inPantry?`${C.green}06`:"transparent" }}>
+                          {/* Pantry toggle */}
+                          <button
+                            onClick={()=>togglePantry(item.display)}
+                            title={inPantry?"Remove from pantry":"Mark as in pantry"}
+                            style={{ width:30, height:30, borderRadius:8, background:inPantry?`${C.green}20`:"transparent", border:`1.5px solid ${inPantry?C.green:C.border}`, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", fontSize:14, flexShrink:0, transition:"all 0.15s" }}
+                          >🏠</button>
+                          {/* Item name + amount */}
+                          <div style={{ flex:1 }} onClick={()=>!inPantry&&setChecked(c=>({...c,[k]:!c[k]}))}>
+                            <span style={{ color:inPantry?C.muted:C.text, fontSize:14, textDecoration:bought||inPantry?"line-through":"none", cursor:inPantry?"default":"pointer" }}>{item.display}</span>
+                            {item.amounts.length > 0 && <span style={{ color:C.muted, fontSize:12, marginLeft:6 }}>({item.amounts[0]})</span>}
+                            {inPantry && <span style={{ color:C.green, fontSize:11, marginLeft:8, fontWeight:600 }}>in pantry</span>}
+                          </div>
+                          {/* Bought tick — only shown if not in pantry */}
+                          {!inPantry && (
+                            <button
+                              onClick={()=>setChecked(c=>({...c,[k]:!c[k]}))}
+                              style={{ width:26, height:26, borderRadius:99, flexShrink:0, background:bought?cat.color:"transparent", border:`2px solid ${bought?cat.color:C.divider}`, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", transition:"all 0.15s" }}
+                            >
+                              {bought&&<span style={{ color:"#fff", fontSize:11, fontWeight:700 }}>✓</span>}
+                            </button>
+                          )}
                         </div>
-                        <div style={{ flex:1 }}>
-                          <span style={{ color:C.text, fontSize:14, textDecoration:checked[k]?"line-through":"none" }}>{item.display}</span>
-                          {item.amounts.length > 0 && <span style={{ color:C.muted, fontSize:12, marginLeft:6 }}>({item.amounts[0]})</span>}
-                        </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
 
             <div style={{ display:"flex", gap:8, marginTop:12 }}>
               <button onClick={()=>setChecked({})} style={{ flex:1, background:"none", border:`1px solid ${C.border}`, borderRadius:10, padding:"8px 0", color:C.muted, fontSize:13, cursor:"pointer", fontFamily:FONT }}>Reset ticks</button>
+              <button onClick={()=>savePantry([])} style={{ flex:1, background:"none", border:`1px solid ${C.border}`, borderRadius:10, padding:"8px 0", color:C.muted, fontSize:13, cursor:"pointer", fontFamily:FONT }}>Clear pantry</button>
               <button onClick={()=>setSection("meals")} style={{ flex:1, background:"none", border:`1px solid ${C.accent}`, borderRadius:10, padding:"8px 0", color:C.accent, fontSize:13, fontWeight:600, cursor:"pointer", fontFamily:FONT }}>↻ New plan</button>
             </div>
           </>
@@ -3648,6 +3697,7 @@ function AppInner() {
     "leanplan_v4", "leanplan_lifts", "leanplan_pro", "leanplan_device_id",
     "leanplan_trial_start", "leanplan_gen_count", "leanplan_disliked_meals",
     "leanplan_liked_meals", "leanplan_meal_plan", "leanplan_todays_meals",
+    "leanplan_pantry",
   ];
 
   const handleReset = () => {
