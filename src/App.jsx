@@ -2745,6 +2745,95 @@ const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDar
           </div>
         )}
       </>}
+
+      {editing==="name"&&<>
+        <p style={{ color:C.muted, fontSize:14, marginBottom:16 }}>What should we call you?</p>
+        <TInput value={tempData.name||""} onChange={e=>setTempData(d=>({...d,name:e.target.value}))} placeholder="Your first name" />
+      </>}
+
+      {editing==="diet"&&<>
+        <div style={{ marginBottom:20 }}>
+          <p style={{ color:C.muted, fontSize:13, fontWeight:600, marginBottom:10 }}>DIET TYPE</p>
+          {[["omnivore","Omnivore","Eat everything"],["pescatarian","Pescatarian","Fish and seafood, no meat"],["vegetarian","Vegetarian","No meat or fish"],["vegan","Vegan","No animal products"]].map(([val,label,desc])=>(
+            <div key={val} onClick={()=>setTempData(d=>({...d,dietType:val}))} style={{ background:tempData.dietType===val?`${C.accent}12`:C.card, border:`1.5px solid ${tempData.dietType===val?C.accent:C.border}`, borderRadius:14, padding:"12px 16px", marginBottom:8, cursor:"pointer", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+              <div><p style={{ color:C.text, fontWeight:600, fontSize:15, margin:0 }}>{label}</p><p style={{ color:C.muted, fontSize:13, margin:"2px 0 0" }}>{desc}</p></div>
+              {tempData.dietType===val && <span style={{ color:C.accent, fontSize:18 }}>✓</span>}
+            </div>
+          ))}
+        </div>
+        <div style={{ marginBottom:20 }}>
+          <p style={{ color:C.muted, fontSize:13, fontWeight:600, marginBottom:10 }}>DAIRY</p>
+          <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
+            {[["full_dairy","Full dairy"],["lactose_free","Lactose-free"],["dairy_free","Dairy-free"]].map(([val,label])=>(
+              <Chip key={val} color={C.accent} active={tempData.dairyPref===val} onClick={()=>setTempData(d=>({...d,dairyPref:val}))}>{label}</Chip>
+            ))}
+          </div>
+        </div>
+        <div>
+          <p style={{ color:C.muted, fontSize:13, fontWeight:600, marginBottom:10 }}>GLUTEN</p>
+          <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
+            {[["regular","Regular"],["gluten_free","Gluten-free"]].map(([val,label])=>(
+              <Chip key={val} color={C.accent} active={tempData.glutenPref===val} onClick={()=>setTempData(d=>({...d,glutenPref:val}))}>{label}</Chip>
+            ))}
+          </div>
+        </div>
+        <div style={{ background:`${C.orange}12`, border:`1px solid ${C.orange}33`, borderRadius:12, padding:"10px 14px", marginTop:14 }}>
+          <p style={{ color:C.orange, fontSize:13, margin:0 }}>⚠️ Regenerate your meal plan after saving to apply changes.</p>
+        </div>
+      </>}
+
+      {editing==="supplements"&&<>
+        <div style={{ marginBottom:20 }}>
+          <p style={{ color:C.muted, fontSize:13, fontWeight:600, marginBottom:10 }}>SUPPLEMENT PREFERENCE</p>
+          {[["yes","Yes — I'm open to them","Show me what's relevant to my goals"],["maybe","Maybe — tell me more","I'd like to learn before deciding"],["no","No thanks — food only","I prefer to get everything from diet"]].map(([val,label,desc])=>(
+            <div key={val} onClick={()=>setTempData(d=>({...d,supplementsOpen:val}))} style={{ background:tempData.supplementsOpen===val?`${C.accent}12`:C.card, border:`1.5px solid ${tempData.supplementsOpen===val?C.accent:C.border}`, borderRadius:14, padding:"12px 16px", marginBottom:8, cursor:"pointer", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+              <div><p style={{ color:C.text, fontWeight:600, fontSize:15, margin:0 }}>{label}</p><p style={{ color:C.muted, fontSize:13, margin:"2px 0 0" }}>{desc}</p></div>
+              {tempData.supplementsOpen===val && <span style={{ color:C.accent, fontSize:18 }}>✓</span>}
+            </div>
+          ))}
+        </div>
+        {(tempData.supplementsOpen==="yes"||tempData.supplementsOpen==="maybe")&&<div>
+          <p style={{ color:C.muted, fontSize:13, fontWeight:600, marginBottom:10 }}>INTERESTED IN</p>
+          <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
+            {[["creatine","Creatine"],["protein","Protein powder"],["vitd","Vitamin D3+K2"],["omega3","Omega-3"],["magnesium","Magnesium"],["multivitamin","Multivitamin"],["collagen","Collagen"],["probiotics","Probiotics"]].map(([val,label])=>(
+              <Chip key={val} color={C.purple} active={tempData.supplementsInterested?.includes(val)} onClick={()=>{
+                const curr = tempData.supplementsInterested||[];
+                setTempData(d=>({...d,supplementsInterested:curr.includes(val)?curr.filter(x=>x!==val):[...curr,val]}));
+              }}>{label}</Chip>
+            ))}
+          </div>
+        </div>}
+      </>}
+
+      {editing==="lifestyle"&&<>
+        <div style={{ marginBottom:20 }}>
+          <p style={{ color:C.muted, fontSize:13, fontWeight:600, marginBottom:10 }}>ACTIVITY LEVEL (outside workouts)</p>
+          {[["sedentary","Sedentary","Desk job, mostly sitting"],["light","Lightly active","Some walking, light activity"],["moderate","Moderately active","On feet a lot, active job"],["very","Very active","Physical job or very active lifestyle"]].map(([val,label,desc])=>(
+            <div key={val} onClick={()=>setTempData(d=>({...d,activityLevel:val}))} style={{ background:tempData.activityLevel===val?`${C.accent}12`:C.card, border:`1.5px solid ${tempData.activityLevel===val?C.accent:C.border}`, borderRadius:14, padding:"12px 16px", marginBottom:8, cursor:"pointer", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+              <div><p style={{ color:C.text, fontWeight:600, fontSize:15, margin:0 }}>{label}</p><p style={{ color:C.muted, fontSize:13, margin:"2px 0 0" }}>{desc}</p></div>
+              {tempData.activityLevel===val && <span style={{ color:C.accent, fontSize:18 }}>✓</span>}
+            </div>
+          ))}
+        </div>
+        <div style={{ marginBottom:20 }}>
+          <p style={{ color:C.muted, fontSize:13, fontWeight:600, marginBottom:10 }}>SLEEP QUALITY</p>
+          {[["poor","Poor","Often tired, broken sleep"],["average","Average","Generally ok, some bad nights"],["good","Good","Usually sleep well"],["great","Great","Consistently great sleep"]].map(([val,label,desc])=>(
+            <div key={val} onClick={()=>setTempData(d=>({...d,sleepQuality:val}))} style={{ background:tempData.sleepQuality===val?`${C.accent}12`:C.card, border:`1.5px solid ${tempData.sleepQuality===val?C.accent:C.border}`, borderRadius:14, padding:"12px 16px", marginBottom:8, cursor:"pointer", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+              <div><p style={{ color:C.text, fontWeight:600, fontSize:15, margin:0 }}>{label}</p><p style={{ color:C.muted, fontSize:13, margin:"2px 0 0" }}>{desc}</p></div>
+              {tempData.sleepQuality===val && <span style={{ color:C.accent, fontSize:18 }}>✓</span>}
+            </div>
+          ))}
+        </div>
+        <div>
+          <p style={{ color:C.muted, fontSize:13, fontWeight:600, marginBottom:10 }}>WORKOUT STYLE</p>
+          <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
+            {[["mixed","Mixed"],["weights","Weights"],["cardio","Cardio"],["home","Home workouts"],["classes","Classes"]].map(([val,label])=>(
+              <Chip key={val} color={C.accent} active={tempData.workoutStyle===val} onClick={()=>setTempData(d=>({...d,workoutStyle:val}))}>{label}</Chip>
+            ))}
+          </div>
+        </div>
+      </>}
+
     </div>
   );
 
@@ -2755,8 +2844,11 @@ const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDar
     <div>
       <div style={{ textAlign:"center", padding:"24px 0 20px" }}>
         <div style={{ width:80, height:80, borderRadius:99, background:`linear-gradient(135deg, ${C.accent}, ${C.green})`, margin:"0 auto 12px", display:"flex", alignItems:"center", justifyContent:"center", overflow:"hidden" }}><img src="/leanplan_app_icon.png" alt="LeanPlan" style={{ width:"100%", height:"100%", objectFit:"cover" }} /></div>
-        <h2 style={{ color:C.text, fontSize:22, fontWeight:700, margin:0 }}>{profile.name||"Your Profile"}</h2>
-        <p style={{ color:C.muted, fontSize:14, margin:"4px 0 0" }}>Age {profile.age||"—"} · LeanPlan</p>
+        <div style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:8 }}>
+          <h2 style={{ color:C.text, fontSize:22, fontWeight:700, margin:0 }}>{profile.name||"Your Profile"}</h2>
+          <button onClick={()=>startEdit("name")} style={{ background:"none", border:"none", color:C.accent, fontSize:13, cursor:"pointer", fontFamily:FONT, padding:"2px 6px" }}>Edit</button>
+        </div>
+        <p style={{ color:C.muted, fontSize:14, margin:"4px 0 0" }}>Age {profile.age||"—"} · {profile.sex||""}</p>
         {tdee&&<p style={{ color:C.accent, fontSize:14, margin:"4px 0 0", fontWeight:600 }}>TDEE: {tdee} cal · BMI: {bmi}</p>}
       </div>
 
@@ -2767,8 +2859,10 @@ const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDar
       </Section>
 
       <Section title="My Details">
-        <Row label="Height" value={profile.heightCm?`${profile.heightCm} cm`:"Not set"} onClick={()=>startEdit("details")} />
+        <Row label="Name" value={profile.name||"Not set"} onClick={()=>startEdit("name")} />
         <Row label="Age" value={profile.age||"Not set"} onClick={()=>startEdit("details")} />
+        <Row label="Sex" value={profile.sex||"Not set"} onClick={()=>startEdit("details")} />
+        <Row label="Height" value={profile.heightCm?`${profile.heightCm} cm`:"Not set"} onClick={()=>startEdit("details")} />
         <Row label="Workouts/week" value={`${profile.workoutsPerWeek}x`} onClick={()=>startEdit("details")} last />
       </Section>
 
@@ -2780,13 +2874,24 @@ const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDar
 
       <Section title="Diet & Meals">
         <Row label="Diet type" value={profile.dietType||"omnivore"} onClick={()=>startEdit("diet")} />
-        <Row label="Dairy" value={profile.dairyPref?.replace("_"," ")||"Not set"} onClick={()=>startEdit("diet")} />
+        <Row label="Dairy" value={profile.dairyPref?.replace(/_/g," ")||"Not set"} onClick={()=>startEdit("diet")} />
         {(profile.dairyPref==="dairy_free"||profile.dairyPref==="lactose_free")&&<Row label="Milk alternative" value={profile.milkAlt||"Not set"} onClick={()=>startEdit("milkalt")} />}
-        <Row label="Gluten" value={profile.glutenPref?.replace("_"," ")||"Not set"} onClick={()=>startEdit("diet")} />
+        <Row label="Gluten" value={profile.glutenPref?.replace(/_/g," ")||"Not set"} onClick={()=>startEdit("diet")} />
         <Row label="Allergies" value={profile.allergies?.length>0?`${profile.allergies.length} selected`:"None"} onClick={()=>startEdit("allergies")} />
         <Row label="Dislikes" value={profile.dislikes?.length>0?`${profile.dislikes.length} foods`:"None"} onClick={()=>startEdit("dislikes")} />
         <Row label="Cooking time" value={{"quick":"Quick (15 min)","moderate":"Moderate (30 min)","enjoy":"I enjoy cooking (1hr)"}[profile.cookingTime||"moderate"]} onClick={()=>startEdit("cookingtime")} />
         <Row label="Meal plan length" value={`${profile.mealPlanDays||5} days`} onClick={()=>startEdit("mealplan")} last />
+      </Section>
+
+      <Section title="Supplements">
+        <Row label="Supplement preference" value={{"yes":"Open to supplements","maybe":"Maybe","no":"Food only"}[profile.supplementsOpen||"maybe"]} onClick={()=>startEdit("supplements")} />
+        <Row label="Interested in" value={profile.supplementsInterested?.length>0?profile.supplementsInterested.join(", "):"None selected"} onClick={()=>startEdit("supplements")} last />
+      </Section>
+
+      <Section title="Lifestyle">
+        <Row label="Activity level" value={{"sedentary":"Sedentary","light":"Lightly active","moderate":"Moderately active","very":"Very active"}[profile.activityLevel||"moderate"]} onClick={()=>startEdit("lifestyle")} />
+        <Row label="Sleep quality" value={{"poor":"Poor","average":"Average","good":"Good","great":"Great"}[profile.sleepQuality||"average"]} onClick={()=>startEdit("lifestyle")} />
+        <Row label="Workout style" value={profile.workoutStyle||"mixed"} onClick={()=>startEdit("lifestyle")} last />
       </Section>
 
       <Section title="Appearance">
