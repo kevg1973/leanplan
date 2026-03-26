@@ -1731,8 +1731,19 @@ const MealsTab = ({ profile, favourites, setFavourites, removed, setRemoved, mea
     if (!likedMeals.find(l=>l.name===m.name)) saveLikedMeals([...likedMeals, {name:m.name, id:m.id}]);
     setFavourites(f=>f.includes(m.id)?f:[...f,m.id]);
   };
+  const [showDislikeNudge, setShowDislikeNudge] = useState(false);
+
   const dislikeMeal = (m) => {
     saveDislikedMeals([...dislikedMeals.filter(d=>d!==m.name), m.name]);
+    // Remove meal from the plan visually
+    if (mealPlan?.days) {
+      const updatedDays = mealPlan.days.map(day => ({
+        ...day,
+        meals: day.meals.filter(meal => meal.id !== m.id)
+      }));
+      onSaveMealPlan({ ...mealPlan, days: updatedDays });
+    }
+    setShowDislikeNudge(true);
   };
 
   const generatePlan = async () => {
@@ -1949,6 +1960,13 @@ const MealsTab = ({ profile, favourites, setFavourites, removed, setRemoved, mea
             targetCals={targetCals}
           />
         </>}
+
+        {showDislikeNudge && mealPlan && (
+          <div style={{ background:`${C.orange}10`, border:`1px solid ${C.orange}33`, borderRadius:14, padding:"12px 16px", display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
+            <p style={{ color:C.text, fontSize:13, margin:0 }}>👎 Meal removed — regenerate for a fresh plan</p>
+            <button onClick={()=>{ setShowDislikeNudge(false); generatePlan(); }} disabled={generating} style={{ background:C.orange, border:"none", borderRadius:99, padding:"6px 14px", color:"#fff", fontSize:13, fontWeight:700, cursor:"pointer", fontFamily:FONT, flexShrink:0 }}>↻ Regenerate</button>
+          </div>
+        )}
 
         {!mealPlan && !generating && isPro && (
           <div style={{ textAlign:"center", padding:"32px 20px", background:C.card, border:`1px solid ${C.border}`, borderRadius:16 }}>
