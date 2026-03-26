@@ -1793,7 +1793,7 @@ const MealsTab = ({ profile, favourites, setFavourites, removed, setRemoved, mea
   };
 
   const buildShoppingList = () => {
-    if (!mealPlan?.days) return {};
+    if (!mealPlan?.days) return [];
     const allItems = {};
     mealPlan.days.forEach(day => {
       day.meals.forEach(meal => {
