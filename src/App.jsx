@@ -2652,7 +2652,7 @@ const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDar
         <div style={{ marginBottom:14 }}>
           <p style={{ color:C.muted, fontSize:13, marginBottom:8 }}>Weight loss target</p>
           <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
-            {[3,5,7,10,15,20].map(kg=>{ const lbs=parseFloat((kg*2.20462).toFixed(1)); return <Chip key={kg} color={C.accent} active={Math.abs((tempData.targetLbs||0)-lbs)<0.6} onClick={()=>setTempData(d=>({...d,targetLbs:lbs}))}>{kg} kg</Chip>; })}
+            {[3,5,7,10,15,20].map(kg=>{ const lbs=parseFloat((kg*2.20462).toFixed(1)); return <BigChip key={kg} color={C.accent} active={Math.abs((tempData.targetLbs||0)-lbs)<0.6} onClick={()=>setTempData(d=>({...d,targetLbs:lbs}))}>{kg} kg</BigChip>; })}
           </div>
         </div>
         <div>
@@ -2667,15 +2667,15 @@ const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDar
           <div style={{ flex:1 }}><p style={{ color:C.textSec, fontSize:13, fontWeight:500, marginBottom:6 }}>Age</p><TInput value={tempData.age||""} onChange={e=>setTempData(d=>({...d,age:e.target.value}))} placeholder="e.g. 53" type="number" /></div>
         </div>
         <div style={{ marginBottom:14 }}>
-          <p style={{ color:C.muted, fontSize:13, marginBottom:6 }}>Biological sex</p>
-          <div style={{ display:"flex", gap:8 }}>
-            {[["male","Male"],["female","Female"]].map(([v,l])=><Chip key={v} color={C.accent} active={tempData.sex===v} onClick={()=>setTempData(d=>({...d,sex:v}))}>{l}</Chip>)}
+          <p style={{ color:C.muted, fontSize:13, marginBottom:10 }}>Biological sex</p>
+          <div style={{ display:"flex", gap:10 }}>
+            {[["male","Male"],["female","Female"]].map(([v,l])=><BigChip key={v} color={C.accent} active={tempData.sex===v} onClick={()=>setTempData(d=>({...d,sex:v}))}>{l}</BigChip>)}
           </div>
         </div>
         <div>
-          <p style={{ color:C.muted, fontSize:13, marginBottom:6 }}>Workouts per week</p>
-          <div style={{ display:"flex", gap:8 }}>
-            {[2,3,4,5].map(n=><Chip key={n} color={C.purple} active={tempData.workoutsPerWeek===n} onClick={()=>setTempData(d=>({...d,workoutsPerWeek:n}))}>{n}x</Chip>)}
+          <p style={{ color:C.muted, fontSize:13, marginBottom:10 }}>Workouts per week</p>
+          <div style={{ display:"flex", gap:10 }}>
+            {[2,3,4,5].map(n=><BigChip key={n} color={C.purple} active={tempData.workoutsPerWeek===n} onClick={()=>setTempData(d=>({...d,workoutsPerWeek:n}))}>{n}x</BigChip>)}
           </div>
         </div>
       </>}
