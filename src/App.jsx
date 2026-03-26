@@ -2009,9 +2009,9 @@ const MealsTab = ({ profile, favourites, setFavourites, removed, setRemoved, mea
       {section==="meals"&&<>
         {/* Daily log summary */}
         {todayLogged.length>0&&<Card style={{ background:`${C.green}08`, borderColor:`${C.green}33` }}>
-          <div style={{ display:"flex", justifyContent:"space-between", marginBottom:10 }}>
-            <div style={{ display:"flex", alignItems:"center", gap:6 }}><Icon name="check" size={14} color={C.green} /><p style={{ color:C.green, fontSize:12, fontWeight:700, letterSpacing:"0.06em", margin:0 }}>TODAY'S LOG</p></div>
-            <span style={{ color:C.muted, fontSize:12 }}>{todayCals} cal · {todayProt}g protein</span>
+          <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:10 }}>
+            <Icon name="check" size={14} color={C.green} />
+            <p style={{ color:C.green, fontSize:12, fontWeight:700, letterSpacing:"0.06em", margin:0 }}>TODAY'S LOG</p>
           </div>
           {tdee&&<div style={{ marginBottom:10 }}>
             <div style={{ display:"flex", justifyContent:"space-between", marginBottom:4 }}><span style={{ color:C.muted, fontSize:12 }}>Calories</span><span style={{ color:todayCals>targetCals?C.red:C.green, fontSize:12, fontWeight:600 }}>{todayCals} / {targetCals}</span></div>
@@ -2028,62 +2028,108 @@ const MealsTab = ({ profile, favourites, setFavourites, removed, setRemoved, mea
           ))}
         </Card>}
 
-        {/* Generate / plan controls */}
-        <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:16, padding:"14px", marginBottom:12 }}>
-
-          {/* Guided mode — targets header */}
-          {isGuided && (
-            <div style={{ marginBottom:12 }}>
-              {!profileComplete ? (
-                <div style={{ background:`${C.orange}12`, border:`1px solid ${C.orange}33`, borderRadius:12, padding:"10px 14px" }}>
-                  <p style={{ color:C.orange, fontSize:13, fontWeight:700, margin:"0 0 4px" }}>⚠️ Profile incomplete</p>
-                  <p style={{ color:C.muted, fontSize:12, margin:0 }}>Add your height, weight and age in Profile settings to get a personalised plan with accurate calorie targets.</p>
-                </div>
-              ) : (
-                <div style={{ display:"flex", gap:8 }}>
-                  <div style={{ flex:1, background:C.sectionBg, borderRadius:12, padding:"10px 12px", textAlign:"center" }}>
-                    <p style={{ color:C.accent, fontWeight:800, fontSize:18, margin:0 }}>{mealPlan?.dailyCalTarget || targetCals}</p>
-                    <p style={{ color:C.muted, fontSize:11, margin:"2px 0 0" }}>cal / day</p>
+        {/* Smart nutrition bar + generate controls */}
+        {generating ? (
+          <MealPlanLoader progress={generateProgress} />
+        ) : mealPlan && isPro ? (
+          // Plan exists — compact single-line bar
+          <div style={{ marginBottom:12 }}>
+            {/* Smart nutrition bar */}
+            <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:14, padding:"10px 14px", marginBottom:8 }}>
+              {isGuided && (() => {
+                const dayTarget = mealPlan.dailyCalTarget || targetCals;
+                const protTarget = mealPlan.dailyProteinTarget || displayProteinTarget;
+                const isToday = selectedDate === today;
+                const loggedCal = isToday ? todayCals : 0;
+                const loggedProt = isToday ? todayProt : 0;
+                const dayMealCal = shownMeals?.reduce((a,m)=>a+m.cals,0) || 0;
+                const dayMealProt = shownMeals?.reduce((a,m)=>a+m.protein,0) || 0;
+                const onTrack = dayMealCal >= dayTarget * 0.9 && dayMealCal <= dayTarget * 1.1;
+                return (
+                  <div>
+                    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:isToday&&loggedCal>0?8:0 }}>
+                      <div style={{ display:"flex", gap:14, alignItems:"center" }}>
+                        <span style={{ color:C.accent, fontWeight:700, fontSize:14 }}>{dayMealCal} <span style={{ color:C.muted, fontWeight:400, fontSize:12 }}>/ {dayTarget} cal</span></span>
+                        <span style={{ color:C.green, fontWeight:700, fontSize:14 }}>{dayMealProt}g <span style={{ color:C.muted, fontWeight:400, fontSize:12 }}>/ {protTarget}g protein</span></span>
+                      </div>
+                      <span style={{ fontSize:14 }}>{onTrack ? "✓" : "~"}</span>
+                    </div>
+                    {isToday && loggedCal > 0 && (
+                      <div>
+                        <div style={{ display:"flex", justifyContent:"space-between", marginBottom:4 }}>
+                          <span style={{ color:C.muted, fontSize:11 }}>Logged today</span>
+                          <span style={{ color:loggedCal>dayTarget?C.red:C.green, fontSize:11, fontWeight:600 }}>{loggedCal} / {dayTarget} cal</span>
+                        </div>
+                        <ProgressBar value={loggedCal} max={dayTarget} color={loggedCal>dayTarget?C.red:C.green} height={4} />
+                      </div>
+                    )}
                   </div>
-                  <div style={{ flex:1, background:C.sectionBg, borderRadius:12, padding:"10px 12px", textAlign:"center" }}>
-                    <p style={{ color:C.green, fontWeight:800, fontSize:18, margin:0 }}>{mealPlan?.dailyProteinTarget || displayProteinTarget || "—"}g</p>
-                    <p style={{ color:C.muted, fontSize:11, margin:"2px 0 0" }}>protein / day</p>
-                  </div>
-                  <div style={{ flex:1, background:C.sectionBg, borderRadius:12, padding:"10px 12px", textAlign:"center" }}>
-                    <p style={{ color:C.orange, fontWeight:800, fontSize:18, margin:0 }}>{planDays}d</p>
-                    <p style={{ color:C.muted, fontSize:11, margin:"2px 0 0" }}>plan length</p>
-                  </div>
+                );
+              })()}
+              {!isGuided && shownMeals && (
+                <div style={{ display:"flex", gap:14 }}>
+                  <span style={{ color:C.accent, fontWeight:700, fontSize:14 }}>{shownMeals.reduce((a,m)=>a+m.cals,0)} kcal</span>
+                  <span style={{ color:C.green, fontWeight:600, fontSize:14 }}>{shownMeals.reduce((a,m)=>a+m.protein,0)}g protein</span>
+                  <span style={{ color:C.orange, fontWeight:600, fontSize:14 }}>{shownMeals.reduce((a,m)=>a+m.carbs,0)}g carbs</span>
                 </div>
               )}
             </div>
-          )}
-
-          {/* Non-guided style chips */}
-          {!isGuided && (
-            <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:10 }}>
-              {["all","balanced","high-protein","mediterranean","budget-friendly"].map(s=><Chip key={s} color={C.accent} active={style===s} onClick={()=>setStyle(s)}>{s}</Chip>)}
-            </div>
-          )}
-
-          {isPro ? (
-            <div>
-              <Btn onClick={generatePlan} disabled={generating || (isGuided && !profileComplete)} style={{ width:"100%", padding:"11px 0", fontSize:15, marginBottom:4 }}>
-                {generating ? "✦ Building your plan..." : mealPlan ? `↻ Regenerate ${planDays}-day plan` : `✦ Generate my ${planDays}-day plan`}
-              </Btn>
-              {mealPlan && <div style={{ textAlign:"center", marginTop:4 }}>
-                <p style={{ color:C.muted, fontSize:11, margin:"0 0 2px" }}>Generated {fmtDate(mealPlan.generatedDate)} · {mealPlan.days?.length} days{mealPlan.coreProteins ? ` · ${mealPlan.coreProteins.join(", ")}` : ""}</p>
-              </div>}
-              {generating && <MealPlanLoader progress={generateProgress} />}
-              {generateError && <p style={{ color:C.red, fontSize:13, textAlign:"center", marginTop:6 }}>{generateError}</p>}
-              {!isGuided && dislikedMeals.length>0 && <p style={{ color:C.muted, fontSize:11, textAlign:"center", marginTop:4 }}>Avoiding {dislikedMeals.length} disliked meal{dislikedMeals.length!==1?"s":""} · <span onClick={()=>saveDislikedMeals([])} style={{ color:C.accent, cursor:"pointer" }}>Reset</span></p>}
-            </div>
-          ) : (
-            <div>
-              <Btn onClick={onUpgrade} color="#5856d6" style={{ width:"100%", padding:"11px 0" }}>✦ Unlock AI Meal Planning — Pro</Btn>
-              <p style={{ color:C.muted, fontSize:12, textAlign:"center", marginTop:6 }}>Generate a full {planDays}-day personalised meal plan</p>
-            </div>
-          )}
-        </div>
+            {/* Compact regenerate row */}
+            {!isGuided && (
+              <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:6 }}>
+                {["all","balanced","high-protein","mediterranean","budget-friendly"].map(s=><Chip key={s} color={C.accent} active={style===s} onClick={()=>setStyle(s)}>{s}</Chip>)}
+              </div>
+            )}
+            <button onClick={generatePlan} disabled={generating} style={{ width:"100%", background:"none", border:`1px solid ${C.border}`, borderRadius:12, padding:"8px 0", color:C.muted, fontSize:13, fontWeight:600, cursor:"pointer", fontFamily:FONT }}>
+              ↻ Regenerate plan · {fmtDate(mealPlan.generatedDate)}
+            </button>
+            {generateError && <p style={{ color:C.red, fontSize:13, textAlign:"center", marginTop:6 }}>{generateError}</p>}
+          </div>
+        ) : (
+          // No plan yet — full generate card
+          <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:16, padding:"14px", marginBottom:12 }}>
+            {isGuided && profileComplete && (
+              <div style={{ display:"flex", gap:8, marginBottom:12 }}>
+                <div style={{ flex:1, background:C.sectionBg, borderRadius:12, padding:"10px 12px", textAlign:"center" }}>
+                  <p style={{ color:C.accent, fontWeight:800, fontSize:18, margin:0 }}>{targetCals}</p>
+                  <p style={{ color:C.muted, fontSize:11, margin:"2px 0 0" }}>cal / day</p>
+                </div>
+                <div style={{ flex:1, background:C.sectionBg, borderRadius:12, padding:"10px 12px", textAlign:"center" }}>
+                  <p style={{ color:C.green, fontWeight:800, fontSize:18, margin:0 }}>{displayProteinTarget || "—"}g</p>
+                  <p style={{ color:C.muted, fontSize:11, margin:"2px 0 0" }}>protein / day</p>
+                </div>
+                <div style={{ flex:1, background:C.sectionBg, borderRadius:12, padding:"10px 12px", textAlign:"center" }}>
+                  <p style={{ color:C.orange, fontWeight:800, fontSize:18, margin:0 }}>{planDays}d</p>
+                  <p style={{ color:C.muted, fontSize:11, margin:"2px 0 0" }}>plan length</p>
+                </div>
+              </div>
+            )}
+            {isGuided && !profileComplete && (
+              <div style={{ background:`${C.orange}12`, border:`1px solid ${C.orange}33`, borderRadius:12, padding:"10px 14px", marginBottom:12 }}>
+                <p style={{ color:C.orange, fontSize:13, fontWeight:700, margin:"0 0 4px" }}>⚠️ Profile incomplete</p>
+                <p style={{ color:C.muted, fontSize:12, margin:0 }}>Add your height, weight and age in Profile settings to get a personalised plan with accurate calorie targets.</p>
+              </div>
+            )}
+            {!isGuided && (
+              <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:10 }}>
+                {["all","balanced","high-protein","mediterranean","budget-friendly"].map(s=><Chip key={s} color={C.accent} active={style===s} onClick={()=>setStyle(s)}>{s}</Chip>)}
+              </div>
+            )}
+            {isPro ? (
+              <div>
+                <Btn onClick={generatePlan} disabled={generating || (isGuided && !profileComplete)} style={{ width:"100%", padding:"11px 0", fontSize:15 }}>
+                  ✦ Generate my {planDays}-day plan
+                </Btn>
+                {generateError && <p style={{ color:C.red, fontSize:13, textAlign:"center", marginTop:6 }}>{generateError}</p>}
+              </div>
+            ) : (
+              <div>
+                <Btn onClick={onUpgrade} color="#5856d6" style={{ width:"100%", padding:"11px 0" }}>✦ Unlock AI Meal Planning — Pro</Btn>
+                <p style={{ color:C.muted, fontSize:12, textAlign:"center", marginTop:6 }}>Generate a full {planDays}-day personalised meal plan</p>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Day picker */}
         {mealPlan?.days && mealPlan.days.length > 1 && (
@@ -2099,13 +2145,6 @@ const MealsTab = ({ profile, favourites, setFavourites, removed, setRemoved, mea
 
         {/* Meals for selected day */}
         {shownMeals&&<>
-          <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:8, background:C.card, border:`1px solid ${C.border}`, borderRadius:14, padding:"8px 12px" }}>
-            <span style={{ color:C.accent, fontWeight:700, fontSize:13 }}>{shownMeals.reduce((a,m)=>a+m.cals,0)} kcal</span>
-            <span style={{ color:C.muted, fontSize:12 }}>·</span>
-            <span style={{ color:C.green, fontWeight:600, fontSize:13 }}>{shownMeals.reduce((a,m)=>a+m.protein,0)}g protein</span>
-            <span style={{ color:C.muted, fontSize:12 }}>·</span>
-            <span style={{ color:C.orange, fontWeight:600, fontSize:13 }}>{shownMeals.reduce((a,m)=>a+m.carbs,0)}g carbs</span>
-          </div>
           <MealCarousel
             meals={shownMeals}
             favourites={favourites}
@@ -4172,7 +4211,7 @@ function AppInner() {
     <div style={{ background:C.bg, minHeight:"100vh", fontFamily:FONT, color:C.text, width:"100%", overflowX:"hidden" }}>
       <style>{`* { box-sizing:border-box; margin:0; padding:0; } input,select,textarea { outline:none; } html,body { width:100%; overflow-x:hidden; background:${C.bg}; font-family:${FONT}; color-scheme:${isDark?"dark":"light"}; } #root { width:100%; } ::-webkit-scrollbar { width:4px; } ::-webkit-scrollbar-thumb { background:${C.divider}; border-radius:4px; } ::placeholder { color:${C.muted}; }`}</style>
 
-      <div style={{ padding:"44px 18px 10px", background:isDark?"rgba(0,0,0,0.85)":"rgba(242,242,247,0.95)", backdropFilter:"blur(20px)", WebkitBackdropFilter:"blur(20px)", borderBottom:`1px solid ${C.border}`, position:"sticky", top:0, zIndex:10, width:"100%" }}>
+      <div style={{ paddingTop:"max(12px, env(safe-area-inset-top))", paddingLeft:18, paddingRight:18, paddingBottom:10, background:isDark?"rgba(0,0,0,0.85)":"rgba(242,242,247,0.95)", backdropFilter:"blur(20px)", WebkitBackdropFilter:"blur(20px)", borderBottom:`1px solid ${C.border}`, position:"sticky", top:0, zIndex:10, width:"100%" }}>
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
           <div>
             <div style={{ display:"flex", alignItems:"center" }}>
