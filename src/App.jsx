@@ -2593,6 +2593,45 @@ const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDar
         <Btn onClick={save} small color={C.accent}>Save</Btn>
       </div>
 
+      {editing==="fitness"&&<>
+        <div style={{ marginBottom:20 }}>
+          <p style={{ color:C.muted, fontSize:13, fontWeight:600, marginBottom:10 }}>FITNESS LEVEL</p>
+          {[["beginner","Beginner","New to exercise or returning after a break"],["intermediate","Intermediate","Exercise 1-3x per week, some experience"],["active","Active","Regular training 3-5x per week"],["athlete","Athlete","Advanced training 5+ times per week"]].map(([val,label,desc])=>(
+            <div key={val} onClick={()=>setTempData(d=>({...d,fitnessLevel:val}))} style={{ background:tempData.fitnessLevel===val?`${C.accent}12`:C.card, border:`1.5px solid ${tempData.fitnessLevel===val?C.accent:C.border}`, borderRadius:14, padding:"12px 16px", marginBottom:8, cursor:"pointer", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+              <div>
+                <p style={{ color:C.text, fontWeight:600, fontSize:15, margin:0 }}>{label}</p>
+                <p style={{ color:C.muted, fontSize:13, margin:"2px 0 0" }}>{desc}</p>
+              </div>
+              {tempData.fitnessLevel===val && <span style={{ color:C.accent, fontSize:18 }}>✓</span>}
+            </div>
+          ))}
+        </div>
+        <div style={{ marginBottom:20 }}>
+          <p style={{ color:C.muted, fontSize:13, fontWeight:600, marginBottom:10 }}>INJURIES / LIMITATIONS</p>
+          <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
+            {[["none","No limitations"],["back","Lower back"],["knees","Knees"],["hips","Hips"],["shoulders","Shoulders"],["wrists","Wrists"],["ankles","Ankles"]].map(([val,label])=>(
+              <Chip key={val} color={C.orange} active={tempData.injuries?.includes(val)} onClick={()=>{
+                const without = (tempData.injuries||[]).filter(x=>x!=="none");
+                if (val==="none") setTempData(d=>({...d,injuries:["none"]}));
+                else if (without.includes(val)) setTempData(d=>({...d,injuries:without.filter(x=>x!==val)}));
+                else setTempData(d=>({...d,injuries:[...without,val]}));
+              }}>{label}</Chip>
+            ))}
+          </div>
+        </div>
+        <div>
+          <p style={{ color:C.muted, fontSize:13, fontWeight:600, marginBottom:10 }}>EQUIPMENT</p>
+          <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
+            {[["gym_machines","Gym machines"],["dumbbells","Dumbbells"],["barbell","Barbell"],["cables","Cable machine"],["rowing","Rowing machine"],["crosstrainer","Cross trainer"],["treadmill","Treadmill"],["bike","Exercise bike"],["resistance_bands","Resistance bands"],["bodyweight","Bodyweight only"]].map(([val,label])=>(
+              <Chip key={val} color={C.green} active={tempData.equipment?.includes(val)} onClick={()=>{
+                const eq = tempData.equipment||[];
+                setTempData(d=>({...d,equipment:eq.includes(val)?eq.filter(x=>x!==val):[...eq,val]}));
+              }}>{label}</Chip>
+            ))}
+          </div>
+        </div>
+      </>}
+
       {editing==="goal"&&<>
         {[["lose_weight","🎯","Lose weight"],["build_muscle","💪","Build muscle"],["get_fitter","🏃","Get fitter"],["all","⭐","All of the above"]].map(([val,ico,title])=>(
           <Card key={val} onClick={()=>setTempData(d=>({...d,goal:val}))} style={{ borderColor:tempData.goal===val?C.accent:C.border, borderWidth:tempData.goal===val?2:1 }}>
