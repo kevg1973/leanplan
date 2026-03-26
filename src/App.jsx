@@ -499,10 +499,18 @@ const buildWorkout = (type, profile, block) => {
   const fitnessLevel = profile?.fitnessLevel || "beginner";
   const workoutStyle = profile?.workoutStyle || "mixed";
 
-  // Filter exercises by available equipment and injuries
+  // Exercises too complex for beginners
+  const advancedExercises = ["Skull Crusher","Ab Wheel Rollout","Romanian Deadlift","Nordic Curl",
+    "Close-Grip Bench Press","Bulgarian Split Squat","Pull Up","Pallof Press","Hanging Knee Raise"];
+  const intermediateExercises = [...advancedExercises,"Dumbbell Bent-Over Row","Upright Row",
+    "Arnold Press","Cable Crunch","Hip Thrust","Straight-Arm Pulldown"];
+
+  // Filter exercises by available equipment, injuries, and fitness level
   const available = EXERCISE_DB.filter(ex => {
     if (ex.equip.length > 0 && !ex.equip.some(e => userEquip.includes(e))) return false;
     if (ex.avoid.some(a => userInjuries.includes(a))) return false;
+    if (fitnessLevel === "beginner" && advancedExercises.includes(ex.name)) return false;
+    if (fitnessLevel === "beginner" && intermediateExercises.includes(ex.name)) return false;
     return true;
   });
 
@@ -2099,6 +2107,66 @@ const MealsTab = ({ profile, favourites, setFavourites, removed, setRemoved, mea
   );
 };
 
+// ── Weekly Plan Generator ────────────────────────────────────────────────────
+const getWeeklyPlan = (profile) => {
+  const days = profile?.workoutsPerWeek || 3;
+  const goal = profile?.goal || "lose_weight";
+  const hasCardio = (profile?.equipment || []).some(e => ["rowing","crosstrainer","treadmill","bike"].includes(e));
+
+  // Session type definitions
+  const FB = { type:"full-body", label:"Full Body", color:"#007aff", desc:"Strength + cardio finisher" };
+  const FBS = { type:"full-body", label:"Full Body", color:"#007aff", desc:"Strength focus" };
+  const UB = { type:"upper-body", label:"Upper Body", color:"#af52de", desc:"Push & pull" };
+  const LB = { type:"lower-body", label:"Lower Body", color:"#34c759", desc:"Legs & core" };
+  const CD = { type:"cardio", label:"Cardio", color:"#ff9500", desc:"Steady state or intervals" };
+  const ST = { type:"strength", label:"Strength", color:"#ff2d55", desc:"Heavy compound lifts" };
+
+  // Plans by goal and days
+  const plans = {
+    lose_weight: {
+      2: { sessions:[FB,CD], note:"Full body strength preserves muscle while cardio burns calories. Best combo for fat loss." },
+      3: { sessions:[FB,FB,CD], note:"Two full-body sessions build strength, one cardio session maximises calorie burn." },
+      4: { sessions:[UB,LB,CD,FB], note:"Upper/lower split with a dedicated cardio day and a full-body finisher." },
+      5: { sessions:[UB,LB,CD,UB,LB], note:"Full upper/lower split. Add cardio finishers to strength days if time allows." },
+    },
+    build_muscle: {
+      2: { sessions:[UB,LB], note:"Upper/lower split. Hit every muscle group twice per week for maximum growth." },
+      3: { sessions:[FB,FBS,FB], note:"Full body 3× per week is optimal for muscle growth with limited training days." },
+      4: { sessions:[UB,LB,UB,LB], note:"Upper/lower split hits each muscle group twice. The gold standard for hypertrophy." },
+      5: { sessions:[UB,LB,UB,LB,FB], note:"Push volume with an upper/lower split plus a full-body day for extra frequency." },
+    },
+    get_fitter: {
+      2: { sessions:[FB,CD], note:"One full-body session builds a strength base, one cardio session builds endurance." },
+      3: { sessions:[FB,CD,FB], note:"Alternating strength and cardio builds all-round fitness efficiently." },
+      4: { sessions:[FB,CD,FB,CD], note:"Equal strength and cardio work. Best approach for general fitness." },
+      5: { sessions:[FB,CD,UB,CD,LB], note:"High frequency. Variety keeps it interesting and builds fitness fast." },
+    },
+    all: {
+      2: { sessions:[FB,CD], note:"Full body strength + cardio covers all goals. Efficient and effective." },
+      3: { sessions:[FB,FB,CD], note:"Two full-body sessions for muscle + fat loss, one cardio day for fitness." },
+      4: { sessions:[UB,LB,CD,FB], note:"Balanced split covering strength, muscle, fat loss and cardiovascular fitness." },
+      5: { sessions:[UB,LB,CD,UB,LB], note:"Full programme hitting all goals. Add cardio finishers to strength days." },
+    },
+  };
+
+  const goalPlan = plans[goal] || plans.all;
+  const plan = goalPlan[Math.min(days, 5)] || goalPlan[3];
+
+  // Suggested days based on frequency
+  const daySuggestions = {
+    2: ["Mon","Thu"],
+    3: ["Mon","Wed","Fri"],
+    4: ["Mon","Tue","Thu","Fri"],
+    5: ["Mon","Tue","Wed","Thu","Sat"],
+  };
+
+  return {
+    sessions: plan.sessions,
+    note: plan.note,
+    days: daySuggestions[Math.min(days, 5)] || daySuggestions[3],
+  };
+};
+
 // ── TRAIN TAB ─────────────────────────────────────────────────────────────────
 const TrainTab = ({ profile, workoutLog, setWorkoutLog, setProfile, savedWorkout, setSavedWorkout }) => {
   const [selectedType, setSelectedType] = useState("full-body");
@@ -2227,15 +2295,42 @@ const TrainTab = ({ profile, workoutLog, setWorkoutLog, setProfile, savedWorkout
           </div>
         </Card>
 
-        <Card style={{ background:`${C.green}08`, borderColor:`${C.green}22` }}>
-          <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:8 }}><Icon name="calendar" size={14} color={C.green} /><p style={{ color:C.muted, fontSize:12, fontWeight:600, letterSpacing:"0.06em", margin:0 }}>REST DAY PLANNER</p></div>
-          <p style={{ color:C.text, fontSize:14, marginBottom:6 }}>Training <strong style={{ color:C.accent }}>{trainDays}x</strong> per week · <strong style={{ color:C.green }}>{restDays} rest days</strong></p>
-          <p style={{ color:C.muted, fontSize:13, marginBottom:10 }}>Suggested: <strong style={{ color:C.text }}>{suggestion}</strong></p>
-          <div style={{ background:C.sectionBg, borderRadius:10, padding:"10px 12px" }}>
-            <p style={{ color:C.muted, fontSize:12, fontWeight:600, marginBottom:4 }}>💚 ON REST DAYS</p>
-            <p style={{ color:C.textSec, fontSize:13, lineHeight:1.6, margin:0 }}>15–20 min gentle walk · Stretching · Foam rolling · Extra sleep</p>
-          </div>
-        </Card>
+        {(()=>{
+          const weekPlan = getWeeklyPlan(profile);
+          return (
+            <Card>
+              <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:10 }}>
+                <Icon name="calendar" size={14} color={C.accent} />
+                <p style={{ color:C.muted, fontSize:12, fontWeight:600, letterSpacing:"0.06em", margin:0 }}>YOUR WEEKLY PLAN</p>
+              </div>
+              <p style={{ color:C.muted, fontSize:12, lineHeight:1.6, margin:"0 0 14px" }}>{weekPlan.note}</p>
+
+              {/* Session cards */}
+              <div style={{ display:"flex", flexDirection:"column", gap:8, marginBottom:14 }}>
+                {weekPlan.sessions.map((session, i) => (
+                  <div key={i} style={{ display:"flex", alignItems:"center", gap:12, background:C.sectionBg, borderRadius:12, padding:"10px 14px", borderLeft:`3px solid ${session.color}` }}>
+                    <div style={{ width:28, height:28, borderRadius:99, background:`${session.color}20`, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+                      <span style={{ color:session.color, fontSize:12, fontWeight:800 }}>{weekPlan.days[i]?.slice(0,1) || i+1}</span>
+                    </div>
+                    <div style={{ flex:1 }}>
+                      <p style={{ color:C.text, fontWeight:700, fontSize:14, margin:0 }}>{weekPlan.days[i] || `Session ${i+1}`} — {session.label}</p>
+                      <p style={{ color:C.muted, fontSize:12, margin:"2px 0 0" }}>{session.desc}</p>
+                    </div>
+                    <button onClick={()=>{ setSelectedType(session.type); buildAndShowWorkout(session.type); setView("workout"); }} style={{ background:session.color, border:"none", borderRadius:8, padding:"6px 12px", color:"#fff", fontSize:12, fontWeight:700, cursor:"pointer", fontFamily:FONT, flexShrink:0 }}>Start</button>
+                  </div>
+                ))}
+              </div>
+
+              {/* Rest days */}
+              <div style={{ background:C.sectionBg, borderRadius:10, padding:"10px 12px", marginBottom:10 }}>
+                <p style={{ color:C.muted, fontSize:12, fontWeight:600, marginBottom:4 }}>💚 REST DAYS ({restDays} per week)</p>
+                <p style={{ color:C.textSec, fontSize:12, lineHeight:1.6, margin:0 }}>15–20 min gentle walk · Stretching · Foam rolling · Extra sleep</p>
+              </div>
+
+              <p style={{ color:C.muted, fontSize:11, margin:0 }}>Tap Start on any session to build your workout, or choose your own type in the Workout tab.</p>
+            </Card>
+          );
+        })()}
 
 
       </>}
