@@ -2815,15 +2815,6 @@ const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDar
             </div>
           ))}
         </div>
-        <div style={{ marginBottom:20 }}>
-          <p style={{ color:C.muted, fontSize:13, fontWeight:600, marginBottom:10 }}>SLEEP QUALITY</p>
-          {[["poor","Poor","Often tired, broken sleep"],["average","Average","Generally ok, some bad nights"],["good","Good","Usually sleep well"],["great","Great","Consistently great sleep"]].map(([val,label,desc])=>(
-            <div key={val} onClick={()=>setTempData(d=>({...d,sleepQuality:val}))} style={{ background:tempData.sleepQuality===val?`${C.accent}12`:C.card, border:`1.5px solid ${tempData.sleepQuality===val?C.accent:C.border}`, borderRadius:14, padding:"12px 16px", marginBottom:8, cursor:"pointer", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-              <div><p style={{ color:C.text, fontWeight:600, fontSize:15, margin:0 }}>{label}</p><p style={{ color:C.muted, fontSize:13, margin:"2px 0 0" }}>{desc}</p></div>
-              {tempData.sleepQuality===val && <span style={{ color:C.accent, fontSize:18 }}>✓</span>}
-            </div>
-          ))}
-        </div>
         <div>
           <p style={{ color:C.muted, fontSize:13, fontWeight:600, marginBottom:10 }}>WORKOUT STYLE</p>
           <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
@@ -2890,7 +2881,6 @@ const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDar
 
       <Section title="Lifestyle">
         <Row label="Activity level" value={{"sedentary":"Sedentary","light":"Lightly active","moderate":"Moderately active","very":"Very active"}[profile.activityLevel||"moderate"]} onClick={()=>startEdit("lifestyle")} />
-        <Row label="Sleep quality" value={{"poor":"Poor","average":"Average","good":"Good","great":"Great"}[profile.sleepQuality||"average"]} onClick={()=>startEdit("lifestyle")} />
         <Row label="Workout style" value={profile.workoutStyle||"mixed"} onClick={()=>startEdit("lifestyle")} last />
       </Section>
 
