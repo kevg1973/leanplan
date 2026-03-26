@@ -848,3 +848,331 @@ app.get("*", (req, res) => {
 app.listen(PORT, () => {
   console.log(`LeanPlan server running on port ${PORT}`);
 });
+
+// ── Core ingredient selector ──────────────────────────────────────────────────
+const selectCoreIngredients = (profile) => {
+  const dietType = profile?.dietType || "omnivore";
+  const isGF = profile?.glutenPref === "gluten_free";
+  const isDF = profile?.dairyPref === "dairy_free";
+  const isLF = profile?.dairyPref === "lactose_free";
+  const dislikes = (profile?.dislikes || []).map(d => d.toLowerCase());
+  const age = parseFloat(profile?.age) || 0;
+  const style = profile?.mealStyle || "all";
+  const usesProtein = profile?.supplementsInterested?.includes("protein") || false;
+
+  // Proteins by diet type
+  const proteinPools = {
+    omnivore:    ["chicken breast", "eggs", "tinned tuna", "lean beef mince", "tinned salmon"],
+    pescatarian: ["eggs", "tinned tuna", "tinned salmon", "cod fillet"],
+    vegetarian:  ["eggs", "Greek yoghurt", "cottage cheese", "halloumi", "lentils", "chickpeas"],
+    vegan:       ["tofu", "lentils", "chickpeas", "black beans", "edamame", "tempeh"],
+  };
+
+  // Filter proteins by dislikes
+  let proteins = (proteinPools[dietType] || proteinPools.omnivore).filter(p => {
+    if (dislikes.some(d => p.includes(d))) return false;
+    if (dislikes.includes("fish") && ["tinned tuna","tinned salmon","cod fillet"].includes(p)) return false;
+    if (dislikes.includes("red meat") && p === "lean beef mince") return false;
+    return true;
+  }).slice(0, 3);
+
+  // Carbs
+  const carbs = isGF
+    ? ["brown rice", "sweet potato", "quinoa", "rice cakes"]
+    : ["brown rice", "sweet potato", "oats", "wholegrain bread", "quinoa"];
+
+  // Veg — age 50+ includes anti-inflammatory options
+  const veg = age >= 50
+    ? ["broccoli", "spinach", "frozen peas", "courgette", "kale", "sweet pepper"]
+    : ["broccoli", "spinach", "frozen peas", "courgette", "sweet pepper", "carrot"];
+
+  // Fruit
+  const fruit = ["banana", "berries", "apple", "orange"];
+
+  // Dairy/alternatives
+  const dairy = isDF
+    ? ["coconut yoghurt"]
+    : isLF
+    ? ["lactose-free yoghurt", "hard cheese"]
+    : ["Greek yoghurt"];
+
+  // Base pantry
+  const base = isGF
+    ? ["tinned tomatoes", "tinned chickpeas", "olive oil", "tamari", "garlic", "onion"]
+    : ["tinned tomatoes", "tinned chickpeas", "olive oil", "tamari", "garlic", "onion"];
+
+  // Supplements
+  const extras = usesProtein ? ["pea protein powder"] : [];
+
+  return { proteins, carbs, veg, fruit, dairy, base, extras };
+};
+
+// ── Calculate per-slot targets ────────────────────────────────────────────────
+const calcSlotTargets = (dailyCal, dailyProtein, isTrainingDay) => {
+  // Add 40g carbs on training days (replace some fat)
+  const carbBoost = isTrainingDay ? 40 : 0;
+
+  const cal = {
+    breakfast:      Math.round(dailyCal * 0.25),
+    morningSnack:   Math.round(dailyCal * 0.10),
+    lunch:          Math.round(dailyCal * 0.25),
+    afternoonSnack: Math.round(dailyCal * 0.10),
+    dinner:         Math.round(dailyCal * 0.30),
+  };
+  const protein = {
+    breakfast:      Math.round(dailyProtein * 0.25),
+    morningSnack:   Math.round(dailyProtein * 0.12),
+    lunch:          Math.round(dailyProtein * 0.25),
+    afternoonSnack: Math.round(dailyProtein * 0.13),
+    dinner:         Math.round(dailyProtein * 0.25),
+  };
+  const carbs = {
+    breakfast:      45 + (isTrainingDay ? 15 : 0),
+    morningSnack:   15,
+    lunch:          40 + (isTrainingDay ? 15 : 0),
+    afternoonSnack: 15,
+    dinner:         35 + (isTrainingDay ? 10 : 0),
+  };
+  return { cal, protein, carbs, isTrainingDay };
+};
+
+// ── Path C: Guided ingredient-first meal plan ─────────────────────────────────
+app.post("/api/generate-meal-plan-v3", async (req, res) => {
+  const { profile, days = 5 } = req.body;
+
+  // ── TDEE & targets ────────────────────────────────────────────────────────
+  const calcTDEE = (p) => {
+    if (!p?.heightCm || !p?.startWeightLbs || !p?.age) return null;
+    const weightKg = p.startWeightLbs * 0.453592;
+    const bmr = p.sex === "female"
+      ? (10 * weightKg) + (6.25 * parseFloat(p.heightCm)) - (5 * parseFloat(p.age)) - 161
+      : (10 * weightKg) + (6.25 * parseFloat(p.heightCm)) - (5 * parseFloat(p.age)) + 5;
+    // Combined activity multiplier: workouts + lifestyle
+    const workoutMult = { 2:1.2, 3:1.375, 4:1.55, 5:1.725 }[p.workoutsPerWeek] || 1.375;
+    const lifestyleMult = { sedentary:0, light:0.05, moderate:0.1, very:0.175 }[p.activityLevel||"moderate"] || 0.1;
+    return Math.round(bmr * (workoutMult + lifestyleMult));
+  };
+
+  const tdee = calcTDEE(profile);
+  if (!tdee) return res.status(400).json({ error: "incomplete_profile", message: "Please complete your profile (height, weight, age) before generating a meal plan." });
+
+  const goal = profile?.goal || "lose_weight";
+  const weightKg = profile.startWeightLbs * 0.453592;
+  const ageNum = parseFloat(profile?.age) || 0;
+  const paceDeficits = { slow:275, normal:500, fast:750, vfast:1000 };
+  const deficit = paceDeficits[profile?.paceId] || 500;
+
+  let dailyCalTarget;
+  if (goal === "lose_weight") dailyCalTarget = Math.max(1200, tdee - deficit);
+  else if (goal === "build_muscle") dailyCalTarget = tdee + 300;
+  else if (goal === "get_fitter") dailyCalTarget = tdee - 150;
+  else dailyCalTarget = Math.max(1400, tdee - deficit);
+
+  const proteinMult = ageNum >= 50 ? 2.4 : 2.2;
+  const dailyProteinTarget = Math.round(weightKg * proteinMult);
+
+  // Dietary flags
+  const isGF = profile?.glutenPref === "gluten_free";
+  const isDF = profile?.dairyPref === "dairy_free";
+  const isLF = profile?.dairyPref === "lactose_free";
+  const milkType = profile?.milkAlt ? `${profile.milkAlt} milk` : isDF ? "oat milk" : isLF ? "lactose-free milk" : "milk";
+  const cookTime = { quick:"15 minutes max", moderate:"30 minutes", enjoy:"up to 60 minutes" }[profile?.cookingTime] || "30 minutes";
+  const usesCreatine = profile?.supplementsInterested?.includes("creatine") || false;
+  const usesProteinPowder = profile?.supplementsInterested?.includes("protein") || false;
+
+  // Hard dietary rules
+  const hardRules = [
+    isGF ? "⛔ GLUTEN-FREE: No wheat, barley, rye, regular oats, bread, pasta, flour, soy sauce. Use tamari." : "",
+    isDF ? `⛔ DAIRY-FREE: No milk, cheese, butter, cream, yoghurt. Use coconut yoghurt, ${milkType}.` : "",
+    isLF ? `⛔ LACTOSE-FREE: Use ${milkType}, hard cheese ok, lactose-free yoghurt.` : "",
+    (profile?.allergies?.length > 0) ? `⛔ ALLERGIES — never include: ${profile.allergies.join(", ")}` : "",
+    (profile?.dislikes?.length > 0) ? `⛔ DISLIKES — never include: ${profile.dislikes.join(", ")}` : "",
+  ].filter(Boolean).join("\n");
+
+  // Age guidance
+  const ageGuidance = ageNum >= 50
+    ? `AGE ${ageNum}: Higher protein every meal. Anti-inflammatory foods (oily fish, berries, leafy greens). Calcium-rich foods. Avoid very high-fibre meals in one sitting.`
+    : ageNum >= 40 ? `AGE ${ageNum}: Protein every meal. Include anti-inflammatory foods regularly.` : "";
+
+  // Select core ingredients
+  const ingredients = selectCoreIngredients(profile);
+  const ingredientList = [
+    ...ingredients.proteins,
+    ...ingredients.carbs,
+    ...ingredients.veg,
+    ...ingredients.fruit,
+    ...ingredients.dairy,
+    ...ingredients.base,
+    ...ingredients.extras,
+  ].join(", ");
+
+  // Training day detection — distribute evenly across plan
+  const trainDays = profile?.workoutsPerWeek || 3;
+  const isTrainingDay = (dayIndex) => {
+    const spacing = Math.round(days / Math.min(trainDays, days));
+    return (dayIndex % spacing) === 0;
+  };
+
+  // Generate date keys
+  const dateKeys = Array.from({length: days}, (_, i) => {
+    const d = new Date(); d.setDate(d.getDate() + i);
+    return d.toISOString().split("T")[0];
+  });
+
+  // Build template (same as v2 but with ingredient awareness)
+  const { template, coreProteins } = (() => {
+    const proteins = ingredients.proteins;
+    const breakfastTypes = isGF
+      ? ["egg-based", "rice/quinoa-based", "egg-based", "smoothie-based", "egg-based", "rice/quinoa-based", "egg-based"]
+      : ["egg-based", "oat-based", "egg-based", "oat-based", "egg-based", "oat-based", "egg-based"];
+    const morningSnacks = usesProteinPowder
+      ? ["protein shake", "fruit + nuts", "protein shake", "fruit + nuts", "protein shake", "fruit + nuts", "protein shake"]
+      : ["fruit + yoghurt", "fruit + nuts", "fruit + yoghurt", "fruit + nuts", "fruit + yoghurt", "fruit + nuts", "fruit + yoghurt"];
+    const afternoonSnacks = usesProteinPowder
+      ? ["fruit + nuts", "protein shake", "fruit + nuts", "protein shake", "fruit + nuts", "protein shake", "fruit + nuts"]
+      : ["fruit + nuts", "fruit + yoghurt", "fruit + nuts", "fruit + yoghurt", "fruit + nuts", "fruit + yoghurt", "fruit + nuts"];
+    const tmpl = [];
+    for (let i = 0; i < days; i++) {
+      const dinnerProtein = proteins[i % proteins.length];
+      const prevDinnerProtein = i > 0 ? proteins[(i-1) % proteins.length] : null;
+      const lunchType = i === 0
+        ? `fresh meal using ${proteins[(i+1) % proteins.length]}`
+        : `leftover assembly using ${prevDinnerProtein} from yesterday's dinner — quick 5-min, no cooking`;
+      tmpl.push({ dayIndex: i, breakfast: breakfastTypes[i % breakfastTypes.length], morningSnack: morningSnacks[i % morningSnacks.length], lunch: lunchType, afternoonSnack: afternoonSnacks[i % afternoonSnacks.length], dinner: `${dinnerProtein} — cook double portion for tomorrow's lunch` });
+    }
+    return { template: tmpl, coreProteins: proteins };
+  })();
+
+  console.log(`Plan v3 — TDEE:${tdee} Cal:${dailyCalTarget} Protein:${dailyProteinTarget}g Goal:${goal} Ingredients:[${ingredientList.slice(0,60)}...]`);
+
+  // Generate each day
+  const generateDay = async (dayTemplate, dateKey, prevDinner) => {
+    const training = isTrainingDay(dayTemplate.dayIndex);
+    const targets = calcSlotTargets(dailyCalTarget, dailyProteinTarget, training);
+    const isLeftover = dayTemplate.dayIndex > 0;
+
+    const prompt = `Generate exactly 5 meals for ONE day. Return ONLY valid JSON.
+
+PERSON: ${ageNum}yo ${profile?.sex||"adult"}, goal: ${goal.replace(/_/g," ")}, ${isDF?"dairy-free":isLF?"lactose-free":"dairy ok"}, ${isGF?"gluten-free":"gluten ok"}
+TODAY: ${training ? "TRAINING DAY — slightly higher carbs" : "REST DAY — standard targets"}
+COOKING TIME: ${cookTime}
+MILK: ${milkType}
+
+${hardRules ? `HARD RULES (never break):\n${hardRules}\n` : ""}${ageGuidance ? `${ageGuidance}\n` : ""}
+CORE INGREDIENTS (build meals from these — use all of them across the day, do not add exotic ingredients):
+${ingredientList}
+
+MEAL SLOTS — hit these targets precisely:
+1. BREAKFAST (~${targets.cal.breakfast}cal, ~${targets.protein.breakfast}g protein, ~${targets.carbs.breakfast}g carbs): ${dayTemplate.breakfast}
+2. MORNING SNACK (~${targets.cal.morningSnack}cal, ~${targets.protein.morningSnack}g protein): ${dayTemplate.morningSnack}${usesProteinPowder && dayTemplate.morningSnack.includes("shake") ? ` — pea protein powder with ${milkType}` : ""}
+3. LUNCH (~${targets.cal.lunch}cal, ~${targets.protein.lunch}g protein, ~${targets.carbs.lunch}g carbs): ${isLeftover ? `LEFTOVER ASSEMBLY — use leftover ${dayTemplate.lunch.split("using ")[1]?.split(" from")[0]||"protein"} from yesterday${prevDinner ? ` (last night: ${prevDinner})` : ""}. Quick 5-min, no cooking. Name it "Leftover [X] [style]".` : dayTemplate.lunch}
+4. AFTERNOON SNACK (~${targets.cal.afternoonSnack}cal, ~${targets.protein.afternoonSnack}g protein): ${dayTemplate.afternoonSnack}${usesProteinPowder && dayTemplate.afternoonSnack.includes("shake") ? ` — pea protein powder with ${milkType}` : ""}
+5. DINNER (~${targets.cal.dinner}cal, ~${targets.protein.dinner}g protein, ~${targets.carbs.dinner}g carbs): ${dayTemplate.dinner}${usesCreatine ? " — note in method: stir 5g creatine into yoghurt or shake after this meal" : ""}
+
+DAILY TOTALS: ~${dailyCalTarget} cal total, ~${dailyProteinTarget}g protein minimum
+RULES: UK supermarket ingredients only. Snacks must contain fruit unless protein shake. Dinner protein must NOT appear in breakfast or lunch.
+
+Return JSON:
+{
+  "isTrainingDay": ${training},
+  "meals": [
+    { "id": "v3_${dateKey.replace(/-/g,"")}_[slot]", "name": "Name", "type": "breakfast|snack|lunch|dinner", "time": "8:00 AM", "cals": 400, "protein": 30, "carbs": 35, "fat": 12, "items": ["ingredient (amount)"], "method": "Instructions", "tags": ["gf","df"] }
+  ]
+}`;
+
+    const response = await client.messages.create({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 2000,
+      messages: [{ role: "user", content: prompt }],
+    });
+    const text = response.content[0]?.text || "";
+    const clean = text.replace(/```json|```/g, "").trim();
+    const parsed = JSON.parse(clean);
+    if (!parsed.meals || parsed.meals.length !== 5) throw new Error(`Day ${dateKey}: invalid meal count`);
+    return { date: dateKey, meals: parsed.meals, isTrainingDay: training };
+  };
+
+  try {
+    // Generate day 1 first, then remaining days sequentially for leftover accuracy
+    const firstDay = await generateDay(template[0], dateKeys[0], null);
+    const finalDays = [firstDay];
+    for (let i = 1; i < days; i++) {
+      const prevDinner = finalDays[i-1]?.meals?.find(m => m.type === "dinner");
+      const day = await generateDay(template[i], dateKeys[i], prevDinner?.name || null);
+      finalDays.push(day);
+    }
+
+    res.json({
+      days: finalDays,
+      coreProteins,
+      dailyCalTarget,
+      dailyProteinTarget,
+      tdee,
+      ingredients,
+    });
+  } catch(err) {
+    console.error("Plan v3 error:", err.message);
+    res.status(500).json({ error: "Failed to generate meal plan: " + err.message });
+  }
+});
+
+// ── Calorie-neutral meal swap ─────────────────────────────────────────────────
+app.post("/api/swap-meal", async (req, res) => {
+  const { profile, slot, targets, prevDinnerName, dislikedMealNames = [] } = req.body;
+  // slot: "breakfast"|"morningSnack"|"lunch"|"afternoonSnack"|"dinner"
+  // targets: { cal, protein, carbs, fat, type }
+
+  const isGF = profile?.glutenPref === "gluten_free";
+  const isDF = profile?.dairyPref === "dairy_free";
+  const isLF = profile?.dairyPref === "lactose_free";
+  const milkType = profile?.milkAlt ? `${profile.milkAlt} milk` : isDF ? "oat milk" : isLF ? "lactose-free milk" : "milk";
+  const cookTime = { quick:"15 minutes max", moderate:"30 minutes", enjoy:"up to 60 minutes" }[profile?.cookingTime] || "30 minutes";
+
+  const hardRules = [
+    isGF ? "⛔ GLUTEN-FREE: No wheat, barley, rye, regular oats, bread, pasta, flour, soy sauce. Use tamari." : "",
+    isDF ? `⛔ DAIRY-FREE: No milk, cheese, butter, cream, yoghurt. Use coconut yoghurt, ${milkType}.` : "",
+    isLF ? `⛔ LACTOSE-FREE: Use ${milkType}, hard cheese ok.` : "",
+    (profile?.allergies?.length > 0) ? `⛔ ALLERGIES: ${profile.allergies.join(", ")}` : "",
+    (profile?.dislikes?.length > 0) ? `⛔ DISLIKES: ${profile.dislikes.join(", ")}` : "",
+  ].filter(Boolean).join("\n");
+
+  const ingredients = selectCoreIngredients(profile);
+  const ingredientList = [...ingredients.proteins, ...ingredients.carbs, ...ingredients.veg, ...ingredients.fruit, ...ingredients.dairy, ...ingredients.base, ...ingredients.extras].join(", ");
+
+  const isLeftover = slot === "lunch" && prevDinnerName;
+  const slotLabels = { breakfast:"Breakfast", morningSnack:"Morning snack", lunch:"Lunch", afternoonSnack:"Afternoon snack", dinner:"Dinner" };
+
+  const prompt = `Generate ONE replacement ${slotLabels[slot]||slot} meal. Return ONLY valid JSON.
+
+MUST HIT THESE EXACT TARGETS (this is a calorie-neutral swap):
+- Calories: ${targets.cal} ± 30
+- Protein: ${targets.protein}g ± 5
+- Carbs: ${targets.carbs}g ± 5
+- Fat: ${targets.fat}g ± 3
+
+CORE INGREDIENTS: ${ingredientList}
+COOKING TIME: ${cookTime}
+MILK: ${milkType}
+${hardRules ? `\nHARD RULES:\n${hardRules}` : ""}
+${isLeftover ? `This is a leftover lunch using ${prevDinnerName} — quick 5-min assembly, no cooking.` : ""}
+Do NOT use any of these (user disliked): ${dislikedMealNames.join(", ") || "none"}
+Must be completely different from the meal being replaced.
+
+Return JSON:
+{ "id": "swap_${Date.now()}", "name": "Meal Name", "type": "${targets.type||slot}", "time": "${targets.time||"12:00 PM"}", "cals": ${targets.cal}, "protein": ${targets.protein}, "carbs": ${targets.carbs}, "fat": ${targets.fat}, "items": ["ingredient (amount)"], "method": "Instructions", "tags": [] }`;
+
+  try {
+    const response = await client.messages.create({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 800,
+      messages: [{ role: "user", content: prompt }],
+    });
+    const text = response.content[0]?.text || "";
+    const clean = text.replace(/```json|```/g, "").trim();
+    const meal = JSON.parse(clean);
+    res.json({ meal });
+  } catch(err) {
+    console.error("Swap meal error:", err.message);
+    res.status(500).json({ error: "Failed to swap meal" });
+  }
+});

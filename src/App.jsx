@@ -1569,7 +1569,7 @@ const MealLoadingIndicator = () => {
 };
 
 // ── Meal Carousel ─────────────────────────────────────────────────────────────
-const MealCarousel = ({ meals, favourites, likedMeals, mealLog, today, onLike, onDislike, onLog, onRemoveLog, targetCals }) => {
+const MealCarousel = ({ meals, favourites, likedMeals, mealLog, today, onLike, onDislike, onLog, onRemoveLog, targetCals, isGuided, onSwap, swappingId }) => {
   const [activeIdx, setActiveIdx] = useState(0);
   const [showMethod, setShowMethod] = useState(false);
   const [dragStart, setDragStart] = useState(null);
@@ -1709,24 +1709,30 @@ const MealCarousel = ({ meals, favourites, likedMeals, mealLog, today, onLike, o
       </div>
 
       {/* Action buttons */}
-      <div style={{ display:"flex", gap:8, marginBottom:8 }}>
-        <button
-          onClick={()=>onLike(m)}
-          style={{ width:44, height:44, background:isLiked?`${C.green}20`:"none", border:`1.5px solid ${isLiked?C.green:C.border}`, borderRadius:12, color:C.green, fontSize:18, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}
-          title="Like this meal"
-        >👍</button>
-        <button
-          onClick={()=>onDislike(m)}
-          style={{ width:44, height:44, background:"none", border:`1.5px solid ${C.border}`, borderRadius:12, color:C.red, fontSize:18, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}
-          title="Never show again"
-        >👎</button>
-        <button
-          onClick={()=>{ if(!isLogged) onLog(m); }}
-          style={{ flex:1, background:isLogged?`${C.green}15`:"none", border:`1.5px solid ${isLogged?C.green:C.border}`, borderRadius:12, padding:"10px 0", color:isLogged?C.green:C.text, fontSize:14, fontWeight:700, cursor:isLogged?"default":"pointer", fontFamily:FONT, transition:"all 0.2s" }}
-        >
-          {isLogged ? "✓ Logged" : "+ Log Meal"}
-        </button>
-      </div>
+      {isGuided ? (
+        <div style={{ display:"flex", gap:8, marginBottom:8 }}>
+          <button
+            onClick={()=>onSwap(m)}
+            disabled={swappingId === m.id}
+            style={{ flex:1, background:swappingId===m.id?C.sectionBg:`${C.accent}12`, border:`1.5px solid ${C.accent}`, borderRadius:12, padding:"10px 0", color:C.accent, fontSize:14, fontWeight:700, cursor:swappingId===m.id?"default":"pointer", fontFamily:FONT }}
+          >{swappingId===m.id ? "⏳ Finding swap..." : "⇄ Swap meal"}</button>
+          <button
+            onClick={()=>onDislike(m)}
+            style={{ width:44, height:44, background:"none", border:`1.5px solid ${C.border}`, borderRadius:12, color:C.red, fontSize:18, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}
+            title="Never show this meal again"
+          >👎</button>
+          <button
+            onClick={()=>{ if(!isLogged) onLog(m); }}
+            style={{ width:44, height:44, background:isLogged?`${C.green}15`:"none", border:`1.5px solid ${isLogged?C.green:C.border}`, borderRadius:12, color:isLogged?C.green:C.text, fontSize:18, cursor:isLogged?"default":"pointer", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}
+          >{isLogged?"✓":"+"}</button>
+        </div>
+      ) : (
+        <div style={{ display:"flex", gap:8, marginBottom:8 }}>
+          <button onClick={()=>onLike(m)} style={{ width:44, height:44, background:isLiked?`${C.green}20`:"none", border:`1.5px solid ${isLiked?C.green:C.border}`, borderRadius:12, color:C.green, fontSize:18, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }} title="Like this meal">👍</button>
+          <button onClick={()=>onDislike(m)} style={{ width:44, height:44, background:"none", border:`1.5px solid ${C.border}`, borderRadius:12, color:C.red, fontSize:18, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }} title="Never show again">👎</button>
+          <button onClick={()=>{ if(!isLogged) onLog(m); }} style={{ flex:1, background:isLogged?`${C.green}15`:"none", border:`1.5px solid ${isLogged?C.green:C.border}`, borderRadius:12, padding:"10px 0", color:isLogged?C.green:C.text, fontSize:14, fontWeight:700, cursor:isLogged?"default":"pointer", fontFamily:FONT, transition:"all 0.2s" }}>{isLogged ? "✓ Logged" : "+ Log Meal"}</button>
+        </div>
+      )}
 
       {/* Swipe hint — only on first card first visit */}
       {activeIdx === 0 && meals.length > 1 && (
@@ -1737,12 +1743,15 @@ const MealCarousel = ({ meals, favourites, likedMeals, mealLog, today, onLike, o
 };
 
 const MealsTab = ({ profile, favourites, setFavourites, removed, setRemoved, mealLog, setMealLog, isPro, onUpgrade, mealPlan, onSaveMealPlan }) => {
-  const [style, setStyle] = useState("all");
+  const isGuided = profile?.appMode !== "custom";
   const [section, setSection] = useState("meals");
   const [suppOpen, setSuppOpen] = useState(null);
   const [generating, setGenerating] = useState(false);
-  const [generateProgress, setGenerateProgress] = useState(null); // e.g. "Day 2 of 5"
+  const [generateProgress, setGenerateProgress] = useState(null);
   const [generateError, setGenerateError] = useState(null);
+  const [swapConfirm, setSwapConfirm] = useState(null); // { meal, slotIndex }
+  const [swappingId, setSwappingId] = useState(null);
+  const [style, setStyle] = useState("all"); // kept for non-guided
   const [checked, setChecked] = useState({});
   const [pantry, setPantry] = useState(() => {
     try { return JSON.parse(localStorage.getItem("leanplan_pantry") || "[]"); } catch { return []; }
@@ -1769,6 +1778,55 @@ const MealsTab = ({ profile, favourites, setFavourites, removed, setRemoved, mea
   const tdee = calcTDEE(profile);
   const pace = getPace(profile.paceId||"normal");
   const targetCals = tdee ? tdee - Math.round(pace.lbs*500) : 1700;
+
+  // Derived targets for display
+  const weightKg = profile?.startWeightLbs ? profile.startWeightLbs * 0.453592 : null;
+  const ageNum = parseFloat(profile?.age) || 0;
+  const proteinMult = ageNum >= 50 ? 2.4 : 2.2;
+  const displayProteinTarget = weightKg ? Math.round(weightKg * proteinMult) : null;
+  const profileComplete = !!(profile?.heightCm && profile?.startWeightLbs && profile?.age);
+
+  const getSlotName = (type) => {
+    const map = { breakfast:"breakfast", snack:"morningSnack", lunch:"lunch", dinner:"dinner" };
+    return map[type] || "morningSnack";
+  };
+
+  const requestSwap = (meal) => {
+    setSwapConfirm(meal);
+  };
+
+  const confirmSwap = async (meal) => {
+    setSwapConfirm(null);
+    setSwappingId(meal.id);
+    try {
+      const slot = getSlotName(meal.type);
+      const prevDinner = selectedDay?.meals?.find(m => m.type === "dinner" && m.id !== meal.id);
+      const res = await fetch("/api/swap-meal", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          profile,
+          slot,
+          targets: { cal: meal.cals, protein: meal.protein, carbs: meal.carbs, fat: meal.fat, type: meal.type, time: meal.time },
+          prevDinnerName: meal.type === "lunch" ? prevDinner?.name : null,
+          dislikedMealNames: dislikedMeals,
+        }),
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      // Replace meal in plan
+      if (mealPlan?.days) {
+        const updatedDays = mealPlan.days.map(day => ({
+          ...day,
+          meals: day.meals.map(m => m.id === meal.id ? data.meal : m)
+        }));
+        onSaveMealPlan({ ...mealPlan, days: updatedDays });
+      }
+    } catch(err) {
+      console.error("Swap error:", err);
+    }
+    setSwappingId(null);
+  };
 
   // Which day are we viewing — default to today
   const [selectedDate, setSelectedDate] = useState(today);
@@ -1802,31 +1860,45 @@ const MealsTab = ({ profile, favourites, setFavourites, removed, setRemoved, mea
   };
 
   const generatePlan = async () => {
+    if (isGuided && !profileComplete) {
+      setGenerateError("Please complete your profile (height, weight, age) before generating a plan.");
+      return;
+    }
     setGenerating(true);
     setGenerateError(null);
-    setGenerateProgress("Building your meal template...");
+    setGenerateProgress("Calculating your targets...");
     try {
-      // Small delay so user sees the first progress message
       await new Promise(r => setTimeout(r, 400));
-      setGenerateProgress(`Generating ${planDays}-day plan...`);
+      setGenerateProgress(`Building your ${planDays}-day plan...`);
 
-      const res = await fetch("/api/generate-meal-plan-v2", {
+      const endpoint = isGuided ? "/api/generate-meal-plan-v3" : "/api/generate-meal-plan-v2";
+      const body = isGuided
+        ? { profile, days: planDays }
+        : { profile, dislikedMealNames: dislikedMeals, style, days: planDays };
+
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ profile, dislikedMealNames: dislikedMeals, style, days: planDays }),
+        body: JSON.stringify(body),
       });
 
       setGenerateProgress("Finalising your meals...");
       const data = await res.json();
+      if (data.error === "incomplete_profile") {
+        setGenerateError("Please complete your profile (height, weight, age) to generate a personalised plan.");
+        setGenerating(false); setGenerateProgress(null); return;
+      }
       if (data.error) throw new Error(data.error);
 
       const plan = {
         days: data.days,
         generatedDate: today,
-        style,
         coreProteins: data.coreProteins,
         dailyCalTarget: data.dailyCalTarget,
         dailyProteinTarget: data.dailyProteinTarget,
+        tdee: data.tdee,
+        ingredients: data.ingredients,
+        isGuided,
       };
       onSaveMealPlan(plan);
       setSelectedDate(today);
@@ -1945,39 +2017,68 @@ const MealsTab = ({ profile, favourites, setFavourites, removed, setRemoved, mea
         </Card>}
 
         {/* Generate / plan controls */}
-        <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:16, padding:"12px 14px", marginBottom:12 }}>
-          <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:10 }}>
-            {["all","balanced","high-protein","mediterranean","budget-friendly"].map(s=><Chip key={s} color={C.accent} active={style===s} onClick={()=>setStyle(s)}>{s}</Chip>)}
-          </div>
+        <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:16, padding:"14px", marginBottom:12 }}>
+
+          {/* Guided mode — targets header */}
+          {isGuided && (
+            <div style={{ marginBottom:12 }}>
+              {!profileComplete ? (
+                <div style={{ background:`${C.orange}12`, border:`1px solid ${C.orange}33`, borderRadius:12, padding:"10px 14px" }}>
+                  <p style={{ color:C.orange, fontSize:13, fontWeight:700, margin:"0 0 4px" }}>⚠️ Profile incomplete</p>
+                  <p style={{ color:C.muted, fontSize:12, margin:0 }}>Add your height, weight and age in Profile settings to get a personalised plan with accurate calorie targets.</p>
+                </div>
+              ) : (
+                <div style={{ display:"flex", gap:8 }}>
+                  <div style={{ flex:1, background:C.sectionBg, borderRadius:12, padding:"10px 12px", textAlign:"center" }}>
+                    <p style={{ color:C.accent, fontWeight:800, fontSize:18, margin:0 }}>{mealPlan?.dailyCalTarget || targetCals}</p>
+                    <p style={{ color:C.muted, fontSize:11, margin:"2px 0 0" }}>cal / day</p>
+                  </div>
+                  <div style={{ flex:1, background:C.sectionBg, borderRadius:12, padding:"10px 12px", textAlign:"center" }}>
+                    <p style={{ color:C.green, fontWeight:800, fontSize:18, margin:0 }}>{mealPlan?.dailyProteinTarget || displayProteinTarget || "—"}g</p>
+                    <p style={{ color:C.muted, fontSize:11, margin:"2px 0 0" }}>protein / day</p>
+                  </div>
+                  <div style={{ flex:1, background:C.sectionBg, borderRadius:12, padding:"10px 12px", textAlign:"center" }}>
+                    <p style={{ color:C.orange, fontWeight:800, fontSize:18, margin:0 }}>{planDays}d</p>
+                    <p style={{ color:C.muted, fontSize:11, margin:"2px 0 0" }}>plan length</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Non-guided style chips */}
+          {!isGuided && (
+            <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:10 }}>
+              {["all","balanced","high-protein","mediterranean","budget-friendly"].map(s=><Chip key={s} color={C.accent} active={style===s} onClick={()=>setStyle(s)}>{s}</Chip>)}
+            </div>
+          )}
+
           {isPro ? (
             <div>
-              <Btn onClick={generatePlan} disabled={generating} style={{ width:"100%", padding:"11px 0", fontSize:15, marginBottom:4 }}>
-                {generating ? "✦ Generating your plan..." : mealPlan ? `↻ Regenerate ${planDays}-day plan` : `✦ Generate my ${planDays}-day meal plan`}
+              <Btn onClick={generatePlan} disabled={generating || (isGuided && !profileComplete)} style={{ width:"100%", padding:"11px 0", fontSize:15, marginBottom:4 }}>
+                {generating ? "✦ Building your plan..." : mealPlan ? `↻ Regenerate ${planDays}-day plan` : `✦ Generate my ${planDays}-day plan`}
               </Btn>
               {mealPlan && <div style={{ textAlign:"center", marginTop:4 }}>
-                <p style={{ color:C.muted, fontSize:11, margin:"0 0 2px" }}>Plan generated {fmtDate(mealPlan.generatedDate)} · {mealPlan.days?.length} days</p>
-                {mealPlan.coreProteins && <p style={{ color:C.muted, fontSize:11, margin:0 }}>Core proteins: {mealPlan.coreProteins.join(", ")}</p>}
+                <p style={{ color:C.muted, fontSize:11, margin:"0 0 2px" }}>Generated {fmtDate(mealPlan.generatedDate)} · {mealPlan.days?.length} days{mealPlan.coreProteins ? ` · ${mealPlan.coreProteins.join(", ")}` : ""}</p>
               </div>}
               {generating && (
                 <div style={{ background:C.sectionBg, borderRadius:14, padding:"14px 16px", marginTop:8 }}>
-                  <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:8 }}>
+                  <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:6 }}>
                     <div style={{ display:"flex", gap:4 }}>
-                      {[0,1,2].map(i=>(
-                        <div key={i} style={{ width:7, height:7, borderRadius:99, background:C.accent, opacity:0.4, animation:`pulse 0.8s ease-in-out ${i*0.2}s infinite alternate` }} />
-                      ))}
+                      {[0,1,2].map(i=>(<div key={i} style={{ width:7, height:7, borderRadius:99, background:C.accent, opacity:0.4, animation:`pulse 0.8s ease-in-out ${i*0.2}s infinite alternate` }} />))}
                     </div>
                     <p style={{ color:C.text, fontSize:13, fontWeight:600, margin:0 }}>{generateProgress || "Generating..."}</p>
                   </div>
-                  <p style={{ color:C.muted, fontSize:12, margin:0 }}>This takes 15–20 seconds — building a personalised plan just for you</p>
+                  <p style={{ color:C.muted, fontSize:12, margin:0 }}>Building a personalised plan — takes 20–30 seconds</p>
                 </div>
               )}
               {generateError && <p style={{ color:C.red, fontSize:13, textAlign:"center", marginTop:6 }}>{generateError}</p>}
-              {dislikedMeals.length>0&&<p style={{ color:C.muted, fontSize:11, textAlign:"center", marginTop:4 }}>Avoiding {dislikedMeals.length} disliked meal{dislikedMeals.length!==1?"s":""} · <span onClick={()=>saveDislikedMeals([])} style={{ color:C.accent, cursor:"pointer" }}>Reset</span></p>}
+              {!isGuided && dislikedMeals.length>0 && <p style={{ color:C.muted, fontSize:11, textAlign:"center", marginTop:4 }}>Avoiding {dislikedMeals.length} disliked meal{dislikedMeals.length!==1?"s":""} · <span onClick={()=>saveDislikedMeals([])} style={{ color:C.accent, cursor:"pointer" }}>Reset</span></p>}
             </div>
           ) : (
             <div>
               <Btn onClick={onUpgrade} color="#5856d6" style={{ width:"100%", padding:"11px 0" }}>✦ Unlock AI Meal Planning — Pro</Btn>
-              <p style={{ color:C.muted, fontSize:12, textAlign:"center", marginTop:6 }}>Generate a full {planDays}-day meal plan with shopping list</p>
+              <p style={{ color:C.muted, fontSize:12, textAlign:"center", marginTop:6 }}>Generate a full {planDays}-day personalised meal plan</p>
             </div>
           )}
         </div>
@@ -1986,8 +2087,9 @@ const MealsTab = ({ profile, favourites, setFavourites, removed, setRemoved, mea
         {mealPlan?.days && mealPlan.days.length > 1 && (
           <div style={{ display:"flex", gap:6, overflowX:"auto", marginBottom:12, paddingBottom:2, scrollbarWidth:"none" }}>
             {mealPlan.days.map(d => (
-              <button key={d.date} onClick={()=>setSelectedDate(d.date)} style={{ flexShrink:0, background:selectedDate===d.date?C.accent:C.card, border:`1px solid ${selectedDate===d.date?C.accent:C.border}`, borderRadius:10, padding:"6px 12px", color:selectedDate===d.date?"#fff":d.date===today?C.accent:C.text, fontSize:12, fontWeight:selectedDate===d.date||d.date===today?700:400, cursor:"pointer", fontFamily:FONT, whiteSpace:"nowrap" }}>
+              <button key={d.date} onClick={()=>setSelectedDate(d.date)} style={{ flexShrink:0, background:selectedDate===d.date?C.accent:C.card, border:`1px solid ${selectedDate===d.date?C.accent:C.border}`, borderRadius:10, padding:"6px 12px", color:selectedDate===d.date?"#fff":d.date===today?C.accent:C.text, fontSize:12, fontWeight:selectedDate===d.date||d.date===today?700:400, cursor:"pointer", fontFamily:FONT, whiteSpace:"nowrap", display:"flex", alignItems:"center", gap:4 }}>
                 {fmtPlanDate(d.date)}
+                {isGuided && d.isTrainingDay && <span style={{ fontSize:10 }}>🏋️</span>}
               </button>
             ))}
           </div>
@@ -2013,8 +2115,33 @@ const MealsTab = ({ profile, favourites, setFavourites, removed, setRemoved, mea
             onLog={logMeal}
             onRemoveLog={removeMealLog}
             targetCals={targetCals}
+            isGuided={isGuided}
+            onSwap={requestSwap}
+            swappingId={swappingId}
           />
         </>}
+
+        {/* Swap confirmation modal */}
+        {swapConfirm && (
+          <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.6)", zIndex:1000, display:"flex", alignItems:"flex-end", justifyContent:"center" }}>
+            <div style={{ background:C.card, borderRadius:"20px 20px 0 0", padding:"24px 20px 40px", width:"100%", maxWidth:480 }}>
+              <p style={{ color:C.text, fontWeight:800, fontSize:18, margin:"0 0 8px" }}>Swap this meal?</p>
+              <p style={{ color:C.muted, fontSize:14, lineHeight:1.6, margin:"0 0 6px" }}>We'll find a different <strong style={{ color:C.text }}>{swapConfirm.type}</strong> with the same calories and protein so your daily targets stay on track.</p>
+              <div style={{ background:C.sectionBg, borderRadius:12, padding:"10px 14px", marginBottom:20 }}>
+                <div style={{ display:"flex", gap:16 }}>
+                  <span style={{ color:C.accent, fontWeight:700, fontSize:14 }}>{swapConfirm.cals} cal</span>
+                  <span style={{ color:C.green, fontWeight:700, fontSize:14 }}>{swapConfirm.protein}g protein</span>
+                  <span style={{ color:C.orange, fontWeight:700, fontSize:14 }}>{swapConfirm.carbs}g carbs</span>
+                </div>
+                <p style={{ color:C.muted, fontSize:12, margin:"4px 0 0" }}>The replacement will match these targets</p>
+              </div>
+              <div style={{ display:"flex", gap:10 }}>
+                <button onClick={()=>setSwapConfirm(null)} style={{ flex:1, background:"none", border:`1.5px solid ${C.border}`, borderRadius:12, padding:"12px 0", color:C.text, fontSize:15, fontWeight:600, cursor:"pointer", fontFamily:FONT }}>Cancel</button>
+                <button onClick={()=>confirmSwap(swapConfirm)} style={{ flex:2, background:C.accent, border:"none", borderRadius:12, padding:"12px 0", color:"#fff", fontSize:15, fontWeight:700, cursor:"pointer", fontFamily:FONT }}>⇄ Find me a swap</button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {showDislikeNudge && mealPlan && (
           <div style={{ background:`${C.orange}10`, border:`1px solid ${C.orange}33`, borderRadius:14, padding:"12px 16px", display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
