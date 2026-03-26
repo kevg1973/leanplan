@@ -2631,10 +2631,15 @@ const TrainTab = ({ profile, workoutLog, setWorkoutLog, setProfile, savedWorkout
 
       {view==="workout"&&<>
         {!activeWorkout&&<>
-          {isGuided && todaySession && (
-            <div style={{ background:`${C.orange}10`, border:`1px solid ${C.orange}30`, borderRadius:14, padding:"10px 14px", marginBottom:12, display:"flex", gap:10, alignItems:"center" }}>
-              <span style={{ fontSize:18, flexShrink:0 }}>💡</span>
-              <p style={{ color:C.text, fontSize:13, margin:0, lineHeight:1.5 }}>Your programme has <strong>{todaySession.label}</strong> scheduled today. Choose a custom workout below if you want something different.</p>
+          {isGuided && (
+            <div style={{ background:todaySession?`${todaySession.color}10`:`${C.green}10`, border:`1px solid ${todaySession?`${todaySession.color}30`:`${C.green}30`}`, borderRadius:14, padding:"10px 14px", marginBottom:12, display:"flex", gap:10, alignItems:"center" }}>
+              <span style={{ fontSize:18, flexShrink:0 }}>{todaySession ? "💡" : "💚"}</span>
+              <p style={{ color:C.text, fontSize:13, margin:0, lineHeight:1.5 }}>
+                {todaySession
+                  ? <>Your programme has <strong>{todaySession.label}</strong> scheduled today. Choosing a custom workout won't affect your targets.</>
+                  : <>Today is a <strong>rest day</strong> in your programme. Training is fine — just make sure to recover well tomorrow.</>
+                }
+              </p>
             </div>
           )}
           <Card>
