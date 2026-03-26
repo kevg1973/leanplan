@@ -670,6 +670,10 @@ const Chip = ({ children, color=C.accent, active, onClick }) => {
   );
 };
 
+const BigChip = ({ children, color=C.accent, active, onClick }) => (
+  <span onClick={onClick} style={{ background:active?color:`${color}12`, color:active?"#fff":color, border:`1.5px solid ${active?color:`${color}55`}`, borderRadius:99, padding:"10px 20px", fontSize:15, fontWeight:600, cursor:onClick?"pointer":"default", transition:"all 0.2s", display:"inline-block", whiteSpace:"nowrap" }}>{children}</span>
+);
+
 const Toggle = ({ value, onChange }) => (
   <div onClick={()=>onChange(!value)} style={{ width:51, height:31, borderRadius:99, background:value?C.accent:"#e5e5ea", cursor:"pointer", position:"relative", transition:"background 0.2s", flexShrink:0 }}>
     <div style={{ position:"absolute", top:2, left:value?22:2, width:27, height:27, borderRadius:99, background:"#fff", boxShadow:"0 2px 4px rgba(0,0,0,0.2)", transition:"left 0.2s" }} />
@@ -2608,9 +2612,9 @@ const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDar
         </div>
         <div style={{ marginBottom:20 }}>
           <p style={{ color:C.muted, fontSize:13, fontWeight:600, marginBottom:10 }}>INJURIES / LIMITATIONS</p>
-          <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
+          <div style={{ display:"flex", flexWrap:"wrap", gap:10 }}>
             {[["none","No limitations"],["back","Lower back"],["knees","Knees"],["hips","Hips"],["shoulders","Shoulders"],["wrists","Wrists"],["ankles","Ankles"]].map(([val,label])=>(
-              <Chip key={val} color={C.orange} active={tempData.injuries?.includes(val)} onClick={()=>{
+              <BigChip key={val} color={C.orange} active={tempData.injuries?.includes(val)} onClick={()=>{
                 const without = (tempData.injuries||[]).filter(x=>x!=="none");
                 if (val==="none") setTempData(d=>({...d,injuries:["none"]}));
                 else if (without.includes(val)) setTempData(d=>({...d,injuries:without.filter(x=>x!==val)}));
@@ -2621,9 +2625,9 @@ const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDar
         </div>
         <div>
           <p style={{ color:C.muted, fontSize:13, fontWeight:600, marginBottom:10 }}>EQUIPMENT</p>
-          <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
+          <div style={{ display:"flex", flexWrap:"wrap", gap:10 }}>
             {[["gym_machines","Gym machines"],["dumbbells","Dumbbells"],["barbell","Barbell"],["cables","Cable machine"],["rowing","Rowing machine"],["crosstrainer","Cross trainer"],["treadmill","Treadmill"],["bike","Exercise bike"],["resistance_bands","Resistance bands"],["bodyweight","Bodyweight only"]].map(([val,label])=>(
-              <Chip key={val} color={C.green} active={tempData.equipment?.includes(val)} onClick={()=>{
+              <BigChip key={val} color={C.green} active={tempData.equipment?.includes(val)} onClick={()=>{
                 const eq = tempData.equipment||[];
                 setTempData(d=>({...d,equipment:eq.includes(val)?eq.filter(x=>x!==val):[...eq,val]}));
               }}>{label}</Chip>
@@ -2679,14 +2683,14 @@ const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDar
       {editing==="allergies"&&<>
         <p style={{ color:C.muted, fontSize:14, marginBottom:16 }}>Select all that apply</p>
         <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
-          {ALLERGENS.map(a=><Chip key={a} color={C.red} active={tempData.allergies.includes(a)} onClick={()=>toggleArr("allergies",a)}>{a}</Chip>)}
+          {ALLERGENS.map(a=><BigChip key={a} color={C.red} active={tempData.allergies.includes(a)} onClick={()=>toggleArr("allergies",a)}>{a}</BigChip>)}
         </div>
       </>}
 
       {editing==="dislikes"&&<>
         <p style={{ color:C.muted, fontSize:14, marginBottom:16 }}>Foods to exclude from meal plans</p>
         <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
-          {DISLIKES_LIST.map(d=><Chip key={d} color={C.orange} active={tempData.dislikes.includes(d)} onClick={()=>toggleArr("dislikes",d)}>{d}</Chip>)}
+          {DISLIKES_LIST.map(d=><BigChip key={d} color={C.orange} active={tempData.dislikes.includes(d)} onClick={()=>toggleArr("dislikes",d)}>{d}</BigChip>)}
         </div>
       </>}
 
@@ -2763,17 +2767,17 @@ const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDar
         </div>
         <div style={{ marginBottom:20 }}>
           <p style={{ color:C.muted, fontSize:13, fontWeight:600, marginBottom:10 }}>DAIRY</p>
-          <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
+          <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
             {[["full_dairy","Full dairy"],["lactose_free","Lactose-free"],["dairy_free","Dairy-free"]].map(([val,label])=>(
-              <Chip key={val} color={C.accent} active={tempData.dairyPref===val} onClick={()=>setTempData(d=>({...d,dairyPref:val}))}>{label}</Chip>
+              <BigChip key={val} color={C.accent} active={tempData.dairyPref===val} onClick={()=>setTempData(d=>({...d,dairyPref:val}))}>{label}</BigChip>
             ))}
           </div>
         </div>
         <div>
           <p style={{ color:C.muted, fontSize:13, fontWeight:600, marginBottom:10 }}>GLUTEN</p>
-          <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
+          <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
             {[["regular","Regular"],["gluten_free","Gluten-free"]].map(([val,label])=>(
-              <Chip key={val} color={C.accent} active={tempData.glutenPref===val} onClick={()=>setTempData(d=>({...d,glutenPref:val}))}>{label}</Chip>
+              <BigChip key={val} color={C.accent} active={tempData.glutenPref===val} onClick={()=>setTempData(d=>({...d,glutenPref:val}))}>{label}</BigChip>
             ))}
           </div>
         </div>
@@ -2794,9 +2798,9 @@ const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDar
         </div>
         {(tempData.supplementsOpen==="yes"||tempData.supplementsOpen==="maybe")&&<div>
           <p style={{ color:C.muted, fontSize:13, fontWeight:600, marginBottom:10 }}>INTERESTED IN</p>
-          <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
+          <div style={{ display:"flex", flexWrap:"wrap", gap:10 }}>
             {[["creatine","Creatine"],["protein","Protein powder"],["vitd","Vitamin D3+K2"],["omega3","Omega-3"],["magnesium","Magnesium"],["multivitamin","Multivitamin"],["collagen","Collagen"],["probiotics","Probiotics"]].map(([val,label])=>(
-              <Chip key={val} color={C.purple} active={tempData.supplementsInterested?.includes(val)} onClick={()=>{
+              <BigChip key={val} color={C.purple} active={tempData.supplementsInterested?.includes(val)} onClick={()=>{
                 const curr = tempData.supplementsInterested||[];
                 setTempData(d=>({...d,supplementsInterested:curr.includes(val)?curr.filter(x=>x!==val):[...curr,val]}));
               }}>{label}</Chip>
@@ -2817,9 +2821,9 @@ const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDar
         </div>
         <div>
           <p style={{ color:C.muted, fontSize:13, fontWeight:600, marginBottom:10 }}>WORKOUT STYLE</p>
-          <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
+          <div style={{ display:"flex", flexWrap:"wrap", gap:10 }}>
             {[["mixed","Mixed"],["weights","Weights"],["cardio","Cardio"],["home","Home workouts"],["classes","Classes"]].map(([val,label])=>(
-              <Chip key={val} color={C.accent} active={tempData.workoutStyle===val} onClick={()=>setTempData(d=>({...d,workoutStyle:val}))}>{label}</Chip>
+              <span key={val} onClick={()=>setTempData(d=>({...d,workoutStyle:val}))} style={{ background:tempData.workoutStyle===val?C.accent:`${C.accent}12`, color:tempData.workoutStyle===val?"#fff":C.accent, border:`1.5px solid ${tempData.workoutStyle===val?C.accent:`${C.accent}55`}`, borderRadius:99, padding:"10px 20px", fontSize:15, fontWeight:600, cursor:"pointer", transition:"all 0.2s", display:"inline-block" }}>{label}</span>
             ))}
           </div>
         </div>
