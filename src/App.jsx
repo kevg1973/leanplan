@@ -733,7 +733,7 @@ const PacePicker = ({ value, onChange, targetLbs }) => {
 };
 
 // ── Onboarding ────────────────────────────────────────────────────────────────
-const TOTAL_STEPS = 16;
+const TOTAL_STEPS = 17;
 
 // Scroll picker component
 
@@ -881,7 +881,7 @@ const Onboarding = ({ onDone }) => {
     dietType:"omnivore", dairyPref:"dairy_free",
     glutenPref:"gluten_free", milkAlt:"soya",
     allergies:[], dislikes:[],
-    cookingTime:"moderate", sleepQuality:"average", mealPlanDays:5,
+    cookingTime:"moderate", sleepQuality:"average", mealPlanDays:5, appMode:"guided",
     activityLevel:"moderate",
     supplementsOpen:"maybe", supplementsInterested:[],
   });
@@ -1203,7 +1203,50 @@ const Onboarding = ({ onDone }) => {
             </div>
           </div>
         </div>
-        <OBtn onClick={finish} disabled={data.equipment.length===0}>Build My Plan →</OBtn>
+        <OBtn onClick={next} disabled={data.equipment.length===0}>Continue →</OBtn>
+      </div>}
+      {/* Step 17 — App mode selection */}
+      {step===17&&<div style={{ flex:1, display:"flex", flexDirection:"column", padding:"0 24px 48px" }}>
+        <Header step={step} />
+        <div style={{ flex:1, paddingTop:8 }}>
+          <h2 style={{ color:"#fff", fontSize:28, fontWeight:800, margin:"0 0 8px", lineHeight:1.2 }}>How would you like LeanPlan to work?</h2>
+          <p style={{ color:"rgba(255,255,255,0.5)", fontSize:15, marginBottom:28, lineHeight:1.6 }}>Choose how you want to use the app. You can change this later in your profile.</p>
+
+          {/* Guided */}
+          <div onClick={()=>update("appMode","guided")} style={{ background:data.appMode==="guided"?"rgba(0,122,255,0.15)":"rgba(255,255,255,0.05)", border:`2px solid ${data.appMode==="guided"?"#007aff":"rgba(255,255,255,0.15)"}`, borderRadius:20, padding:"20px", marginBottom:14, cursor:"pointer", transition:"all 0.2s" }}>
+            <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:10 }}>
+              <div style={{ width:44, height:44, borderRadius:12, background:data.appMode==="guided"?"#007aff":"rgba(255,255,255,0.1)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:22, flexShrink:0 }}>🎯</div>
+              <div>
+                <p style={{ color:"#fff", fontWeight:800, fontSize:18, margin:0 }}>Guided</p>
+                <p style={{ color:"rgba(255,255,255,0.5)", fontSize:13, margin:0 }}>Recommended</p>
+              </div>
+              {data.appMode==="guided" && <span style={{ marginLeft:"auto", color:"#007aff", fontSize:22 }}>✓</span>}
+            </div>
+            <p style={{ color:"rgba(255,255,255,0.75)", fontSize:14, lineHeight:1.7, margin:"0 0 12px" }}>LeanPlan builds your complete programme — personalised meal plans, a structured workout schedule, and shopping lists. You follow the plan, we handle the thinking.</p>
+            <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
+              {["✦ Personalised meal plan built around your calorie targets","✦ Structured weekly workout schedule based on your goal","✦ Shopping list built from your meal plan","✦ AI coach to keep you on track"].map((f,i)=>(
+                <p key={i} style={{ color:"rgba(255,255,255,0.6)", fontSize:13, margin:0 }}>{f}</p>
+              ))}
+            </div>
+          </div>
+
+          {/* Custom */}
+          <div onClick={()=>update("appMode","custom")} style={{ background:data.appMode==="custom"?"rgba(255,255,255,0.08)":"rgba(255,255,255,0.03)", border:`2px solid ${data.appMode==="custom"?"rgba(255,255,255,0.4)":"rgba(255,255,255,0.1)"}`, borderRadius:20, padding:"20px", cursor:"pointer", transition:"all 0.2s", position:"relative" }}>
+            <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:10 }}>
+              <div style={{ width:44, height:44, borderRadius:12, background:"rgba(255,255,255,0.08)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:22, flexShrink:0 }}>⚙️</div>
+              <div>
+                <p style={{ color:"rgba(255,255,255,0.6)", fontWeight:800, fontSize:18, margin:0 }}>Custom</p>
+                <p style={{ color:"rgba(255,255,255,0.3)", fontSize:13, margin:0 }}>Coming soon</p>
+              </div>
+              {data.appMode==="custom" && <span style={{ marginLeft:"auto", color:"rgba(255,255,255,0.4)", fontSize:22 }}>✓</span>}
+            </div>
+            <p style={{ color:"rgba(255,255,255,0.4)", fontSize:14, lineHeight:1.7, margin:"0 0 12px" }}>Log your own meals and workouts. Use LeanPlan as a flexible tracking tool with AI coaching support.</p>
+            <div style={{ background:"rgba(255,149,0,0.12)", border:"1px solid rgba(255,149,0,0.3)", borderRadius:10, padding:"8px 12px" }}>
+              <p style={{ color:"#ff9500", fontSize:12, margin:0, fontWeight:600 }}>🚧 Custom mode is coming soon — select Guided for now to get the full LeanPlan experience.</p>
+            </div>
+          </div>
+        </div>
+        <OBtn onClick={finish} disabled={!data.appMode}>Build My Plan →</OBtn>
       </div>}
     </div>
   );
@@ -2904,6 +2947,24 @@ const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDar
         </div>}
       </>}
 
+      {editing==="appmode"&&<>
+        <p style={{ color:C.muted, fontSize:14, marginBottom:20 }}>Choose how you want LeanPlan to work for you.</p>
+        <div onClick={()=>setTempData(d=>({...d,appMode:"guided"}))} style={{ background:tempData.appMode==="guided"?`${C.accent}12`:C.card, border:`1.5px solid ${tempData.appMode==="guided"?C.accent:C.border}`, borderRadius:16, padding:"16px", marginBottom:12, cursor:"pointer" }}>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:6 }}>
+            <p style={{ color:C.text, fontWeight:700, fontSize:16, margin:0 }}>🎯 Guided</p>
+            {tempData.appMode==="guided" && <span style={{ color:C.accent, fontSize:18 }}>✓</span>}
+          </div>
+          <p style={{ color:C.muted, fontSize:13, margin:0, lineHeight:1.6 }}>LeanPlan builds your complete programme — personalised meal plans, structured workouts and shopping lists.</p>
+        </div>
+        <div style={{ background:C.card, border:`1.5px solid ${C.border}`, borderRadius:16, padding:"16px", opacity:0.5 }}>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:6 }}>
+            <p style={{ color:C.text, fontWeight:700, fontSize:16, margin:0 }}>⚙️ Custom</p>
+            <span style={{ color:C.orange, fontSize:12, fontWeight:600 }}>Coming soon</span>
+          </div>
+          <p style={{ color:C.muted, fontSize:13, margin:0, lineHeight:1.6 }}>Log your own meals and workouts. Use LeanPlan as a flexible tracking tool.</p>
+        </div>
+      </>}
+
       {editing==="lifestyle"&&<>
         <div style={{ marginBottom:20 }}>
           <p style={{ color:C.muted, fontSize:13, fontWeight:600, marginBottom:10 }}>ACTIVITY LEVEL (outside workouts)</p>
@@ -2981,6 +3042,11 @@ const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDar
       <Section title="Lifestyle">
         <Row label="Activity level" value={{"sedentary":"Sedentary","light":"Lightly active","moderate":"Moderately active","very":"Very active"}[profile.activityLevel||"moderate"]} onClick={()=>startEdit("lifestyle")} />
         <Row label="Workout style" value={profile.workoutStyle||"mixed"} onClick={()=>startEdit("lifestyle")} last />
+      </Section>
+
+      <Section title="App Mode">
+        <Row label="Mode" value={profile.appMode==="custom"?"Custom (coming soon)":"Guided"} onClick={()=>startEdit("appmode")} />
+        <Row label="About" value={profile.appMode==="guided"?"LeanPlan plans everything for you":"Log your own meals and workouts"} color={C.muted} last />
       </Section>
 
       <Section title="Appearance">
