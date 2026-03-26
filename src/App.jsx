@@ -2619,7 +2619,7 @@ const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDar
                 if (val==="none") setTempData(d=>({...d,injuries:["none"]}));
                 else if (without.includes(val)) setTempData(d=>({...d,injuries:without.filter(x=>x!==val)}));
                 else setTempData(d=>({...d,injuries:[...without,val]}));
-              }}>{label}</Chip>
+              }}>{label}</BigChip>
             ))}
           </div>
         </div>
@@ -2630,7 +2630,7 @@ const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDar
               <BigChip key={val} color={C.green} active={tempData.equipment?.includes(val)} onClick={()=>{
                 const eq = tempData.equipment||[];
                 setTempData(d=>({...d,equipment:eq.includes(val)?eq.filter(x=>x!==val):[...eq,val]}));
-              }}>{label}</Chip>
+              }}>{label}</BigChip>
             ))}
           </div>
         </div>
@@ -2803,7 +2803,7 @@ const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDar
               <BigChip key={val} color={C.purple} active={tempData.supplementsInterested?.includes(val)} onClick={()=>{
                 const curr = tempData.supplementsInterested||[];
                 setTempData(d=>({...d,supplementsInterested:curr.includes(val)?curr.filter(x=>x!==val):[...curr,val]}));
-              }}>{label}</Chip>
+              }}>{label}</BigChip>
             ))}
           </div>
         </div>}
