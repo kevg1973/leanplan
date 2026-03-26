@@ -2385,7 +2385,8 @@ const TrainTab = ({ profile, workoutLog, setWorkoutLog, setProfile, savedWorkout
   const activeExercises = savedWorkout?.exercises || [];
   const setActiveWorkout = (w) => setSavedWorkout(w ? { workout:w, exercises:savedWorkout?.exercises||[] } : null);
   const setActiveExercises = (e) => setSavedWorkout(prev => prev ? { ...prev, exercises:e } : null);
-  const [view, setView] = useState("workout");
+  const isGuided = profile?.appMode !== "custom";
+  const [view, setView] = useState(isGuided ? "calendar" : "workout");
   const [expandedEx, setExpandedEx] = useState(null);
   const [loggedWeights, setLoggedWeights] = useState({});
   const [liftInputs, setLiftInputs] = useState({});
@@ -2449,15 +2450,88 @@ const TrainTab = ({ profile, workoutLog, setWorkoutLog, setProfile, savedWorkout
   const restDays = 7 - trainDays;
   const suggestion = trainDays<=3 ? "Mon · Wed · Fri" : trainDays===4 ? "Mon · Tue · Thu · Fri" : "Mon · Tue · Thu · Fri · Sat";
 
+  // Determine today's prescribed session from weekly plan
+  const getTodaySession = () => {
+    const weekPlan = getWeeklyPlan(profile);
+    const dayOfWeek = new Date().getDay(); // 0=Sun, 1=Mon...
+    // Map day names to day-of-week indices
+    const dayMap = { Mon:1, Tue:2, Wed:3, Thu:4, Fri:5, Sat:6, Sun:0 };
+    const sessionIndex = weekPlan.days.findIndex(d => dayMap[d] === dayOfWeek);
+    if (sessionIndex === -1) return null; // rest day
+    return { ...weekPlan.sessions[sessionIndex], dayName: weekPlan.days[sessionIndex] };
+  };
+  const todaySession = getTodaySession();
+  const todayDayName = new Date().toLocaleDateString("en-GB", { weekday:"long" });
+
   return (
     <div>
       <div style={{ display:"flex", background:C.card, border:`1px solid ${C.border}`, borderRadius:12, padding:3, marginBottom:12, gap:2 }}>
-        {[["workout","Workout"],["calendar","Programme"],["lifts","Progress"]].map(([k,l])=>(
+        {[["workout", isGuided?"Custom":"Workout"],["calendar","Programme"],["lifts","Progress"]].map(([k,l])=>(
           <button key={k} onClick={()=>setView(k)} style={{ flex:1, background:view===k?C.accent:"transparent", color:view===k?"#fff":C.muted, border:"none", borderRadius:10, padding:"8px 0", fontSize:13, fontWeight:600, cursor:"pointer", fontFamily:FONT, transition:"all 0.2s" }}>{l}</button>
         ))}
       </div>
 
       {view==="calendar"&&<>
+
+        {/* Today's session card */}
+        {isGuided && (
+          <div style={{ marginBottom:14 }}>
+            {todaySession ? (
+              <div style={{ background:`linear-gradient(135deg, ${todaySession.color}22, ${todaySession.color}08)`, border:`1.5px solid ${todaySession.color}44`, borderRadius:20, padding:"16px 18px" }}>
+                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:12 }}>
+                  <div>
+                    <p style={{ color:C.muted, fontSize:11, fontWeight:700, letterSpacing:"0.08em", margin:"0 0 4px" }}>TODAY — {todayDayName.toUpperCase()}</p>
+                    <h3 style={{ color:C.text, fontSize:20, fontWeight:800, margin:"0 0 4px" }}>🏋️ {todaySession.label}</h3>
+                    <p style={{ color:C.muted, fontSize:13, margin:0 }}>{block.name} Block · Week {weekInBlock+1} · {isDeload?"Deload":block.reps+" reps · "+block.sets+" sets"}</p>
+                  </div>
+                  {workoutLog[today] ? (
+                    <div style={{ background:`${C.green}20`, border:`1px solid ${C.green}44`, borderRadius:12, padding:"8px 12px", textAlign:"center" }}>
+                      <div style={{ fontSize:20 }}>✓</div>
+                      <div style={{ color:C.green, fontSize:10, fontWeight:700 }}>DONE</div>
+                    </div>
+                  ) : (
+                    <div style={{ background:`${todaySession.color}20`, borderRadius:12, padding:"8px 12px", textAlign:"center" }}>
+                      <div style={{ color:todaySession.color, fontSize:18, fontWeight:800 }}>{todaySession.desc.split(" ")[0]}</div>
+                      <div style={{ color:todaySession.color, fontSize:10, fontWeight:700, opacity:0.8 }}>TODAY</div>
+                    </div>
+                  )}
+                </div>
+                <p style={{ color:C.muted, fontSize:13, margin:"0 0 14px" }}>{todaySession.desc}</p>
+                {!workoutLog[today] ? (
+                  <div>
+                    <button
+                      onClick={()=>{ buildAndShowWorkout(todaySession.type); setView("workout"); }}
+                      style={{ width:"100%", background:todaySession.color, border:"none", borderRadius:14, padding:"13px 0", color:"#fff", fontSize:15, fontWeight:700, cursor:"pointer", fontFamily:FONT, marginBottom:8 }}
+                    >Start Today's Workout →</button>
+                    <button
+                      onClick={()=>setView("workout")}
+                      style={{ width:"100%", background:"none", border:"none", padding:"4px 0", color:C.muted, fontSize:12, cursor:"pointer", fontFamily:FONT }}
+                    >Choose a different workout instead</button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={()=>{ buildAndShowWorkout(todaySession.type); setView("workout"); }}
+                    style={{ width:"100%", background:"none", border:`1.5px solid ${C.green}`, borderRadius:14, padding:"12px 0", color:C.green, fontSize:14, fontWeight:700, cursor:"pointer", fontFamily:FONT }}
+                  >↻ Do it again</button>
+                )}
+              </div>
+            ) : (
+              <div style={{ background:`${C.green}08`, border:`1px solid ${C.green}22`, borderRadius:20, padding:"16px 18px" }}>
+                <p style={{ color:C.muted, fontSize:11, fontWeight:700, letterSpacing:"0.08em", margin:"0 0 4px" }}>TODAY — {todayDayName.toUpperCase()}</p>
+                <h3 style={{ color:C.text, fontSize:20, fontWeight:800, margin:"0 0 6px" }}>💚 Rest Day</h3>
+                <p style={{ color:C.muted, fontSize:13, margin:"0 0 14px", lineHeight:1.6 }}>Recovery is where the gains happen. A short walk, stretching, or foam rolling will help you come back stronger tomorrow.</p>
+                <div style={{ display:"flex", gap:8 }}>
+                  {["🚶 Walk","🧘 Stretch","🫁 Breathe"].map(a=>(
+                    <div key={a} style={{ flex:1, background:C.sectionBg, borderRadius:12, padding:"10px 8px", textAlign:"center" }}>
+                      <p style={{ color:C.text, fontSize:13, margin:0 }}>{a}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Training Block Card */}
         <div style={{ background:`linear-gradient(135deg, ${block.color}, ${block.color}aa)`, borderRadius:16, padding:"16px 18px", marginBottom:14, color:"#fff" }}>
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
@@ -2518,18 +2592,27 @@ const TrainTab = ({ profile, workoutLog, setWorkoutLog, setProfile, savedWorkout
 
               {/* Session cards */}
               <div style={{ display:"flex", flexDirection:"column", gap:8, marginBottom:14 }}>
-                {weekPlan.sessions.map((session, i) => (
-                  <div key={i} style={{ display:"flex", alignItems:"center", gap:12, background:C.sectionBg, borderRadius:12, padding:"10px 14px", borderLeft:`3px solid ${session.color}` }}>
-                    <div style={{ width:28, height:28, borderRadius:99, background:`${session.color}20`, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
-                      <span style={{ color:session.color, fontSize:12, fontWeight:800 }}>{weekPlan.days[i]?.slice(0,1) || i+1}</span>
+                {weekPlan.sessions.map((session, i) => {
+                  const dayMap = { Mon:1, Tue:2, Wed:3, Thu:4, Fri:5, Sat:6, Sun:0 };
+                  const sessionDayIndex = dayMap[weekPlan.days[i]];
+                  const todayDayIndex = new Date().getDay();
+                  const isSessionToday = sessionDayIndex === todayDayIndex;
+                  return (
+                    <div key={i} style={{ display:"flex", alignItems:"center", gap:12, background:isSessionToday?`${session.color}12`:C.sectionBg, borderRadius:12, padding:"10px 14px", borderLeft:`3px solid ${isSessionToday?session.color:C.border}`, opacity: isSessionToday?1:0.75 }}>
+                      <div style={{ width:28, height:28, borderRadius:99, background:`${session.color}20`, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+                        <span style={{ color:session.color, fontSize:12, fontWeight:800 }}>{weekPlan.days[i]?.slice(0,1) || i+1}</span>
+                      </div>
+                      <div style={{ flex:1 }}>
+                        <p style={{ color:C.text, fontWeight:isSessionToday?800:600, fontSize:14, margin:0 }}>
+                          {weekPlan.days[i] || `Session ${i+1}`} — {session.label}
+                          {isSessionToday && <span style={{ color:session.color, fontSize:11, fontWeight:700, marginLeft:8 }}>TODAY</span>}
+                        </p>
+                        <p style={{ color:C.muted, fontSize:12, margin:"2px 0 0" }}>{session.desc}</p>
+                      </div>
+                      <button onClick={()=>{ setSelectedType(session.type); buildAndShowWorkout(session.type); setView("workout"); }} style={{ background:isSessionToday?session.color:"none", border:`1px solid ${isSessionToday?session.color:C.border}`, borderRadius:8, padding:"6px 12px", color:isSessionToday?"#fff":C.muted, fontSize:12, fontWeight:700, cursor:"pointer", fontFamily:FONT, flexShrink:0 }}>Start</button>
                     </div>
-                    <div style={{ flex:1 }}>
-                      <p style={{ color:C.text, fontWeight:700, fontSize:14, margin:0 }}>{weekPlan.days[i] || `Session ${i+1}`} — {session.label}</p>
-                      <p style={{ color:C.muted, fontSize:12, margin:"2px 0 0" }}>{session.desc}</p>
-                    </div>
-                    <button onClick={()=>{ setSelectedType(session.type); buildAndShowWorkout(session.type); setView("workout"); }} style={{ background:session.color, border:"none", borderRadius:8, padding:"6px 12px", color:"#fff", fontSize:12, fontWeight:700, cursor:"pointer", fontFamily:FONT, flexShrink:0 }}>Start</button>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               {/* Rest days */}
@@ -2547,13 +2630,21 @@ const TrainTab = ({ profile, workoutLog, setWorkoutLog, setProfile, savedWorkout
       </>}
 
       {view==="workout"&&<>
-        {!activeWorkout&&<Card>
-          <p style={{ color:C.muted, fontSize:12, fontWeight:600, letterSpacing:"0.06em", marginBottom:12 }}>CHOOSE WORKOUT</p>
-          <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:14 }}>
-            {Object.entries(WORKOUTS).map(([key,val])=><BigChip key={key} color={val.color} active={selectedType===key} onClick={()=>setSelectedType(key)}>{key.replace(/-/g," ")}</BigChip>)}
-          </div>
-          <Btn onClick={()=>buildAndShowWorkout(selectedType)} color={WORKOUTS[selectedType].color} style={{ width:"100%" }}>✦ Build My Workout</Btn>
-        </Card>}
+        {!activeWorkout&&<>
+          {isGuided && todaySession && (
+            <div style={{ background:`${C.orange}10`, border:`1px solid ${C.orange}30`, borderRadius:14, padding:"10px 14px", marginBottom:12, display:"flex", gap:10, alignItems:"center" }}>
+              <span style={{ fontSize:18, flexShrink:0 }}>💡</span>
+              <p style={{ color:C.text, fontSize:13, margin:0, lineHeight:1.5 }}>Your programme has <strong>{todaySession.label}</strong> scheduled today. Choose a custom workout below if you want something different.</p>
+            </div>
+          )}
+          <Card>
+            <p style={{ color:C.muted, fontSize:12, fontWeight:600, letterSpacing:"0.06em", marginBottom:12 }}>{isGuided ? "CUSTOM WORKOUT" : "CHOOSE WORKOUT"}</p>
+            <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:14 }}>
+              {Object.entries(WORKOUTS).map(([key,val])=><BigChip key={key} color={val.color} active={selectedType===key} onClick={()=>setSelectedType(key)}>{key.replace(/-/g," ")}</BigChip>)}
+            </div>
+            <Btn onClick={()=>buildAndShowWorkout(selectedType)} color={WORKOUTS[selectedType].color} style={{ width:"100%" }}>✦ Build My Workout</Btn>
+          </Card>
+        </>}
 
         {activeWorkout&&<>
           <div style={{ background:`linear-gradient(135deg, ${activeWorkout.color}, ${activeWorkout.color}88)`, borderRadius:16, padding:"16px 18px", marginBottom:14, color:"#fff" }}>
