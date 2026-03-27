@@ -1960,6 +1960,12 @@ const MealsTab = ({ profile, favourites, setFavourites, removed, setRemoved, mea
     const allItems = {};
     mealPlan.days.forEach(day => {
       day.meals.forEach(meal => {
+        // Skip leftover meals — their ingredients are already counted from the original dinner
+        const isLeftover = meal.name?.toLowerCase().includes("leftover") ||
+                           meal.method?.toLowerCase().includes("leftover") ||
+                           meal.name?.toLowerCase().includes("using leftover");
+        if (isLeftover) return;
+
         meal.items.forEach(item => {
           const stripped = item.replace(/\s*\([^)]*\)/g, "").trim();
           const key = stripped.toLowerCase();
