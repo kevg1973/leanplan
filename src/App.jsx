@@ -4415,11 +4415,6 @@ function AppInner() {
 
 
 
-  // Show tip splash on every open (after profile is loaded)
-  if (showTipSplash && profile && !showAuth && !showWelcome && !showOnboarding) {
-    return <TipSplashScreen tip={DAILY_TIPS[splashTipIdx]} onDismiss={()=>setShowTipSplash(false)} />;
-  }
-
   // Apply theme first — needed by all render paths
   const isDark = darkOverride !== null ? darkOverride : systemDark;
   C = isDark ? DARK : LIGHT;
@@ -4430,6 +4425,11 @@ function AppInner() {
   if (showSetPassword) return <SetPasswordScreen onDone={() => {
     setShowSetPassword(false);
   }} />;
+
+  // Show tip splash on every open (after profile is loaded)
+  if (showTipSplash && profile && !showAuth && !showWelcome && !showOnboarding && !showSetPassword) {
+    return <TipSplashScreen tip={DAILY_TIPS[splashTipIdx]} onDismiss={()=>setShowTipSplash(false)} />;
+  }
 
   // 1. Auth screen — shown when explicitly requested
   if (showAuth) return <AuthScreen
