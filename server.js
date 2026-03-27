@@ -199,31 +199,25 @@ app.post("/api/stripe/webhook", async (req, res) => {
         console.log(`Webhook: profile updated for ${email}`);
       }
 
-      // ── 3. Generate password reset link (acts as "set your password" link) ───
-      const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
-        type: "recovery",
-        email,
-        options: {
-          redirectTo: `${APP_URL}?type=recovery`,
-        },
+      // ── 3. Set a temporary password and email it directly ────────────────────
+      const tempPassword = "LP-" + Math.random().toString(36).slice(2, 8).toUpperCase() + Math.floor(Math.random()*100);
+
+      const { error: pwError } = await supabaseAdmin.auth.admin.updateUserById(userId, {
+        password: tempPassword,
       });
 
-      if (linkError) {
-        console.error("Webhook: failed to generate password link:", linkError.message);
-        // Don't fail the webhook — account was created, just no email
-        return res.json({ received: true });
+      if (pwError) {
+        console.error("Webhook: failed to set temp password:", pwError.message);
       }
 
-      const setPasswordUrl = linkData.properties?.action_link;
-
-      // ── 4. Send "set your password" email via Resend ─────────────────────────
+      // ── 4. Send welcome email with temp password via Resend ───────────────────
       const planLabel = plan === "annual" ? "Annual" : "Monthly";
       const planPrice = plan === "annual" ? "£39.99/year" : "£4.99/month";
 
       const { error: emailError } = await resend.emails.send({
         from: "LeanPlan <hello@leanplan.uk>",
         to: email,
-        subject: "Welcome to LeanPlan — set your password to sync across devices",
+        subject: "Welcome to LeanPlan — your account is ready",
         html: `<!DOCTYPE html>
 <html>
 <head>
@@ -254,23 +248,30 @@ app.post("/api/stripe/webhook", async (req, res) => {
               <p style="margin:0 0 8px 0;font-size:13px;font-weight:600;color:#3b82f6;text-transform:uppercase;letter-spacing:1px;">You're in 🎉</p>
               <h1 style="margin:0 0 16px 0;font-size:24px;font-weight:700;color:#ffffff;line-height:1.3;">Welcome to LeanPlan Pro</h1>
               <p style="margin:0 0 24px 0;font-size:15px;color:#9ca3af;line-height:1.6;">
-                Your <strong style="color:#ffffff;">${planLabel} plan (${planPrice})</strong> is active. Set a password to keep your meal plans, workouts and progress synced across all your devices.
+                Your <strong style="color:#ffffff;">${planLabel} plan (${planPrice})</strong> is active. Sign in to sync your data across all your devices.
               </p>
 
+              <!-- Credentials box -->
+              <div style="background:#0a0a0a;border:1px solid #3b82f6;border-radius:12px;padding:20px 24px;margin-bottom:24px;">
+                <p style="margin:0 0 12px 0;font-size:13px;font-weight:600;color:#3b82f6;text-transform:uppercase;letter-spacing:0.8px;">Your sign-in details</p>
+                <p style="margin:0 0 8px 0;font-size:14px;color:#9ca3af;">Email: <strong style="color:#ffffff;">${email}</strong></p>
+                <p style="margin:0;font-size:14px;color:#9ca3af;">Temporary password: <strong style="color:#ffffff;font-size:18px;letter-spacing:2px;">${tempPassword}</strong></p>
+              </div>
+
               <!-- CTA Button -->
-              <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:20px;">
                 <tr>
                   <td align="center">
-                    <a href="${setPasswordUrl}"
+                    <a href="${APP_URL}"
                        style="display:inline-block;background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:#ffffff;text-decoration:none;font-size:16px;font-weight:600;padding:16px 36px;border-radius:12px;letter-spacing:0.2px;">
-                      Set Your Password →
+                      Open LeanPlan →
                     </a>
                   </td>
                 </tr>
               </table>
 
               <p style="margin:0 0 24px 0;font-size:13px;color:#6b7280;text-align:center;">
-                This link expires in 24 hours. If you didn't subscribe, you can safely ignore this email.
+                Tap Sign In, enter your email and temporary password, then change it in your Profile settings.
               </p>
 
               <!-- Divider -->
@@ -279,21 +280,11 @@ app.post("/api/stripe/webhook", async (req, res) => {
               <!-- What's included -->
               <p style="margin:0 0 14px 0;font-size:13px;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:0.8px;">What's included</p>
               <table width="100%" cellpadding="0" cellspacing="0">
-                <tr>
-                  <td style="padding:6px 0;font-size:14px;color:#d1d5db;">✅ &nbsp;AI-powered personalised meal plans</td>
-                </tr>
-                <tr>
-                  <td style="padding:6px 0;font-size:14px;color:#d1d5db;">✅ &nbsp;Guided workout programme (16 weeks)</td>
-                </tr>
-                <tr>
-                  <td style="padding:6px 0;font-size:14px;color:#d1d5db;">✅ &nbsp;AI nutrition & fitness coach</td>
-                </tr>
-                <tr>
-                  <td style="padding:6px 0;font-size:14px;color:#d1d5db;">✅ &nbsp;Progress tracking & measurements</td>
-                </tr>
-                <tr>
-                  <td style="padding:6px 0;font-size:14px;color:#d1d5db;">✅ &nbsp;Smart shopping list with pantry</td>
-                </tr>
+                <tr><td style="padding:6px 0;font-size:14px;color:#d1d5db;">✅ &nbsp;AI-powered personalised meal plans</td></tr>
+                <tr><td style="padding:6px 0;font-size:14px;color:#d1d5db;">✅ &nbsp;Guided workout programme (16 weeks)</td></tr>
+                <tr><td style="padding:6px 0;font-size:14px;color:#d1d5db;">✅ &nbsp;AI nutrition & fitness coach</td></tr>
+                <tr><td style="padding:6px 0;font-size:14px;color:#d1d5db;">✅ &nbsp;Progress tracking & measurements</td></tr>
+                <tr><td style="padding:6px 0;font-size:14px;color:#d1d5db;">✅ &nbsp;Smart shopping list with pantry</td></tr>
               </table>
 
             </td>

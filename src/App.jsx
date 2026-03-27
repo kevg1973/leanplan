@@ -3353,7 +3353,14 @@ const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDar
           <div>
             <Row label="Signed in as" value={user.email} />
             <Row label="Data sync" value="✓ Synced to cloud" color={C.green} last />
-            <div style={{ padding:"12px 16px" }}>
+            <div style={{ padding:"12px 16px", display:"flex", flexDirection:"column", gap:8 }}>
+              <Btn outline color={C.accent} onClick={async()=>{
+                const newPw = prompt("Enter new password (min 6 characters):");
+                if (!newPw || newPw.length < 6) return;
+                const { error } = await supabase.auth.updateUser({ password: newPw });
+                if (error) alert("Failed to update password: " + error.message);
+                else alert("Password updated successfully!");
+              }} style={{ width:"100%" }}>Change Password</Btn>
               <Btn outline color={C.red} onClick={async()=>{ await supabase.auth.signOut(); }} style={{ width:"100%" }}>Sign Out</Btn>
             </div>
           </div>
