@@ -2993,9 +2993,69 @@ const TrackTab = ({ profile, entries, setEntries, measurements, setMeasurements,
 const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDarkOverride, isPro, proData, onUpgrade, user, onShowAuth }) => {
   const [editing, setEditing] = useState(null);
   const [tempData, setTempData] = useState({});
+  const [showChangePw, setShowChangePw] = useState(false);
+  const [newPw, setNewPw] = useState("");
+  const [confirmPw, setConfirmPw] = useState("");
+  const [pwLoading, setPwLoading] = useState(false);
+  const [pwError, setPwError] = useState(null);
+  const [pwSuccess, setPwSuccess] = useState(false);
   const toggleArr = (k,v) => setTempData(d=>({...d,[k]:d[k].includes(v)?d[k].filter(x=>x!==v):[...d[k],v]}));
   const startEdit = (s) => { setTempData({...profile}); setEditing(s); };
   const save = () => { setProfile({...profile,...tempData}); setEditing(null); };
+
+  if (showChangePw) return (
+    <div style={{ padding:"0 20px", maxWidth:480, margin:"0 auto" }}>
+      <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:28, paddingTop:8 }}>
+        <button onClick={()=>{ setShowChangePw(false); setNewPw(""); setConfirmPw(""); setPwError(null); setPwSuccess(false); }} style={{ background:"none", border:"none", color:C.accent, fontSize:16, cursor:"pointer", fontFamily:FONT }}>←</button>
+        <h2 style={{ color:C.text, fontSize:20, fontWeight:700, margin:0 }}>Change Password</h2>
+      </div>
+
+      {pwSuccess ? (
+        <div style={{ textAlign:"center", padding:"40px 0" }}>
+          <div style={{ fontSize:48, marginBottom:16 }}>✅</div>
+          <h3 style={{ color:C.text, fontSize:20, fontWeight:700, marginBottom:8 }}>Password updated!</h3>
+          <p style={{ color:C.muted, fontSize:15 }}>Your new password is saved.</p>
+          <Btn color={C.accent} onClick={()=>{ setShowChangePw(false); setNewPw(""); setConfirmPw(""); setPwSuccess(false); }} style={{ marginTop:24 }}>Done</Btn>
+        </div>
+      ) : (
+        <>
+          <div style={{ marginBottom:14 }}>
+            <p style={{ color:C.textSec, fontSize:13, fontWeight:500, marginBottom:6 }}>New password</p>
+            <TInput
+              value={newPw}
+              onChange={e=>setNewPw(e.target.value)}
+              placeholder="Min 6 characters"
+              type="password"
+              autoComplete="new-password"
+            />
+          </div>
+          <div style={{ marginBottom:20 }}>
+            <p style={{ color:C.textSec, fontSize:13, fontWeight:500, marginBottom:6 }}>Confirm password</p>
+            <TInput
+              value={confirmPw}
+              onChange={e=>setConfirmPw(e.target.value)}
+              placeholder="Repeat new password"
+              type="password"
+              autoComplete="new-password"
+            />
+          </div>
+          {pwError && <div style={{ background:`${C.red}10`, border:`1px solid ${C.red}33`, borderRadius:10, padding:"10px 14px", marginBottom:14 }}>
+            <p style={{ color:C.red, fontSize:13, margin:0 }}>{pwError}</p>
+          </div>}
+          <Btn color={C.accent} disabled={pwLoading} onClick={async()=>{
+            if (!newPw || newPw.length < 6) { setPwError("Password must be at least 6 characters"); return; }
+            if (newPw !== confirmPw) { setPwError("Passwords don't match"); return; }
+            setPwLoading(true); setPwError(null);
+            const { error } = await supabase.auth.updateUser({ password: newPw });
+            if (error) { setPwError(error.message); setPwLoading(false); return; }
+            setPwSuccess(true); setPwLoading(false);
+          }} style={{ width:"100%" }}>
+            {pwLoading ? "Updating..." : "Update Password"}
+          </Btn>
+        </>
+      )}
+    </div>
+  );
 
   if (editing) return (
     <div>
@@ -3354,13 +3414,7 @@ const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDar
             <Row label="Signed in as" value={user.email} />
             <Row label="Data sync" value="✓ Synced to cloud" color={C.green} last />
             <div style={{ padding:"12px 16px", display:"flex", flexDirection:"column", gap:8 }}>
-              <Btn outline color={C.accent} onClick={async()=>{
-                const newPw = prompt("Enter new password (min 6 characters):");
-                if (!newPw || newPw.length < 6) return;
-                const { error } = await supabase.auth.updateUser({ password: newPw });
-                if (error) alert("Failed to update password: " + error.message);
-                else alert("Password updated successfully!");
-              }} style={{ width:"100%" }}>Change Password</Btn>
+              <Btn outline color={C.accent} onClick={()=>setShowChangePw(true)} style={{ width:"100%" }}>Change Password</Btn>
               <Btn outline color={C.red} onClick={async()=>{ await supabase.auth.signOut(); }} style={{ width:"100%" }}>Sign Out</Btn>
             </div>
           </div>
