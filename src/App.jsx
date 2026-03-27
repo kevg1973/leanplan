@@ -3960,33 +3960,37 @@ const SetPasswordScreen = ({ onDone }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [done, setDone] = useState(false);
+  const [sessionReady, setSessionReady] = useState(false);
+
+  // Restore session immediately on mount
+  useEffect(() => {
+    const restoreSession = async () => {
+      // Check if session already exists
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) { setSessionReady(true); return; }
+
+      // Try to restore from stored tokens
+      const accessToken = localStorage.getItem("leanplan_recovery_token");
+      const refreshToken = localStorage.getItem("leanplan_recovery_refresh");
+      if (accessToken && refreshToken) {
+        const { error } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken,
+        });
+        if (!error) { setSessionReady(true); return; }
+      }
+
+      // No valid session — link has expired
+      setSessionReady(false);
+      setError("Your link has expired. Please use 'Forgot password' to get a new one.");
+    };
+    restoreSession();
+  }, []);
 
   const handleSet = async () => {
     if (!password || password.length < 6) { setError("Password must be at least 6 characters"); return; }
     if (password !== confirm) { setError("Passwords don't match"); return; }
     setLoading(true); setError(null);
-
-    // Restore session from stored tokens if needed
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      const accessToken = localStorage.getItem("leanplan_recovery_token");
-      const refreshToken = localStorage.getItem("leanplan_recovery_refresh");
-      if (accessToken && refreshToken) {
-        const { error: sessionError } = await supabase.auth.setSession({
-          access_token: accessToken,
-          refresh_token: refreshToken,
-        });
-        if (sessionError) {
-          setError("Your link has expired. Please use 'Forgot password' to get a new one.");
-          setLoading(false);
-          return;
-        }
-      } else {
-        setError("Your link has expired. Please use 'Forgot password' to get a new one.");
-        setLoading(false);
-        return;
-      }
-    }
 
     const { error } = await supabase.auth.updateUser({ password });
     if (error) { setError(error.message); setLoading(false); return; }
@@ -4033,7 +4037,7 @@ const SetPasswordScreen = ({ onDone }) => {
               <p style={{ color:C.red, fontSize:13, margin:0 }}>{error}</p>
             </div>}
 
-            <Btn onClick={handleSet} disabled={loading} color={C.accent} style={{ width:"100%", marginBottom:12 }}>
+            <Btn onClick={handleSet} disabled={loading || !sessionReady} color={C.accent} style={{ width:"100%", marginBottom:12 }}>
               {loading ? "Saving..." : "Set Password"}
             </Btn>
           </>
