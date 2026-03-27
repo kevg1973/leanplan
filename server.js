@@ -204,7 +204,7 @@ app.post("/api/stripe/webhook", async (req, res) => {
         type: "recovery",
         email,
         options: {
-          redirectTo: `${APP_URL}?welcome=true`,
+          redirectTo: `${APP_URL}?type=recovery`,
         },
       });
 
