@@ -3959,6 +3959,95 @@ class ErrorBoundary extends React.Component {
 
 
 
+// ── Create Account Screen (shown after onboarding) ───────────────────────────
+const CreateAccountScreen = ({ profileData, onDone }) => {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const handleCreate = async () => {
+    if (!email) { setError("Please enter your email address"); return; }
+    if (!password || password.length < 6) { setError("Password must be at least 6 characters"); return; }
+    setLoading(true); setError(null);
+
+    // Create Supabase account
+    const { data, error: signUpError } = await supabase.auth.signUp({ email, password });
+    if (signUpError) { setError(signUpError.message); setLoading(false); return; }
+
+    const userId = data.user?.id;
+    if (!userId) { setError("Something went wrong — please try again"); setLoading(false); return; }
+
+    // Save profile data to Supabase immediately
+    try {
+      await supabase.from("profiles").upsert({
+        id: userId,
+        email,
+        profile_data: profileData,
+        entries: [],
+        favourites: [],
+        removed: [],
+        meal_log: {},
+        workout_log: {},
+        water: {},
+        journal: {},
+        measurements: [],
+      });
+    } catch(e) { console.error("Profile save error:", e); }
+
+    setLoading(false);
+    onDone(data.user, email);
+  };
+
+  return (
+    <div style={{ minHeight:"100vh", background:C.bg, fontFamily:FONT, display:"flex", flexDirection:"column", justifyContent:"center", padding:"0 20px" }}>
+      <div style={{ maxWidth:400, margin:"0 auto", width:"100%" }}>
+
+        {/* Header */}
+        <div style={{ textAlign:"center", marginBottom:36 }}>
+          <div style={{ fontSize:48, marginBottom:12 }}>🎉</div>
+          <h1 style={{ fontSize:26, fontWeight:800, color:C.text, margin:"0 0 10px" }}>Your personal plan is ready</h1>
+          <p style={{ color:C.muted, fontSize:15, lineHeight:1.6, margin:0 }}>Create your account to save it. You'll have 7 days free to explore the app.</p>
+        </div>
+
+        {/* Form */}
+        <div style={{ marginBottom:14 }}>
+          <p style={{ color:C.textSec, fontSize:13, fontWeight:500, marginBottom:6 }}>Email address</p>
+          <TInput
+            value={email}
+            onChange={e=>setEmail(e.target.value)}
+            placeholder="your@email.com"
+            type="email"
+            autoComplete="email"
+          />
+        </div>
+        <div style={{ marginBottom:20 }}>
+          <p style={{ color:C.textSec, fontSize:13, fontWeight:500, marginBottom:6 }}>Password</p>
+          <TInput
+            value={password}
+            onChange={e=>setPassword(e.target.value)}
+            placeholder="Min 6 characters"
+            type="password"
+            autoComplete="new-password"
+          />
+        </div>
+
+        {error && <div style={{ background:`${C.red}10`, border:`1px solid ${C.red}33`, borderRadius:10, padding:"10px 14px", marginBottom:14 }}>
+          <p style={{ color:C.red, fontSize:13, margin:0 }}>{error}</p>
+        </div>}
+
+        <Btn onClick={handleCreate} disabled={loading} color={C.accent} style={{ width:"100%", fontSize:17, padding:"16px 0", marginBottom:12 }}>
+          {loading ? "Creating your account..." : "Save My Plan"}
+        </Btn>
+
+        <p style={{ color:C.muted, fontSize:12, textAlign:"center", lineHeight:1.6, margin:0 }}>
+          By continuing you agree to our terms. Your 7-day free trial starts now. Cancel anytime.
+        </p>
+      </div>
+    </div>
+  );
+};
+
 // ── Welcome Screen ────────────────────────────────────────────────────────────
 const WelcomeScreen = ({ onNew, onSignIn }) => (
   <div style={{ minHeight:"100vh", background:C.bg, fontFamily:FONT, display:"flex", flexDirection:"column", justifyContent:"center", padding:"0 20px" }}>
@@ -4179,6 +4268,8 @@ function AppInner() {
   const [user, setUser] = useState(null); // Supabase user
   const [authChecked, setAuthChecked] = useState(false); // has auth been checked
   const [showAuth, setShowAuth] = useState(false); // show auth screen
+  const [showCreateAccount, setShowCreateAccount] = useState(false); // show create account after onboarding
+  const [pendingProfile, setPendingProfile] = useState(null); // profile data waiting for account creation
   const [showTipSplash, setShowTipSplash] = useState(true);
   const [splashTipIdx] = useState(()=>Math.floor(Math.random()*DAILY_TIPS.length)); // show tip on open
   const [showWelcome, setShowWelcome] = useState(false);
@@ -4438,22 +4529,30 @@ function AppInner() {
 
   // 3. Welcome screen — first time, no profile, no user
   if (!profile && !user && !showOnboarding) return <WelcomeScreen
-    onNew={()=>{ setTrialStart(); setShowOnboarding(true); }}
+    onNew={()=>{ setShowOnboarding(true); }}
     onSignIn={()=>setShowAuth(true)}
   />;
 
   // 4. Onboarding — after Get Started
-  if (!profile) return <Onboarding onDone={p=>{ 
-    setProfile(p);
-    setTrialStart();
+  if (!profile && !showCreateAccount) return <Onboarding onDone={p=>{ 
+    setPendingProfile(p);
+    setShowCreateAccount(true);
     try {
       localStorage.setItem("leanplan_v4", JSON.stringify({profile:p, entries:[], favourites:[], removed:[], mealLog:{}, workoutLog:{}, water:{}, journal:{}, measurements:[], darkOverride:null}));
     } catch(e){}
-    // If logged in, save to Supabase too
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) saveToSupabase(session.user.id, { profile:p, entries:[], favourites:[], removed:[], mealLog:{}, workoutLog:{}, water:{}, journal:{}, measurements:[], darkOverride:null });
-    });
   }} />;
+
+  // 4b. Create account — mandatory after onboarding
+  if (showCreateAccount && pendingProfile) return <CreateAccountScreen
+    profileData={pendingProfile}
+    onDone={async (user, email) => {
+      setUser(user);
+      setProfile(pendingProfile);
+      setShowCreateAccount(false);
+      setPendingProfile(null);
+      setTrialStart();
+    }}
+  />;
 
   // 5. Trial expired — show subscribe screen
   if (isTrialExpired() && !isPro) return <TrialExpiredScreen onSubscribe={()=>setShowPaywall(true)} />;

@@ -125,17 +125,15 @@ app.post("/api/stripe/webhook", async (req, res) => {
 
   console.log("Webhook event:", event.type);
 
-  // ── New subscription: create Supabase account + send set-password email ──────
+  // ── New subscription: mark user as pro ───────────────────────────────────────
   if (event.type === "checkout.session.completed") {
     const session = event.data.object;
 
-    // Only handle paid subscriptions
     if (session.mode !== "subscription" || session.payment_status !== "paid") {
       return res.json({ received: true });
     }
 
     try {
-      // Retrieve full session to get customer email
       const fullSession = await stripe.checkout.sessions.retrieve(session.id, {
         expand: ["customer"],
       });
@@ -152,171 +150,91 @@ app.post("/api/stripe/webhook", async (req, res) => {
         return res.json({ received: true });
       }
 
-      console.log(`Webhook: new subscriber ${email}, plan=${plan}, customer=${customerId}`);
+      console.log(`Webhook: new subscriber ${email}, plan=${plan}`);
 
-      // ── 1. Create or retrieve Supabase user ──────────────────────────────────
-      // Try to find existing user first
-      const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
-      const existingUser = existingUsers?.users?.find(u => u.email === email);
-
-      let userId;
+      // Find existing Supabase user by email and mark as pro
+      const { data: { users } } = await supabaseAdmin.auth.admin.listUsers();
+      const existingUser = users?.find(u => u.email === email);
 
       if (existingUser) {
-        userId = existingUser.id;
-        console.log(`Webhook: found existing user ${userId}`);
+        const { error } = await supabaseAdmin
+          .from("profiles")
+          .upsert({
+            id: existingUser.id,
+            email,
+            is_pro: true,
+            stripe_customer_id: customerId,
+            stripe_subscription_id: subscriptionId,
+            stripe_plan: plan,
+          }, { onConflict: "id" });
+
+        if (error) console.error("Webhook: failed to update profile:", error.message);
+        else console.log(`Webhook: marked ${email} as pro`);
       } else {
-        // Create new user with a random password — they'll set their own via email link
-        const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
-          email,
-          email_confirm: true, // skip email confirmation — we're handling it ourselves
-          user_metadata: { source: "stripe" },
-        });
-
-        if (createError) {
-          console.error("Webhook: failed to create Supabase user:", createError.message);
-          return res.status(500).json({ error: "Failed to create user" });
-        }
-
-        userId = newUser.user.id;
-        console.log(`Webhook: created new user ${userId}`);
-      }
-
-      // ── 2. Upsert profile row with pro status + Stripe IDs ───────────────────
-      const { error: profileError } = await supabaseAdmin
-        .from("profiles")
-        .upsert({
-          id: userId,
+        // User hasn't created an account yet — store Stripe details for later
+        // When they create their account, is_pro will be set on first sync
+        console.log(`Webhook: no account found for ${email} — storing stripe data`);
+        await supabaseAdmin.from("profiles").upsert({
+          id: fullSession.customer,
           email,
           is_pro: true,
           stripe_customer_id: customerId,
           stripe_subscription_id: subscriptionId,
           stripe_plan: plan,
         }, { onConflict: "id" });
-
-      if (profileError) {
-        console.error("Webhook: failed to upsert profile:", profileError.message);
-      } else {
-        console.log(`Webhook: profile updated for ${email}`);
       }
 
-      // ── 3. Set a temporary password and email it directly ────────────────────
-      const tempPassword = "LP-" + Math.random().toString(36).slice(2, 8).toUpperCase() + Math.floor(Math.random()*100);
-
-      const { error: pwError } = await supabaseAdmin.auth.admin.updateUserById(userId, {
-        password: tempPassword,
-      });
-
-      if (pwError) {
-        console.error("Webhook: failed to set temp password:", pwError.message);
-      }
-
-      // ── 4. Send welcome email with temp password via Resend ───────────────────
+      // Send welcome email via Resend
       const planLabel = plan === "annual" ? "Annual" : "Monthly";
       const planPrice = plan === "annual" ? "£39.99/year" : "£4.99/month";
 
-      const { error: emailError } = await resend.emails.send({
+      await resend.emails.send({
         from: "LeanPlan <hello@leanplan.uk>",
         to: email,
-        subject: "Welcome to LeanPlan — your account is ready",
+        subject: "Welcome to LeanPlan Pro 💪",
         html: `<!DOCTYPE html>
 <html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Welcome to LeanPlan</title>
-</head>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"></head>
 <body style="margin:0;padding:0;background-color:#0a0a0a;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
   <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#0a0a0a;padding:40px 20px;">
-    <tr>
-      <td align="center">
-        <table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;">
-
-          <!-- Logo / Header -->
-          <tr>
-            <td align="center" style="padding-bottom:32px;">
-              <div style="display:inline-flex;align-items:center;gap:10px;">
-                <div style="width:44px;height:44px;background:linear-gradient(135deg,#3b82f6,#1d4ed8);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;text-align:center;line-height:44px;">💪</div>
-                <span style="font-size:26px;font-weight:700;color:#ffffff;letter-spacing:-0.5px;">Lean<span style="color:#3b82f6;">Plan</span></span>
-              </div>
-            </td>
-          </tr>
-
-          <!-- Main card -->
-          <tr>
-            <td style="background:#1a1a1a;border-radius:20px;padding:36px 32px;border:1px solid #2a2a2a;">
-
-              <p style="margin:0 0 8px 0;font-size:13px;font-weight:600;color:#3b82f6;text-transform:uppercase;letter-spacing:1px;">You're in 🎉</p>
-              <h1 style="margin:0 0 16px 0;font-size:24px;font-weight:700;color:#ffffff;line-height:1.3;">Welcome to LeanPlan Pro</h1>
-              <p style="margin:0 0 24px 0;font-size:15px;color:#9ca3af;line-height:1.6;">
-                Your <strong style="color:#ffffff;">${planLabel} plan (${planPrice})</strong> is active. Sign in to sync your data across all your devices.
-              </p>
-
-              <!-- Credentials box -->
-              <div style="background:#0a0a0a;border:1px solid #3b82f6;border-radius:12px;padding:20px 24px;margin-bottom:24px;">
-                <p style="margin:0 0 12px 0;font-size:13px;font-weight:600;color:#3b82f6;text-transform:uppercase;letter-spacing:0.8px;">Your sign-in details</p>
-                <p style="margin:0 0 8px 0;font-size:14px;color:#9ca3af;">Email: <strong style="color:#ffffff;">${email}</strong></p>
-                <p style="margin:0;font-size:14px;color:#9ca3af;">Temporary password: <strong style="color:#ffffff;font-size:18px;letter-spacing:2px;">${tempPassword}</strong></p>
-              </div>
-
-              <!-- CTA Button -->
-              <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:20px;">
-                <tr>
-                  <td align="center">
-                    <a href="${APP_URL}"
-                       style="display:inline-block;background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:#ffffff;text-decoration:none;font-size:16px;font-weight:600;padding:16px 36px;border-radius:12px;letter-spacing:0.2px;">
-                      Open LeanPlan →
-                    </a>
-                  </td>
-                </tr>
-              </table>
-
-              <p style="margin:0 0 24px 0;font-size:13px;color:#6b7280;text-align:center;">
-                Tap Sign In, enter your email and temporary password, then change it in your Profile settings.
-              </p>
-
-              <!-- Divider -->
-              <div style="border-top:1px solid #2a2a2a;margin-bottom:24px;"></div>
-
-              <!-- What's included -->
-              <p style="margin:0 0 14px 0;font-size:13px;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:0.8px;">What's included</p>
-              <table width="100%" cellpadding="0" cellspacing="0">
-                <tr><td style="padding:6px 0;font-size:14px;color:#d1d5db;">✅ &nbsp;AI-powered personalised meal plans</td></tr>
-                <tr><td style="padding:6px 0;font-size:14px;color:#d1d5db;">✅ &nbsp;Guided workout programme (16 weeks)</td></tr>
-                <tr><td style="padding:6px 0;font-size:14px;color:#d1d5db;">✅ &nbsp;AI nutrition & fitness coach</td></tr>
-                <tr><td style="padding:6px 0;font-size:14px;color:#d1d5db;">✅ &nbsp;Progress tracking & measurements</td></tr>
-                <tr><td style="padding:6px 0;font-size:14px;color:#d1d5db;">✅ &nbsp;Smart shopping list with pantry</td></tr>
-              </table>
-
-            </td>
-          </tr>
-
-          <!-- Footer -->
-          <tr>
-            <td align="center" style="padding-top:24px;">
-              <p style="margin:0;font-size:12px;color:#4b5563;line-height:1.6;">
-                LeanPlan · Manchester, UK<br>
-                Questions? Reply to this email or visit <a href="https://www.leanplan.uk" style="color:#3b82f6;text-decoration:none;">leanplan.uk</a>
-              </p>
-            </td>
-          </tr>
-
-        </table>
-      </td>
-    </tr>
+    <tr><td align="center">
+      <table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;">
+        <tr><td align="center" style="padding-bottom:32px;">
+          <span style="font-size:26px;font-weight:700;color:#ffffff;">Lean<span style="color:#3b82f6;">Plan</span></span>
+        </td></tr>
+        <tr><td style="background:#1a1a1a;border-radius:20px;padding:36px 32px;border:1px solid #2a2a2a;">
+          <p style="margin:0 0 8px;font-size:13px;font-weight:600;color:#3b82f6;text-transform:uppercase;letter-spacing:1px;">You're in 🎉</p>
+          <h1 style="margin:0 0 16px;font-size:24px;font-weight:700;color:#ffffff;">Welcome to LeanPlan Pro</h1>
+          <p style="margin:0 0 24px;font-size:15px;color:#9ca3af;line-height:1.6;">Your <strong style="color:#ffffff;">${planLabel} plan (${planPrice})</strong> is now active. Open the app to continue your journey.</p>
+          <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+            <tr><td align="center">
+              <a href="${APP_URL}" style="display:inline-block;background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:#ffffff;text-decoration:none;font-size:16px;font-weight:600;padding:16px 36px;border-radius:12px;">Open LeanPlan →</a>
+            </td></tr>
+          </table>
+          <div style="border-top:1px solid #2a2a2a;margin-bottom:24px;"></div>
+          <table width="100%" cellpadding="0" cellspacing="0">
+            <tr><td style="padding:6px 0;font-size:14px;color:#d1d5db;">✅ &nbsp;AI-powered personalised meal plans</td></tr>
+            <tr><td style="padding:6px 0;font-size:14px;color:#d1d5db;">✅ &nbsp;Guided workout programme (16 weeks)</td></tr>
+            <tr><td style="padding:6px 0;font-size:14px;color:#d1d5db;">✅ &nbsp;AI nutrition & fitness coach</td></tr>
+            <tr><td style="padding:6px 0;font-size:14px;color:#d1d5db;">✅ &nbsp;Progress tracking & measurements</td></tr>
+            <tr><td style="padding:6px 0;font-size:14px;color:#d1d5db;">✅ &nbsp;Smart shopping list with pantry</td></tr>
+          </table>
+        </td></tr>
+        <tr><td align="center" style="padding-top:24px;">
+          <p style="margin:0;font-size:12px;color:#4b5563;line-height:1.6;">LeanPlan · Manchester, UK<br>
+          Questions? Reply to this email or visit <a href="https://www.leanplan.uk" style="color:#3b82f6;text-decoration:none;">leanplan.uk</a></p>
+        </td></tr>
+      </table>
+    </td></tr>
   </table>
 </body>
 </html>`,
       });
 
-      if (emailError) {
-        console.error("Webhook: Resend email failed:", emailError.message);
-      } else {
-        console.log(`Webhook: set-password email sent to ${email}`);
-      }
+      console.log(`Webhook: welcome email sent to ${email}`);
 
     } catch (err) {
       console.error("Webhook checkout.session.completed error:", err.message);
-      // Always return 200 to Stripe — don't retry webhook for app errors
     }
   }
 
