@@ -3,6 +3,8 @@ import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 import Anthropic from "@anthropic-ai/sdk";
 import Stripe from "stripe";
+import { createClient } from "@supabase/supabase-js";
+import { Resend } from "resend";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -10,6 +12,15 @@ const PORT = process.env.PORT || 3000;
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+
+// ── Supabase admin client (service role — server only) ────────────────────────
+const supabaseAdmin = createClient(
+  process.env.VITE_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
+
+// ── Resend email client ───────────────────────────────────────────────────────
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 // ── Auto detect test/live from secret key ────────────────────────────────────
 const IS_TEST = process.env.STRIPE_SECRET_KEY?.startsWith("sk_test_");
@@ -112,11 +123,232 @@ app.post("/api/stripe/webhook", async (req, res) => {
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
-  // Handle subscription cancellation / expiry
+  console.log("Webhook event:", event.type);
+
+  // ── New subscription: create Supabase account + send set-password email ──────
+  if (event.type === "checkout.session.completed") {
+    const session = event.data.object;
+
+    // Only handle paid subscriptions
+    if (session.mode !== "subscription" || session.payment_status !== "paid") {
+      return res.json({ received: true });
+    }
+
+    try {
+      // Retrieve full session to get customer email
+      const fullSession = await stripe.checkout.sessions.retrieve(session.id, {
+        expand: ["customer"],
+      });
+
+      const email = fullSession.customer_details?.email || fullSession.customer?.email;
+      const customerId = typeof fullSession.customer === "string"
+        ? fullSession.customer
+        : fullSession.customer?.id;
+      const subscriptionId = fullSession.subscription;
+      const plan = fullSession.metadata?.plan || "monthly";
+
+      if (!email) {
+        console.error("Webhook: no email found in session", session.id);
+        return res.json({ received: true });
+      }
+
+      console.log(`Webhook: new subscriber ${email}, plan=${plan}, customer=${customerId}`);
+
+      // ── 1. Create or retrieve Supabase user ──────────────────────────────────
+      // Try to find existing user first
+      const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
+      const existingUser = existingUsers?.users?.find(u => u.email === email);
+
+      let userId;
+
+      if (existingUser) {
+        userId = existingUser.id;
+        console.log(`Webhook: found existing user ${userId}`);
+      } else {
+        // Create new user with a random password — they'll set their own via email link
+        const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
+          email,
+          email_confirm: true, // skip email confirmation — we're handling it ourselves
+          user_metadata: { source: "stripe" },
+        });
+
+        if (createError) {
+          console.error("Webhook: failed to create Supabase user:", createError.message);
+          return res.status(500).json({ error: "Failed to create user" });
+        }
+
+        userId = newUser.user.id;
+        console.log(`Webhook: created new user ${userId}`);
+      }
+
+      // ── 2. Upsert profile row with pro status + Stripe IDs ───────────────────
+      const { error: profileError } = await supabaseAdmin
+        .from("profiles")
+        .upsert({
+          id: userId,
+          email,
+          is_pro: true,
+          stripe_customer_id: customerId,
+          stripe_subscription_id: subscriptionId,
+          stripe_plan: plan,
+        }, { onConflict: "id" });
+
+      if (profileError) {
+        console.error("Webhook: failed to upsert profile:", profileError.message);
+      } else {
+        console.log(`Webhook: profile updated for ${email}`);
+      }
+
+      // ── 3. Generate password reset link (acts as "set your password" link) ───
+      const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
+        type: "recovery",
+        email,
+        options: {
+          redirectTo: `${APP_URL}?welcome=true`,
+        },
+      });
+
+      if (linkError) {
+        console.error("Webhook: failed to generate password link:", linkError.message);
+        // Don't fail the webhook — account was created, just no email
+        return res.json({ received: true });
+      }
+
+      const setPasswordUrl = linkData.properties?.action_link;
+
+      // ── 4. Send "set your password" email via Resend ─────────────────────────
+      const planLabel = plan === "annual" ? "Annual" : "Monthly";
+      const planPrice = plan === "annual" ? "£39.99/year" : "£4.99/month";
+
+      const { error: emailError } = await resend.emails.send({
+        from: "LeanPlan <hello@leanplan.uk>",
+        to: email,
+        subject: "Welcome to LeanPlan — set your password to sync across devices",
+        html: `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Welcome to LeanPlan</title>
+</head>
+<body style="margin:0;padding:0;background-color:#0a0a0a;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#0a0a0a;padding:40px 20px;">
+    <tr>
+      <td align="center">
+        <table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;">
+
+          <!-- Logo / Header -->
+          <tr>
+            <td align="center" style="padding-bottom:32px;">
+              <div style="display:inline-flex;align-items:center;gap:10px;">
+                <div style="width:44px;height:44px;background:linear-gradient(135deg,#3b82f6,#1d4ed8);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;text-align:center;line-height:44px;">💪</div>
+                <span style="font-size:26px;font-weight:700;color:#ffffff;letter-spacing:-0.5px;">Lean<span style="color:#3b82f6;">Plan</span></span>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Main card -->
+          <tr>
+            <td style="background:#1a1a1a;border-radius:20px;padding:36px 32px;border:1px solid #2a2a2a;">
+
+              <p style="margin:0 0 8px 0;font-size:13px;font-weight:600;color:#3b82f6;text-transform:uppercase;letter-spacing:1px;">You're in 🎉</p>
+              <h1 style="margin:0 0 16px 0;font-size:24px;font-weight:700;color:#ffffff;line-height:1.3;">Welcome to LeanPlan Pro</h1>
+              <p style="margin:0 0 24px 0;font-size:15px;color:#9ca3af;line-height:1.6;">
+                Your <strong style="color:#ffffff;">${planLabel} plan (${planPrice})</strong> is active. Set a password to keep your meal plans, workouts and progress synced across all your devices.
+              </p>
+
+              <!-- CTA Button -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
+                <tr>
+                  <td align="center">
+                    <a href="${setPasswordUrl}"
+                       style="display:inline-block;background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:#ffffff;text-decoration:none;font-size:16px;font-weight:600;padding:16px 36px;border-radius:12px;letter-spacing:0.2px;">
+                      Set Your Password →
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="margin:0 0 24px 0;font-size:13px;color:#6b7280;text-align:center;">
+                This link expires in 24 hours. If you didn't subscribe, you can safely ignore this email.
+              </p>
+
+              <!-- Divider -->
+              <div style="border-top:1px solid #2a2a2a;margin-bottom:24px;"></div>
+
+              <!-- What's included -->
+              <p style="margin:0 0 14px 0;font-size:13px;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:0.8px;">What's included</p>
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="padding:6px 0;font-size:14px;color:#d1d5db;">✅ &nbsp;AI-powered personalised meal plans</td>
+                </tr>
+                <tr>
+                  <td style="padding:6px 0;font-size:14px;color:#d1d5db;">✅ &nbsp;Guided workout programme (16 weeks)</td>
+                </tr>
+                <tr>
+                  <td style="padding:6px 0;font-size:14px;color:#d1d5db;">✅ &nbsp;AI nutrition & fitness coach</td>
+                </tr>
+                <tr>
+                  <td style="padding:6px 0;font-size:14px;color:#d1d5db;">✅ &nbsp;Progress tracking & measurements</td>
+                </tr>
+                <tr>
+                  <td style="padding:6px 0;font-size:14px;color:#d1d5db;">✅ &nbsp;Smart shopping list with pantry</td>
+                </tr>
+              </table>
+
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td align="center" style="padding-top:24px;">
+              <p style="margin:0;font-size:12px;color:#4b5563;line-height:1.6;">
+                LeanPlan · Manchester, UK<br>
+                Questions? Reply to this email or visit <a href="https://www.leanplan.uk" style="color:#3b82f6;text-decoration:none;">leanplan.uk</a>
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`,
+      });
+
+      if (emailError) {
+        console.error("Webhook: Resend email failed:", emailError.message);
+      } else {
+        console.log(`Webhook: set-password email sent to ${email}`);
+      }
+
+    } catch (err) {
+      console.error("Webhook checkout.session.completed error:", err.message);
+      // Always return 200 to Stripe — don't retry webhook for app errors
+    }
+  }
+
+  // ── Subscription cancelled or expired ────────────────────────────────────────
   if (event.type === "customer.subscription.deleted" ||
       event.type === "customer.subscription.paused") {
-    console.log("Subscription ended:", event.data.object.id);
-    // In a full system you'd update a DB here — for now just log it
+    const subscription = event.data.object;
+    const customerId = subscription.customer;
+
+    try {
+      const { error } = await supabaseAdmin
+        .from("profiles")
+        .update({ is_pro: false })
+        .eq("stripe_customer_id", customerId);
+
+      if (error) {
+        console.error("Webhook: failed to revoke pro for customer", customerId, error.message);
+      } else {
+        console.log(`Webhook: pro revoked for customer ${customerId}`);
+      }
+    } catch (err) {
+      console.error("Webhook subscription.deleted error:", err.message);
+    }
   }
 
   res.json({ received: true });
