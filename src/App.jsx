@@ -4080,7 +4080,7 @@ const AuthScreen = ({ onAuth, onSkip }) => {
     if (!email) { setError("Enter your email address first"); return; }
     setLoading(true);
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`
+      redirectTo: `${window.location.origin}?type=recovery`,
     });
     if (error) setError(error.message);
     else setMessage("Password reset email sent! Check your inbox.");
