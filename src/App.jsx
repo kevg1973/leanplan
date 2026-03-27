@@ -3967,6 +3967,7 @@ const SetPasswordScreen = ({ onDone }) => {
     setLoading(true); setError(null);
     const { error } = await supabase.auth.updateUser({ password });
     if (error) { setError(error.message); setLoading(false); return; }
+    localStorage.removeItem("leanplan_recovery");
     setDone(true);
     setTimeout(() => onDone(), 2000);
   };
@@ -4321,13 +4322,23 @@ function AppInner() {
     loadFromLocal();
     setLoading(false); // Show the app straight away from cache
 
-    // Check for password recovery link — must happen before Supabase processes the hash
+    // Check for password recovery link — Supabase uses either hash or query param format
     const hash = window.location.hash;
-    if (hash?.includes("type=recovery")) {
+    const search = window.location.search;
+    const isRecovery = hash?.includes("type=recovery") || search?.includes("type=recovery");
+    const hasAuthCode = search?.includes("code=") || hash?.includes("access_token");
+
+    if (isRecovery) {
+      localStorage.setItem("leanplan_recovery", "1");
       setShowSetPassword(true);
-    }
-    if (hash?.includes("access_token") || hash?.includes("type=")) {
       window.history.replaceState({}, "", "/");
+    } else if (hasAuthCode) {
+      window.history.replaceState({}, "", "/");
+    }
+
+    // Also check localStorage flag — survives PWA redirect on mobile
+    if (localStorage.getItem("leanplan_recovery") === "1") {
+      setShowSetPassword(true);
     }
 
     const finishLoading = () => {
@@ -4347,6 +4358,7 @@ function AppInner() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === "PASSWORD_RECOVERY") {
         // User clicked set-password link from email — show the set password screen
+        localStorage.setItem("leanplan_recovery", "1");
         setShowSetPassword(true);
         setUser(session?.user || null);
         clearTimeout(safetyTimer);
