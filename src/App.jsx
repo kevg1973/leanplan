@@ -3965,9 +3965,34 @@ const SetPasswordScreen = ({ onDone }) => {
     if (!password || password.length < 6) { setError("Password must be at least 6 characters"); return; }
     if (password !== confirm) { setError("Passwords don't match"); return; }
     setLoading(true); setError(null);
+
+    // Restore session from stored tokens if needed
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      const accessToken = localStorage.getItem("leanplan_recovery_token");
+      const refreshToken = localStorage.getItem("leanplan_recovery_refresh");
+      if (accessToken && refreshToken) {
+        const { error: sessionError } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken,
+        });
+        if (sessionError) {
+          setError("Your link has expired. Please use 'Forgot password' to get a new one.");
+          setLoading(false);
+          return;
+        }
+      } else {
+        setError("Your link has expired. Please use 'Forgot password' to get a new one.");
+        setLoading(false);
+        return;
+      }
+    }
+
     const { error } = await supabase.auth.updateUser({ password });
     if (error) { setError(error.message); setLoading(false); return; }
     localStorage.removeItem("leanplan_recovery");
+    localStorage.removeItem("leanplan_recovery_token");
+    localStorage.removeItem("leanplan_recovery_refresh");
     setDone(true);
     setTimeout(() => onDone(), 2000);
   };
@@ -4359,6 +4384,11 @@ function AppInner() {
       if (event === "PASSWORD_RECOVERY") {
         // User clicked set-password link from email — show the set password screen
         localStorage.setItem("leanplan_recovery", "1");
+        // Store the access token so we can use it to update password
+        if (session?.access_token) {
+          localStorage.setItem("leanplan_recovery_token", session.access_token);
+          localStorage.setItem("leanplan_recovery_refresh", session.refresh_token || "");
+        }
         setShowSetPassword(true);
         setUser(session?.user || null);
         clearTimeout(safetyTimer);
