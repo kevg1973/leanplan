@@ -3953,6 +3953,70 @@ const TrialExpiredScreen = ({ onSubscribe }) => (
   </div>
 );
 
+// ── Set Password Screen (after clicking email link) ───────────────────────────
+const SetPasswordScreen = ({ onDone }) => {
+  const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [done, setDone] = useState(false);
+
+  const handleSet = async () => {
+    if (!password || password.length < 6) { setError("Password must be at least 6 characters"); return; }
+    if (password !== confirm) { setError("Passwords don't match"); return; }
+    setLoading(true); setError(null);
+    const { error } = await supabase.auth.updateUser({ password });
+    if (error) { setError(error.message); setLoading(false); return; }
+    setDone(true);
+    setTimeout(() => onDone(), 2000);
+  };
+
+  return (
+    <div style={{ minHeight:"100vh", background:C.bg, fontFamily:FONT, display:"flex", flexDirection:"column", justifyContent:"center", padding:"0 20px" }}>
+      <div style={{ maxWidth:400, margin:"0 auto", width:"100%" }}>
+        <div style={{ textAlign:"center", marginBottom:40 }}>
+          <img src="/leanplan_app_icon.png" alt="" style={{ height:72, width:72, borderRadius:18, marginBottom:16 }} />
+          <h1 style={{ fontSize:32, fontWeight:800, color:C.text, margin:"0 0 8px" }}>
+            <span style={{ color:C.text }}>Lean</span><span style={{ color:C.accent }}>Plan</span>
+          </h1>
+        </div>
+
+        {done ? (
+          <div style={{ textAlign:"center" }}>
+            <div style={{ fontSize:48, marginBottom:16 }}>✅</div>
+            <h2 style={{ color:C.text, fontSize:22, fontWeight:700, marginBottom:8 }}>Password set!</h2>
+            <p style={{ color:C.muted, fontSize:15 }}>Taking you into the app...</p>
+          </div>
+        ) : (
+          <>
+            <div style={{ marginBottom:24 }}>
+              <h2 style={{ color:C.text, fontSize:22, fontWeight:700, margin:"0 0 6px" }}>Set your password</h2>
+              <p style={{ color:C.muted, fontSize:14, margin:0 }}>Choose a password to sign in across all your devices.</p>
+            </div>
+
+            <div style={{ marginBottom:14 }}>
+              <p style={{ color:C.textSec, fontSize:13, fontWeight:500, marginBottom:6 }}>New password</p>
+              <TInput value={password} onChange={e=>setPassword(e.target.value)} placeholder="Min 6 characters" type="password" />
+            </div>
+            <div style={{ marginBottom:20 }}>
+              <p style={{ color:C.textSec, fontSize:13, fontWeight:500, marginBottom:6 }}>Confirm password</p>
+              <TInput value={confirm} onChange={e=>setConfirm(e.target.value)} placeholder="Repeat password" type="password" />
+            </div>
+
+            {error && <div style={{ background:`${C.red}10`, border:`1px solid ${C.red}33`, borderRadius:10, padding:"10px 14px", marginBottom:14 }}>
+              <p style={{ color:C.red, fontSize:13, margin:0 }}>{error}</p>
+            </div>}
+
+            <Btn onClick={handleSet} disabled={loading} color={C.accent} style={{ width:"100%", marginBottom:12 }}>
+              {loading ? "Saving..." : "Set Password"}
+            </Btn>
+          </>
+        )}
+      </div>
+    </div>
+  );
+};
+
 // ── Auth Screen ───────────────────────────────────────────────────────────────
 const AuthScreen = ({ onAuth, onSkip }) => {
   const [mode, setMode] = useState("login"); // login, signup, forgot
@@ -4118,6 +4182,7 @@ function AppInner() {
   const [user, setUser] = useState(null); // Supabase user
   const [authChecked, setAuthChecked] = useState(false); // has auth been checked
   const [showAuth, setShowAuth] = useState(false); // show auth screen
+  const [showSetPassword, setShowSetPassword] = useState(false); // set password after email link
   const [showTipSplash, setShowTipSplash] = useState(true);
   const [splashTipIdx] = useState(()=>Math.floor(Math.random()*DAILY_TIPS.length)); // show tip on open
   const [showWelcome, setShowWelcome] = useState(false);
@@ -4256,12 +4321,18 @@ function AppInner() {
     loadFromLocal();
     setLoading(false); // Show the app straight away from cache
 
+    // Check for password recovery link — must happen before Supabase processes the hash
+    const hash = window.location.hash;
+    if (hash?.includes("type=recovery")) {
+      setShowSetPassword(true);
+    }
+    if (hash?.includes("access_token") || hash?.includes("type=")) {
+      window.history.replaceState({}, "", "/");
+    }
+
     const finishLoading = () => {
       if (!loadingDone) {
         loadingDone = true;
-        if (window.location.hash?.includes("access_token")) {
-          window.history.replaceState({}, "", "/");
-        }
         setAuthChecked(true);
         setAuthLoading(false);
       }
@@ -4274,6 +4345,14 @@ function AppInner() {
 
     // onAuthStateChange catches ALL auth events including email confirmation
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === "PASSWORD_RECOVERY") {
+        // User clicked set-password link from email — show the set password screen
+        setShowSetPassword(true);
+        setUser(session?.user || null);
+        clearTimeout(safetyTimer);
+        finishLoading();
+        return;
+      }
       if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED" || event === "USER_UPDATED") {
         if (session?.user) {
           setUser(session.user);
@@ -4346,6 +4425,11 @@ function AppInner() {
   C = isDark ? DARK : LIGHT;
 
   // ── Render sequence ──────────────────────────────────────────────────────────
+
+  // 0. Set password screen — shown when user arrives via email recovery link
+  if (showSetPassword) return <SetPasswordScreen onDone={() => {
+    setShowSetPassword(false);
+  }} />;
 
   // 1. Auth screen — shown when explicitly requested
   if (showAuth) return <AuthScreen
