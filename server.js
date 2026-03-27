@@ -764,7 +764,7 @@ Return this JSON:
 
 // ── Chat endpoint ─────────────────────────────────────────────────────────────
 app.post("/api/chat", async (req, res) => {
-  const { messages, profile } = req.body;
+  const { messages, profile, context } = req.body;
   if (!messages || !Array.isArray(messages)) return res.status(400).json({ error: "Invalid request" });
 
   const injuries = profile?.injuries?.filter(i=>i!=="none")?.join(", ") || "none";
@@ -781,6 +781,24 @@ app.post("/api/chat", async (req, res) => {
     profile?.milkAlt ? `prefers ${profile.milkAlt} milk` : "",
   ].filter(Boolean).join(", ");
 
+  // Build live context section
+  const contextSection = context ? `
+LIVE CONTEXT (use this to give specific, timely advice):
+- Today: ${context.todayDate} (${context.todayDayName})
+- Today is a: ${context.isTrainingDay ? "TRAINING DAY" : "REST DAY"}${context.todaySessionType ? ` — ${context.todaySessionType} scheduled` : ""}
+- Calories today: ${context.todayCaloriesLogged} logged / ${context.dailyCalTarget} target${context.todayCaloriesLogged > 0 ? ` (${context.dailyCalTarget - context.todayCaloriesLogged > 0 ? context.dailyCalTarget - context.todayCaloriesLogged + " remaining" : "over target by " + (context.todayCaloriesLogged - context.dailyCalTarget)})` : " — nothing logged yet"}
+- Protein today: ${context.todayProteinLogged}g logged / ${context.dailyProteinTarget}g target
+- Workouts this week: ${context.workoutsThisWeek} done / ${context.workoutsPerWeekTarget} target
+- Last workout: ${context.lastWorkoutDate || "none recorded"}
+- Days since last workout: ${context.daysSinceLastWorkout !== null ? context.daysSinceLastWorkout : "unknown"}
+- Current weight: ${context.currentWeightKg ? context.currentWeightKg + "kg" : "not logged"}
+- Start weight: ${context.startWeightKg ? context.startWeightKg + "kg" : "unknown"}
+- Weight lost so far: ${context.weightLostKg !== null ? context.weightLostKg + "kg" : "unknown"}
+- Weeks into programme: ${context.weeksIntoProgramme || 0}
+- Meal plan: ${context.hasMealPlan ? `${context.mealPlanDays}-day plan generated on ${context.mealPlanDate}` : "no plan generated yet"}
+- Today's planned meals: ${context.todayMealNames?.length > 0 ? context.todayMealNames.join(", ") : "no meals planned for today"}
+- Core proteins in plan: ${context.coreProteins?.join(", ") || "not available"}` : "";
+
   const systemPrompt = `You are a friendly, knowledgeable personal health coach built into LeanPlan, a fitness and nutrition app.
 
 The user's profile:
@@ -788,10 +806,9 @@ The user's profile:
 - Age: ${profile?.age || "unknown"}
 - Sex: ${profile?.sex || "not specified"}
 - Goal: ${profile?.goal?.replace(/_/g, " ") || "lose weight"}
-- Target: Lose ${profile?.targetLbs || 14} lbs at ${profile?.paceId || "moderate"} pace
+- Target: Lose ${profile?.targetLbs ? (profile.targetLbs * 0.453592).toFixed(1) : "?"} kg at ${profile?.paceId || "moderate"} pace
 - Fitness level: ${profile?.fitnessLevel || "beginner"}
 - Workouts/week: ${profile?.workoutsPerWeek || 3}
-- Workout style: ${profile?.workoutStyle || "mixed"}
 - Equipment available: ${equipment}
 - Injuries/limitations: ${injuries}
 - Diet: ${dietNotes}
@@ -802,15 +819,17 @@ The user's profile:
 - Cooking time: ${profile?.cookingTime || "moderate"}
 - Known pains: ${profile?.pains?.map(p=>p.desc).join(", ") || "none logged"}
 - Supplements: ${suppNote}
-- TDEE: ${profile?.heightCm && profile?.age ? "calculable from profile" : "unknown"}
+${contextSection}
 
 Your role:
 1. Answer health, fitness, nutrition and wellbeing questions helpfully and specifically to this person
-2. Tailor advice to their equipment, injuries, diet type and fitness level
-3. When the user mentions a NEW food dislike, include: ACTION:{"type":"add_dislike","value":"food name"}
-4. When they mention a NEW pain or injury, include: ACTION:{"type":"add_pain","value":"description"}
-5. When they mention an allergy, include: ACTION:{"type":"add_allergy","value":"allergen name"}
-6. When they want to remove a dislike, include: ACTION:{"type":"remove_dislike","value":"food name"}
+2. Use the LIVE CONTEXT to give timely, specific advice — reference what they've eaten today, how many workouts they've done, their progress
+3. If they're behind on workouts, gently encourage them. If they're under calories, flag it. If they've made great progress, acknowledge it.
+4. Tailor advice to their equipment, injuries, diet type and fitness level
+5. When the user mentions a NEW food dislike, include: ACTION:{"type":"add_dislike","value":"food name"}
+6. When they mention a NEW pain or injury, include: ACTION:{"type":"add_pain","value":"description"}
+7. When they mention an allergy, include: ACTION:{"type":"add_allergy","value":"allergen name"}
+8. When they want to remove a dislike, include: ACTION:{"type":"remove_dislike","value":"food name"}
 
 Keep responses warm, concise and practical — 2-4 sentences. Only include an ACTION line if there's a genuine profile update to make.`;
 

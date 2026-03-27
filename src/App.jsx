@@ -3402,15 +3402,92 @@ const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDar
 
 
 // ── COACH TAB ─────────────────────────────────────────────────────────────────
-const CoachTab = ({ profile, setProfile }) => {
+const CoachTab = ({ profile, setProfile, mealPlan, mealLog, workoutLog, entries }) => {
+  // Build live context for the AI
+  const buildContext = () => {
+    const today = todayKey();
+    const todayLog = mealLog?.[today] || [];
+    const todayCaloriesLogged = todayLog.reduce((a,m)=>a+m.cals, 0);
+    const todayProteinLogged = todayLog.reduce((a,m)=>a+m.protein, 0);
+
+    // Workouts this week
+    const weekStart = new Date();
+    weekStart.setDate(weekStart.getDate() - weekStart.getDay() + 1);
+    const weekDays = Array.from({length:7},(_,i)=>{ const d=new Date(weekStart); d.setDate(d.getDate()+i); return d.toISOString().split("T")[0]; });
+    const workoutsThisWeek = weekDays.filter(d => workoutLog?.[d]).length;
+
+    // Last workout
+    const allWorkoutDates = Object.keys(workoutLog||{}).sort().reverse();
+    const lastWorkoutDate = allWorkoutDates[0] || null;
+    const daysSinceLastWorkout = lastWorkoutDate
+      ? Math.floor((new Date(today) - new Date(lastWorkoutDate)) / (1000*60*60*24))
+      : null;
+
+    // Weight progress
+    const startWeightKg = profile?.startWeightLbs ? parseFloat((profile.startWeightLbs * 0.453592).toFixed(1)) : null;
+    const latestEntry = entries?.length > 0 ? entries[entries.length-1] : null;
+    const currentWeightKg = latestEntry ? parseFloat((latestEntry.weight * 0.453592).toFixed(1)) : startWeightKg;
+    const weightLostKg = startWeightKg && currentWeightKg ? parseFloat((startWeightKg - currentWeightKg).toFixed(1)) : null;
+
+    // Programme progress
+    const weeksIntoProgramme = profile?.trainingStartDate
+      ? Math.floor((Date.now() - new Date(profile.trainingStartDate)) / (7*24*60*60*1000))
+      : 0;
+
+    // Today's training
+    const dayOfWeek = new Date().getDay();
+    const dayMap = { Mon:1, Tue:2, Wed:3, Thu:4, Fri:5, Sat:6, Sun:0 };
+    const weekPlan = (() => {
+      const days = profile?.workoutsPerWeek || 3;
+      const goal = profile?.goal || "lose_weight";
+      const daySuggestions = { 2:["Mon","Thu"], 3:["Mon","Wed","Fri"], 4:["Mon","Tue","Thu","Fri"], 5:["Mon","Tue","Wed","Thu","Sat"] };
+      const suggestedDays = daySuggestions[Math.min(days,5)] || daySuggestions[3];
+      const sessionIndex = suggestedDays.findIndex(d => dayMap[d] === dayOfWeek);
+      return sessionIndex !== -1 ? { isTrainingDay:true, sessionIndex } : { isTrainingDay:false };
+    })();
+
+    // Today's planned meals
+    const todayMealPlanDay = mealPlan?.days?.find(d => d.date === today);
+    const todayMealNames = todayMealPlanDay?.meals?.map(m=>m.name) || [];
+
+    const calTarget = mealPlan?.dailyCalTarget || (profile?.heightCm && profile?.startWeightLbs && profile?.age ? null : null);
+    const protTarget = mealPlan?.dailyProteinTarget || null;
+
+    return {
+      todayDate: today,
+      todayDayName: new Date().toLocaleDateString("en-GB", {weekday:"long"}),
+      isTrainingDay: weekPlan.isTrainingDay,
+      todaySessionType: null, // could extend later
+      todayCaloriesLogged,
+      todayProteinLogged,
+      dailyCalTarget: calTarget || 1800,
+      dailyProteinTarget: protTarget || 150,
+      workoutsThisWeek,
+      workoutsPerWeekTarget: profile?.workoutsPerWeek || 3,
+      lastWorkoutDate,
+      daysSinceLastWorkout,
+      currentWeightKg,
+      startWeightKg,
+      weightLostKg,
+      weeksIntoProgramme,
+      hasMealPlan: !!mealPlan,
+      mealPlanDays: mealPlan?.days?.length || 0,
+      mealPlanDate: mealPlan?.generatedDate || null,
+      todayMealNames,
+      coreProteins: mealPlan?.coreProteins || [],
+    };
+  };
+
+  const context = buildContext();
+
   const [messages, setMessages] = useState([
-    { role:"assistant", content:`Hi ${profile.name||"there"}! 👋 I'm your personal coach. You can ask me anything about your diet, workouts, or wellbeing — or just tell me if something isn't working for you.
+    { role:"assistant", content:`Hi ${profile.name||"there"}! 👋 I'm your personal coach. Ask me anything about your diet, workouts, or how you're feeling.
 
 For example:
 • "I don't like broccoli"
 • "My lower back is aching after rows"
 • "What should I eat before a workout?"
-• "I'm really tired this week"` }
+• "How am I doing this week?"` }
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -3465,8 +3542,9 @@ For example:
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          messages: newMessages.filter(m => m.role !== "system"),
+          messages: newMessages.filter(m => m.role !== "system").slice(-15),
           profile,
+          context,
         }),
       });
       const data = await res.json();
@@ -3499,6 +3577,48 @@ For example:
           {notification.msg}
         </div>
       )}
+
+      {/* Live context summary */}
+      <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:14, padding:"10px 14px", marginBottom:12 }}>
+        <p style={{ color:C.muted, fontSize:11, fontWeight:700, letterSpacing:"0.06em", margin:"0 0 8px" }}>RIGHT NOW</p>
+        <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
+          {/* Training day / rest day */}
+          <div style={{ background:context.isTrainingDay?`${C.accent}12`:`${C.green}12`, borderRadius:8, padding:"4px 10px" }}>
+            <span style={{ color:context.isTrainingDay?C.accent:C.green, fontSize:12, fontWeight:600 }}>{context.isTrainingDay?"🏋️ Training day":"💚 Rest day"}</span>
+          </div>
+          {/* Calories */}
+          {context.dailyCalTarget && (
+            <div style={{ background:C.sectionBg, borderRadius:8, padding:"4px 10px" }}>
+              <span style={{ color:C.text, fontSize:12 }}>
+                <span style={{ fontWeight:700, color:C.accent }}>{context.todayCaloriesLogged}</span>
+                <span style={{ color:C.muted }}> / {context.dailyCalTarget} cal</span>
+              </span>
+            </div>
+          )}
+          {/* Protein */}
+          {context.dailyProteinTarget && (
+            <div style={{ background:C.sectionBg, borderRadius:8, padding:"4px 10px" }}>
+              <span style={{ color:C.text, fontSize:12 }}>
+                <span style={{ fontWeight:700, color:C.green }}>{context.todayProteinLogged}g</span>
+                <span style={{ color:C.muted }}> / {context.dailyProteinTarget}g protein</span>
+              </span>
+            </div>
+          )}
+          {/* Workouts */}
+          <div style={{ background:C.sectionBg, borderRadius:8, padding:"4px 10px" }}>
+            <span style={{ color:C.text, fontSize:12 }}>
+              <span style={{ fontWeight:700, color:context.workoutsThisWeek>=context.workoutsPerWeekTarget?C.green:C.orange }}>{context.workoutsThisWeek}</span>
+              <span style={{ color:C.muted }}> / {context.workoutsPerWeekTarget} workouts</span>
+            </span>
+          </div>
+          {/* Weight lost */}
+          {context.weightLostKg !== null && context.weightLostKg > 0 && (
+            <div style={{ background:`${C.green}12`, borderRadius:8, padding:"4px 10px" }}>
+              <span style={{ color:C.green, fontSize:12, fontWeight:600 }}>▼ {context.weightLostKg}kg lost</span>
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* Pain log if any */}
       {(profile.pains||[]).length > 0 && (
@@ -4349,7 +4469,7 @@ function AppInner() {
         {tab==="Meals"&&<MealsTab profile={profile} favourites={favourites} setFavourites={setFavourites} removed={removed} setRemoved={setRemoved} mealLog={mealLog} setMealLog={setMealLog} isPro={effectiveIsPro} onUpgrade={()=>setShowPaywall(true)} mealPlan={mealPlan} onSaveMealPlan={saveMealPlan} />}
         {tab==="Train"&&(effectiveIsPro ? <TrainTab profile={profile} workoutLog={workoutLog} setWorkoutLog={setWorkoutLog} setProfile={setProfile} savedWorkout={todaysWorkout} setSavedWorkout={setTodaysWorkout} /> : <LockedTab feature="Workout tracking, lift tracker and rest day planner" onUpgrade={()=>setShowPaywall(true)} />)}
         {tab==="Track"&&(effectiveIsPro ? <TrackTab profile={profile} entries={entries} setEntries={fn=>setEntries(typeof fn==="function"?fn(entries):fn)} measurements={measurements} setMeasurements={setMeasurements} workoutLog={workoutLog} /> : <LockedTab feature="Progress tracking, measurements and body stats" onUpgrade={()=>setShowPaywall(true)} />)}
-        {tab==="Coach"&&(effectiveIsPro ? <CoachTab profile={profile} setProfile={setProfile} /> : <LockedTab feature="AI personal coach" onUpgrade={()=>setShowPaywall(true)} />)}
+        {tab==="Coach"&&(effectiveIsPro ? <CoachTab profile={profile} setProfile={setProfile} mealPlan={mealPlan} mealLog={mealLog} workoutLog={workoutLog} entries={entries} /> : <LockedTab feature="AI personal coach" onUpgrade={()=>setShowPaywall(true)} />)}
         {tab==="Profile"&&<ProfileTab profile={profile} setProfile={setProfile} onReset={handleReset} isDark={isDark} darkOverride={darkOverride} setDarkOverride={setDarkOverride} isPro={effectiveIsPro} proData={proData} onUpgrade={()=>setShowPaywall(true)} user={user} onShowAuth={()=>setShowAuth(true)} />}
 
       </div>
