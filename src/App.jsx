@@ -3416,7 +3416,7 @@ const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDar
             <Row label="Change password" value="••••••••" onClick={()=>setShowChangePw(true)} last />
             <div style={{ padding:"8px 16px 4px" }}>
               <p onClick={async()=>{ await supabase.auth.signOut(); setUser(null); }}
-                style={{ color:C.muted, fontSize:13, textAlign:"center", cursor:"pointer", padding:"8px 0" }}>
+                style={{ color:C.red, fontSize:14, fontWeight:500, textAlign:"center", cursor:"pointer", padding:"8px 0" }}>
                 Sign Out
               </p>
             </div>
