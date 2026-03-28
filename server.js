@@ -1085,7 +1085,7 @@ app.post("/api/send-trial-reminders", async (req, res) => {
         <!-- Header image -->
         <tr><td style="border-radius:20px 20px 0 0;overflow:hidden;position:relative;">
           <div style="position:relative;">
-            <img src="https://www.leanplan.uk/email-header.png" alt="LeanPlan" width="560" style="width:100%;display:block;max-height:220px;object-fit:cover;" />
+            <img src="https://www.leanplan.uk/email-header.png" alt="LeanPlan" width="560" style="width:100%;display:block;max-height:320px;object-fit:cover;object-position:center top;" />
             <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,0.1),rgba(10,10,10,0.75));"></div>
             <div style="position:absolute;bottom:0;left:0;right:0;padding:24px 32px;">
               <p style="margin:0 0 6px;font-size:12px;font-weight:600;color:#ff9f0a;text-transform:uppercase;letter-spacing:1.5px;">2 days left</p>
