@@ -1085,19 +1085,19 @@ app.post("/api/send-trial-reminders", async (req, res) => {
         <!-- Header image -->
         <tr><td style="border-radius:20px 20px 0 0;overflow:hidden;position:relative;">
           <div style="position:relative;">
-            <img src="https://www.leanplan.uk/email-header.png" alt="LeanPlan" width="560" style="width:100%;display:block;max-height:320px;object-fit:cover;object-position:center top;" />
-            <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,0.1),rgba(10,10,10,0.75));"></div>
-            <div style="position:absolute;bottom:0;left:0;right:0;padding:24px 32px;">
-              <p style="margin:0 0 6px;font-size:12px;font-weight:600;color:#ff9f0a;text-transform:uppercase;letter-spacing:1.5px;">2 days left</p>
-              <h1 style="margin:0 0 6px;font-size:26px;font-weight:800;color:#ffffff;line-height:1.2;">Don't lose your plan</h1>
-              <p style="margin:0;font-size:14px;color:rgba(255,255,255,0.7);">Your body. Your plan. Your results.</p>
+            <img src="https://www.leanplan.uk/email-header.png" alt="LeanPlan" width="560" style="width:100%;display:block;height:260px;object-fit:cover;object-position:center top;" />
+            <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,0.3),rgba(10,10,10,0.85));"></div>
+            <div style="position:absolute;top:0;left:0;right:0;bottom:0;padding:24px 32px;display:flex;flex-direction:column;justify-content:space-between;">
+              <div>
+                <span style="font-size:20px;font-weight:700;color:#ffffff;">Lean<span style="color:#3b82f6;">Plan</span></span>
+              </div>
+              <div>
+                <p style="margin:0 0 6px;font-size:12px;font-weight:600;color:#ff9f0a;text-transform:uppercase;letter-spacing:1.5px;">2 days left</p>
+                <h1 style="margin:0 0 6px;font-size:26px;font-weight:800;color:#ffffff;line-height:1.2;">Don't lose your plan</h1>
+                <p style="margin:0;font-size:14px;color:rgba(255,255,255,0.75);">Your body. Your plan. Your results.</p>
+              </div>
             </div>
           </div>
-        </td></tr>
-
-        <!-- Logo bar -->
-        <tr><td style="background:#111111;padding:12px 32px;border-bottom:1px solid #2a2a2a;">
-          <span style="font-size:20px;font-weight:700;color:#ffffff;">Lean<span style="color:#3b82f6;">Plan</span></span>
         </td></tr>
 
         <!-- Body -->
