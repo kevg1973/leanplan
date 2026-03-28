@@ -4536,6 +4536,27 @@ function AppInner() {
     onSignIn={()=>setShowAuth(true)}
   />;
 
+  // 3b. Signed out but have local data — show sign in screen
+  if (profile && !user) return <AuthScreen
+    onAuth={async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        setUser(session.user);
+        setSyncing(true);
+        try {
+          await loadFromSupabase(session.user.id);
+          const { data } = await supabase.from("profiles").select("profile_data").eq("id", session.user.id).single();
+          if (!data?.profile_data || Object.keys(data.profile_data).length === 0) {
+            const local = JSON.parse(localStorage.getItem("leanplan_v4") || "{}");
+            if (local.profile) await saveToSupabase(session.user.id, local);
+          }
+        } catch(e){}
+        setSyncing(false);
+      }
+    }}
+    onSkip={null}
+  />;
+
   // 4. Onboarding — after Get Started
   if (!profile && !showCreateAccount) return <Onboarding onDone={p=>{ 
     setPendingProfile(p);
