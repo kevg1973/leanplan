@@ -4397,7 +4397,7 @@ function AppInner() {
       if (data.journal && Object.keys(data.journal).length) setJournal(data.journal);
       if (data.measurements?.length) setMeasurements(data.measurements);
       if (data.dark_override !== null && data.dark_override !== undefined) setDarkOverride(data.dark_override);
-      if (data.is_pro) { setIsPro(true); setProData({ customerId: data.stripe_customer_id, subscriptionId: data.stripe_subscription_id, plan: data.stripe_plan }); }
+      if (data.is_pro) { setIsPro(true); setProData({ customerId: data.stripe_customer_id, subscriptionId: data.stripe_subscription_id, plan: data.stripe_plan, cancelAt: data.cancel_at || null }); }
     } catch(e){ console.error("Supabase load error:", e); }
   };
 
@@ -4669,14 +4669,27 @@ function AppInner() {
       </div>
 
       <div style={{ padding:"8px 14px 100px" }}>
-        {/* Trial banner or Pro upgrade banner */}
-        {!isPro && isTrialActive() && (
-          <div style={{ background:`linear-gradient(135deg, #1c1c2e, #2d2b55)`, border:`1px solid rgba(88,86,214,0.4)`, borderRadius:14, padding:"12px 16px", marginBottom:14, display:"flex", justifyContent:"space-between", alignItems:"center", boxShadow:"0 4px 16px rgba(88,86,214,0.2)" }}>
+        {/* Cancellation notice */}
+        {isPro && proData?.cancelAt && (
+          <div style={{ background:`linear-gradient(135deg, #2d1f00, #3d2a00)`, border:`1px solid rgba(255,159,10,0.4)`, borderRadius:14, padding:"12px 16px", marginBottom:14, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
             <div>
-              <p style={{ color:"#fff", fontWeight:700, fontSize:13, margin:0 }}>✦ Full access — {getTrialDaysLeft()} day{getTrialDaysLeft()!==1?"s":""} left</p>
+              <p style={{ color:"#ff9f0a", fontWeight:700, fontSize:13, margin:0 }}>⚠️ Subscription cancelled</p>
+              <p style={{ color:"rgba(255,255,255,0.6)", fontSize:11, margin:"2px 0 0" }}>
+                Access continues until {new Date(proData.cancelAt).toLocaleDateString("en-GB", { day:"numeric", month:"long", year:"numeric" })}
+              </p>
+            </div>
+            <button onClick={()=>setShowPaywall(true)} style={{ background:"#ff9f0a", border:"none", borderRadius:99, padding:"7px 14px", color:"#000", fontSize:12, fontWeight:700, cursor:"pointer", fontFamily:FONT, whiteSpace:"nowrap" }}>Resubscribe</button>
+          </div>
+        )}
+
+        {/* Trial banner */}
+        {!isPro && isTrialActive() && (
+          <div style={{ background:`linear-gradient(135deg, #0a2a1f, #0d3d2a)`, border:`1px solid rgba(52,199,89,0.5)`, borderRadius:14, padding:"12px 16px", marginBottom:14, display:"flex", justifyContent:"space-between", alignItems:"center", boxShadow:"0 4px 16px rgba(52,199,89,0.15)" }}>
+            <div>
+              <p style={{ color:"#34c759", fontWeight:700, fontSize:13, margin:0 }}>✦ Free trial — {getTrialDaysLeft()} day{getTrialDaysLeft()!==1?"s":""} left</p>
               <p style={{ color:"rgba(255,255,255,0.6)", fontSize:11, margin:"2px 0 0" }}>Subscribe before your trial ends to keep everything</p>
             </div>
-            <button onClick={()=>setShowPaywall(true)} style={{ background:"#5856d6", border:"none", borderRadius:99, padding:"7px 14px", color:"#fff", fontSize:12, fontWeight:700, cursor:"pointer", fontFamily:FONT, whiteSpace:"nowrap" }}>Subscribe →</button>
+            <button onClick={()=>setShowPaywall(true)} style={{ background:"#34c759", border:"none", borderRadius:99, padding:"7px 14px", color:"#000", fontSize:12, fontWeight:700, cursor:"pointer", fontFamily:FONT, whiteSpace:"nowrap" }}>Subscribe →</button>
           </div>
         )}
         {!effectiveIsPro && <ProBanner onUpgrade={()=>setShowPaywall(true)} />}

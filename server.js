@@ -238,6 +238,34 @@ app.post("/api/stripe/webhook", async (req, res) => {
     }
   }
 
+  // ── Subscription updated (e.g. cancelled but still active) ──────────────────
+  if (event.type === "customer.subscription.updated") {
+    const subscription = event.data.object;
+    const customerId = subscription.customer;
+
+    try {
+      if (subscription.cancel_at_period_end) {
+        const cancelAt = new Date(subscription.cancel_at * 1000).toISOString();
+        const { error } = await supabaseAdmin
+          .from("profiles")
+          .update({ stripe_plan: subscription.items?.data?.[0]?.price?.recurring?.interval === "year" ? "annual" : "monthly", cancel_at: cancelAt })
+          .eq("stripe_customer_id", customerId);
+        if (error) console.error("Webhook: failed to store cancel_at:", error.message);
+        else console.log(`Webhook: subscription cancellation scheduled for ${cancelAt}`);
+      } else {
+        // Reactivated — clear cancel_at
+        const { error } = await supabaseAdmin
+          .from("profiles")
+          .update({ cancel_at: null })
+          .eq("stripe_customer_id", customerId);
+        if (error) console.error("Webhook: failed to clear cancel_at:", error.message);
+        else console.log(`Webhook: subscription reactivated for customer ${customerId}`);
+      }
+    } catch (err) {
+      console.error("Webhook subscription.updated error:", err.message);
+    }
+  }
+
   // ── Subscription cancelled or expired ────────────────────────────────────────
   if (event.type === "customer.subscription.deleted" ||
       event.type === "customer.subscription.paused") {
@@ -247,7 +275,7 @@ app.post("/api/stripe/webhook", async (req, res) => {
     try {
       const { error } = await supabaseAdmin
         .from("profiles")
-        .update({ is_pro: false })
+        .update({ is_pro: false, cancel_at: null })
         .eq("stripe_customer_id", customerId);
 
       if (error) {
