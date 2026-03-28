@@ -4542,17 +4542,28 @@ function AppInner() {
     } catch(e){}
   }} />;
 
-  // 4b. Create account — mandatory after onboarding
-  if (showCreateAccount && pendingProfile) return <CreateAccountScreen
-    profileData={pendingProfile}
-    onDone={async (user, email) => {
-      setUser(user);
+  // 4b. Create account — mandatory after onboarding (skip if already signed in)
+  if (showCreateAccount && pendingProfile) {
+    if (user) {
+      // Already signed in (e.g. after reset) — just save profile and continue
       setProfile(pendingProfile);
       setShowCreateAccount(false);
       setPendingProfile(null);
       setTrialStart();
-    }}
-  />;
+      saveToSupabase(user.id, { profile: pendingProfile, entries:[], favourites:[], removed:[], mealLog:{}, workoutLog:{}, water:{}, journal:{}, measurements:[], darkOverride:null });
+      return null;
+    }
+    return <CreateAccountScreen
+      profileData={pendingProfile}
+      onDone={async (supabaseUser, email) => {
+        setUser(supabaseUser);
+        setProfile(pendingProfile);
+        setShowCreateAccount(false);
+        setPendingProfile(null);
+        setTrialStart();
+      }}
+    />;
+  }
 
   // 5. Trial expired — show subscribe screen
   if (isTrialExpired() && !isPro) return <TrialExpiredScreen onSubscribe={()=>setShowPaywall(true)} />;
@@ -4582,12 +4593,14 @@ function AppInner() {
       setProfile(null); setEntries([]); setFavourites([]); setRemoved([]);
       setMealLog({}); setWorkoutLog({}); setWater({}); setJournal({}); setMeasurements([]);
       setIsPro(false); setProData(null); setMealPlan(null);
+      setUser(null); supabase.auth.signOut();
     } else {
       if (!window.confirm("Reset all data? This cannot be undone.")) return;
       RESET_KEYS.forEach(k => localStorage.removeItem(k));
       setProfile(null); setEntries([]); setFavourites([]); setRemoved([]);
       setMealLog({}); setWorkoutLog({}); setWater({}); setJournal({}); setMeasurements([]);
       setIsPro(false); setProData(null); setMealPlan(null);
+      setUser(null); supabase.auth.signOut();
     }
   };
 
