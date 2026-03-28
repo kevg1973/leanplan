@@ -4107,7 +4107,7 @@ const TrialExpiredScreen = ({ onSubscribe }) => (
 );
 
 // ── Auth Screen ───────────────────────────────────────────────────────────────
-const AuthScreen = ({ onAuth, onSkip }) => {
+const AuthScreen = ({ onAuth, onSkip, onStartFresh }) => {
   const [mode, setMode] = useState("login"); // login, signup, forgot
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -4203,6 +4203,17 @@ const AuthScreen = ({ onAuth, onSkip }) => {
         {mode === "forgot" && <p onClick={()=>{setMode("login");setError(null);}} style={{ color:C.accent, fontSize:13, textAlign:"center", cursor:"pointer", marginBottom:16 }}>← Back to sign in</p>}
         {mode === "login" && onSkip && <p onClick={onSkip} style={{ color:C.muted, fontSize:13, textAlign:"center", cursor:"pointer", marginBottom:16 }}>← Back</p>}
 
+        {onStartFresh && mode === "login" && <>
+          <div style={{ display:"flex", alignItems:"center", gap:12, margin:"16px 0" }}>
+            <div style={{ flex:1, height:1, background:C.border }} />
+            <span style={{ color:C.muted, fontSize:13 }}>or</span>
+            <div style={{ flex:1, height:1, background:C.border }} />
+          </div>
+          <p onClick={onStartFresh} style={{ color:C.muted, fontSize:13, textAlign:"center", cursor:"pointer" }}>
+            Start fresh with a new account
+          </p>
+        </>}
+
         {onSkip && <>
           <div style={{ display:"flex", alignItems:"center", gap:12, margin:"16px 0" }}>
             <div style={{ flex:1, height:1, background:C.border }} />
@@ -4226,6 +4237,12 @@ const AuthScreen = ({ onAuth, onSkip }) => {
 
 // ── MAIN ──────────────────────────────────────────────────────────────────────
 function AppInner() {
+  const RESET_KEYS = [
+    "leanplan_v4", "leanplan_lifts", "leanplan_pro", "leanplan_device_id",
+    "leanplan_trial_start", "leanplan_gen_count", "leanplan_disliked_meals",
+    "leanplan_liked_meals", "leanplan_meal_plan", "leanplan_todays_meals",
+    "leanplan_pantry",
+  ];
   const [profile, setProfile] = useState(null);
   const [tab, setTab] = useState("Today");
   const [isPro, setIsPro] = useState(false);
@@ -4555,6 +4572,13 @@ function AppInner() {
       }
     }}
     onSkip={null}
+    onStartFresh={() => {
+      if (!window.confirm("Start fresh? This will clear all your current data and cannot be undone.")) return;
+      RESET_KEYS.forEach(k => localStorage.removeItem(k));
+      setProfile(null); setEntries([]); setFavourites([]); setRemoved([]);
+      setMealLog({}); setWorkoutLog({}); setWater({}); setJournal({}); setMeasurements([]);
+      setIsPro(false); setProData(null); setMealPlan(null);
+    }}
   />;
 
   // 4. Onboarding — after Get Started
@@ -4596,13 +4620,6 @@ function AppInner() {
   const lost = Math.max(0,profile.startWeightLbs-cur);
   const pct = Math.min(100,Math.round((lost/profile.targetLbs)*100));
   const TAB_COLORS = {Today:"#007aff",Meals:"#34c759",Train:"#5ac8fa",Track:"#af52de",Coach:"#ff2d55",Profile:"#ff9500"};
-
-  const RESET_KEYS = [
-    "leanplan_v4", "leanplan_lifts", "leanplan_pro", "leanplan_device_id",
-    "leanplan_trial_start", "leanplan_gen_count", "leanplan_disliked_meals",
-    "leanplan_liked_meals", "leanplan_meal_plan", "leanplan_todays_meals",
-    "leanplan_pantry",
-  ];
 
   const handleReset = () => {
     const savedPro = localStorage.getItem("leanplan_pro");
