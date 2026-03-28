@@ -3982,11 +3982,14 @@ const CreateAccountScreen = ({ profileData, onDone }) => {
     if (!userId) { setError("Something went wrong — please try again"); setLoading(false); return; }
 
     // Save profile data to Supabase immediately
+    const trialStart = new Date().toISOString();
     try {
       await supabase.from("profiles").upsert({
         id: userId,
         email,
         profile_data: profileData,
+        trial_start: trialStart,
+        reminder_sent: false,
         entries: [],
         favourites: [],
         removed: [],

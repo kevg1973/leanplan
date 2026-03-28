@@ -1033,6 +1033,121 @@ app.get("*", (req, res) => {
   res.sendFile(join(__dirname, "dist", "index.html"));
 });
 
+// ── Trial reminder cron endpoint ─────────────────────────────────────────────
+// Called daily by Railway cron job
+app.post("/api/send-trial-reminders", async (req, res) => {
+  // Simple security check — Railway cron sends a secret header
+  const secret = req.headers["x-cron-secret"];
+  if (secret !== process.env.CRON_SECRET) {
+    return res.status(401).json({ error: "Unauthorised" });
+  }
+
+  try {
+    // Find all users who:
+    // - Started trial 5 days ago (between 5.0 and 5.99 days ago)
+    // - Are not pro
+    // - Haven't been sent a reminder yet
+    const fiveDaysAgo = new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString();
+    const sixDaysAgo = new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString();
+
+    const { data: users, error } = await supabaseAdmin
+      .from("profiles")
+      .select("id, email, trial_start, is_pro, reminder_sent")
+      .eq("is_pro", false)
+      .eq("reminder_sent", false)
+      .gte("trial_start", sixDaysAgo)
+      .lte("trial_start", fiveDaysAgo);
+
+    if (error) {
+      console.error("Trial reminder query error:", error.message);
+      return res.status(500).json({ error: "Database query failed" });
+    }
+
+    console.log(`Trial reminders: found ${users?.length || 0} users to remind`);
+
+    let sent = 0;
+    for (const user of (users || [])) {
+      if (!user.email) continue;
+
+      // Send reminder email
+      const { error: emailError } = await resend.emails.send({
+        from: "LeanPlan <hello@leanplan.uk>",
+        to: user.email,
+        subject: "Your LeanPlan trial ends in 2 days 🏃",
+        html: `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"></head>
+<body style="margin:0;padding:0;background-color:#0a0a0a;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#0a0a0a;padding:40px 20px;">
+    <tr><td align="center">
+      <table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;">
+
+        <tr><td align="center" style="padding-bottom:32px;">
+          <span style="font-size:26px;font-weight:700;color:#ffffff;">Lean<span style="color:#3b82f6;">Plan</span></span>
+        </td></tr>
+
+        <tr><td style="background:#1a1a1a;border-radius:20px;padding:36px 32px;border:1px solid #2a2a2a;">
+
+          <p style="margin:0 0 8px;font-size:13px;font-weight:600;color:#ff9f0a;text-transform:uppercase;letter-spacing:1px;">⏰ 2 days left</p>
+          <h1 style="margin:0 0 16px;font-size:24px;font-weight:700;color:#ffffff;line-height:1.3;">Don't lose your plan</h1>
+          <p style="margin:0 0 24px;font-size:15px;color:#9ca3af;line-height:1.6;">
+            Your 7-day free trial ends in <strong style="color:#ffffff;">2 days</strong>. Subscribe now to keep your personalised meal plan, workout programme and AI coach.
+          </p>
+
+          <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+            <tr><td align="center">
+              <a href="${APP_URL}" style="display:inline-block;background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:#ffffff;text-decoration:none;font-size:16px;font-weight:600;padding:16px 36px;border-radius:12px;">
+                Subscribe Now — from £4.99/mo →
+              </a>
+            </td></tr>
+          </table>
+
+          <div style="border-top:1px solid #2a2a2a;margin-bottom:24px;"></div>
+
+          <p style="margin:0 0 14px;font-size:13px;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:0.8px;">What you'll keep</p>
+          <table width="100%" cellpadding="0" cellspacing="0">
+            <tr><td style="padding:6px 0;font-size:14px;color:#d1d5db;">✅ &nbsp;Your personalised meal plan</td></tr>
+            <tr><td style="padding:6px 0;font-size:14px;color:#d1d5db;">✅ &nbsp;Your 16-week workout programme</td></tr>
+            <tr><td style="padding:6px 0;font-size:14px;color:#d1d5db;">✅ &nbsp;AI nutrition & fitness coach</td></tr>
+            <tr><td style="padding:6px 0;font-size:14px;color:#d1d5db;">✅ &nbsp;All your progress data</td></tr>
+          </table>
+
+        </td></tr>
+
+        <tr><td align="center" style="padding-top:24px;">
+          <p style="margin:0;font-size:12px;color:#4b5563;line-height:1.6;">
+            LeanPlan · Manchester, UK<br>
+            <a href="${APP_URL}" style="color:#3b82f6;text-decoration:none;">leanplan.uk</a>
+          </p>
+        </td></tr>
+
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`,
+      });
+
+      if (emailError) {
+        console.error(`Trial reminder: failed to send to ${user.email}:`, emailError.message);
+      } else {
+        // Mark reminder as sent
+        await supabaseAdmin
+          .from("profiles")
+          .update({ reminder_sent: true })
+          .eq("id", user.id);
+        sent++;
+        console.log(`Trial reminder sent to ${user.email}`);
+      }
+    }
+
+    res.json({ success: true, sent, total: users?.length || 0 });
+  } catch (err) {
+    console.error("Trial reminder error:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`LeanPlan server running on port ${PORT}`);
 });
