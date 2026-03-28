@@ -1082,42 +1082,83 @@ app.post("/api/send-trial-reminders", async (req, res) => {
     <tr><td align="center">
       <table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;">
 
-        <tr><td align="center" style="padding-bottom:32px;">
-          <span style="font-size:26px;font-weight:700;color:#ffffff;">Lean<span style="color:#3b82f6;">Plan</span></span>
+        <!-- Header image -->
+        <tr><td style="background:linear-gradient(135deg,#0f2027,#1a3a4a,#0f2027);border-radius:20px 20px 0 0;padding:48px 32px 40px;text-align:center;">
+          <div style="margin-bottom:20px;">
+            <span style="font-size:24px;font-weight:700;color:#ffffff;">Lean<span style="color:#3b82f6;">Plan</span></span>
+          </div>
+          <p style="margin:0 0 8px;font-size:13px;font-weight:600;color:#ff9f0a;text-transform:uppercase;letter-spacing:1.5px;">2 days left</p>
+          <h1 style="margin:0 0 12px;font-size:28px;font-weight:800;color:#ffffff;line-height:1.2;">Don't lose your plan</h1>
+          <p style="margin:0;font-size:15px;color:rgba(255,255,255,0.6);line-height:1.5;">Your body. Your plan. Your results.</p>
         </td></tr>
 
-        <tr><td style="background:#1a1a1a;border-radius:20px;padding:36px 32px;border:1px solid #2a2a2a;">
+        <!-- Body -->
+        <tr><td style="background:#1a1a1a;padding:36px 32px;border:1px solid #2a2a2a;border-top:none;border-radius:0 0 20px 20px;">
 
-          <p style="margin:0 0 8px;font-size:13px;font-weight:600;color:#ff9f0a;text-transform:uppercase;letter-spacing:1px;">⏰ 2 days left</p>
-          <h1 style="margin:0 0 16px;font-size:24px;font-weight:700;color:#ffffff;line-height:1.3;">Don't lose your plan</h1>
-          <p style="margin:0 0 24px;font-size:15px;color:#9ca3af;line-height:1.6;">
-            Your 7-day free trial ends in <strong style="color:#ffffff;">2 days</strong>. Subscribe now to keep your personalised meal plan, workout programme and AI coach.
+          <p style="margin:0 0 24px;font-size:15px;color:#9ca3af;line-height:1.7;">
+            You've already done the hard part — you've set your goal, built your plan and started your journey. <strong style="color:#ffffff;">LeanPlan Pro keeps everything working for you:</strong> AI-generated meals tailored to your diet, a 16-week progressive workout programme that adapts to your equipment and injuries, calorie and macro tracking, smart shopping lists, and an AI coach available whenever you need a nudge. Cancel anytime — but most people find they don't want to.
           </p>
 
-          <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+          <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:32px;">
             <tr><td align="center">
-              <a href="${APP_URL}" style="display:inline-block;background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:#ffffff;text-decoration:none;font-size:16px;font-weight:600;padding:16px 36px;border-radius:12px;">
-                Subscribe Now — from £4.99/mo →
-              </a>
+              <a href="${APP_URL}" style="display:inline-block;background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:#ffffff;text-decoration:none;font-size:16px;font-weight:700;padding:16px 40px;border-radius:12px;">Subscribe Now — from £4.99/mo →</a>
             </td></tr>
           </table>
 
-          <div style="border-top:1px solid #2a2a2a;margin-bottom:24px;"></div>
+          <div style="border-top:1px solid #2a2a2a;margin-bottom:28px;"></div>
 
-          <p style="margin:0 0 14px;font-size:13px;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:0.8px;">What you'll keep</p>
+          <p style="margin:0 0 16px;font-size:12px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:1px;">Everything you'll keep</p>
+
           <table width="100%" cellpadding="0" cellspacing="0">
-            <tr><td style="padding:6px 0;font-size:14px;color:#d1d5db;">✅ &nbsp;Your personalised meal plan</td></tr>
-            <tr><td style="padding:6px 0;font-size:14px;color:#d1d5db;">✅ &nbsp;Your 16-week workout programme</td></tr>
-            <tr><td style="padding:6px 0;font-size:14px;color:#d1d5db;">✅ &nbsp;AI nutrition & fitness coach</td></tr>
-            <tr><td style="padding:6px 0;font-size:14px;color:#d1d5db;">✅ &nbsp;All your progress data</td></tr>
+            <tr>
+              <td style="padding:8px 8px 8px 0;width:50%;vertical-align:top;">
+                <p style="margin:0;font-size:14px;font-weight:600;color:#ffffff;">✅ &nbsp;Personalised meal plans</p>
+                <p style="margin:2px 0 0 24px;font-size:12px;color:#6b7280;">GF, dairy-free &amp; allergy aware</p>
+              </td>
+              <td style="padding:8px 0 8px 8px;width:50%;vertical-align:top;">
+                <p style="margin:0;font-size:14px;font-weight:600;color:#ffffff;">✅ &nbsp;16-week programme</p>
+                <p style="margin:2px 0 0 24px;font-size:12px;color:#6b7280;">Injury &amp; equipment aware</p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:8px 8px 8px 0;vertical-align:top;">
+                <p style="margin:0;font-size:14px;font-weight:600;color:#ffffff;">✅ &nbsp;AI nutrition coach</p>
+                <p style="margin:2px 0 0 24px;font-size:12px;color:#6b7280;">Available 24/7</p>
+              </td>
+              <td style="padding:8px 0 8px 8px;vertical-align:top;">
+                <p style="margin:0;font-size:14px;font-weight:600;color:#ffffff;">✅ &nbsp;Calorie &amp; macro tracking</p>
+                <p style="margin:2px 0 0 24px;font-size:12px;color:#6b7280;">Daily progress at a glance</p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:8px 8px 8px 0;vertical-align:top;">
+                <p style="margin:0;font-size:14px;font-weight:600;color:#ffffff;">✅ &nbsp;Smart shopping list</p>
+                <p style="margin:2px 0 0 24px;font-size:12px;color:#6b7280;">With pantry tracking</p>
+              </td>
+              <td style="padding:8px 0 8px 8px;vertical-align:top;">
+                <p style="margin:0;font-size:14px;font-weight:600;color:#ffffff;">✅ &nbsp;Training day carb cycling</p>
+                <p style="margin:2px 0 0 24px;font-size:12px;color:#6b7280;">Optimised for your goal</p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:8px 8px 8px 0;vertical-align:top;">
+                <p style="margin:0;font-size:14px;font-weight:600;color:#ffffff;">✅ &nbsp;Progress tracking</p>
+                <p style="margin:2px 0 0 24px;font-size:12px;color:#6b7280;">Weight, measurements &amp; lifts</p>
+              </td>
+              <td style="padding:8px 0 8px 8px;vertical-align:top;">
+                <p style="margin:0;font-size:14px;font-weight:600;color:#ffffff;">✅ &nbsp;Calorie-neutral meal swaps</p>
+                <p style="margin:2px 0 0 24px;font-size:12px;color:#6b7280;">Same calories, different meal</p>
+              </td>
+            </tr>
           </table>
 
         </td></tr>
 
+        <!-- Footer -->
         <tr><td align="center" style="padding-top:24px;">
           <p style="margin:0;font-size:12px;color:#4b5563;line-height:1.6;">
             LeanPlan · Manchester, UK<br>
-            <a href="${APP_URL}" style="color:#3b82f6;text-decoration:none;">leanplan.uk</a>
+            <a href="${APP_URL}" style="color:#3b82f6;text-decoration:none;">leanplan.uk</a> · Cancel anytime
           </p>
         </td></tr>
 
