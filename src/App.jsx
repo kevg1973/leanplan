@@ -3412,10 +3412,13 @@ const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDar
         {user ? (
           <div>
             <Row label="Signed in as" value={user.email} />
-            <Row label="Data sync" value="✓ Synced to cloud" color={C.green} last />
-            <div style={{ padding:"12px 16px", display:"flex", flexDirection:"column", gap:8 }}>
-              <Btn outline color={C.accent} onClick={()=>setShowChangePw(true)} style={{ width:"100%" }}>Change Password</Btn>
-              <Btn outline color={C.red} onClick={async()=>{ await supabase.auth.signOut(); }} style={{ width:"100%" }}>Sign Out</Btn>
+            <Row label="Data sync" value="✓ Synced to cloud" color={C.green} />
+            <Row label="Change password" value="••••••••" onClick={()=>setShowChangePw(true)} last />
+            <div style={{ padding:"8px 16px 4px" }}>
+              <p onClick={async()=>{ await supabase.auth.signOut(); setUser(null); }}
+                style={{ color:C.muted, fontSize:13, textAlign:"center", cursor:"pointer", padding:"8px 0" }}>
+                Sign Out
+              </p>
             </div>
           </div>
         ) : (
