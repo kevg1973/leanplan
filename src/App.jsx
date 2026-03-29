@@ -4475,8 +4475,19 @@ function AppInner() {
         }
       } else if (event === "SIGNED_OUT") {
         setUser(null);
+        clearTimeout(safetyTimer);
+        finishLoading();
       } else if (event === "INITIAL_SESSION") {
-        if (!session?.user) {
+        if (session?.user) {
+          // Valid session exists — set user immediately, don't wait for SIGNED_IN
+          setUser(session.user);
+          loadFromLocal();
+          try {
+            await loadFromSupabase(session.user.id);
+          } catch(e){ console.error("Supabase sync failed:", e); }
+          clearTimeout(safetyTimer);
+          finishLoading();
+        } else {
           loadFromLocal();
           clearTimeout(safetyTimer);
           finishLoading();
