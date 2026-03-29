@@ -2064,22 +2064,6 @@ const MealsTab = ({ profile, favourites, setFavourites, removed, setRemoved, mea
 
       {section==="meals"&&<>
         {/* Daily log summary */}
-        {todayLogged.length>0&&<Card style={{ background:`${C.green}08`, borderColor:`${C.green}33` }}>
-          <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:10 }}>
-            <Icon name="check" size={14} color={C.green} />
-            <p style={{ color:C.green, fontSize:12, fontWeight:700, letterSpacing:"0.06em", margin:0 }}>TODAY'S LOG</p>
-          </div>
-          {todayLogged.map((m,i)=>(
-            <div key={i} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"5px 0", borderBottom:i<todayLogged.length-1?`1px solid ${C.border}`:"none" }}>
-              <div><span style={{ color:C.text, fontSize:13 }}>{m.name}</span><span style={{ color:C.muted, fontSize:11, marginLeft:8 }}>{m.time}</span></div>
-              <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-                <span style={{ color:C.muted, fontSize:12 }}>{m.cals}cal</span>
-                <button onClick={()=>removeMealLog(i)} style={{ background:"none", border:"none", color:C.red, cursor:"pointer", fontSize:14 }}>×</button>
-              </div>
-            </div>
-          ))}
-        </Card>}
-
         {/* Smart nutrition bar + generate controls */}
         {generating ? (
           <MealPlanLoader progress={generateProgress} />
