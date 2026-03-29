@@ -1777,7 +1777,14 @@ const MealCarousel = ({ meals, favourites, likedMeals, mealLog, today, onLike, o
         <div style={{ display:"flex", gap:8, marginBottom:8 }}>
           <button onClick={()=>onLike(m)} style={{ width:44, height:44, background:isLiked?`${C.green}20`:"none", border:`1.5px solid ${isLiked?C.green:C.border}`, borderRadius:12, color:C.green, fontSize:18, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }} title="Like this meal">👍</button>
           <button onClick={()=>onDislike(m)} style={{ width:44, height:44, background:"none", border:`1.5px solid ${C.border}`, borderRadius:12, color:C.red, fontSize:18, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }} title="Never show again">👎</button>
-          <button onClick={()=>{ if(!isLogged) onLog(m); }} style={{ flex:1, background:isLogged?`${C.green}15`:"none", border:`1.5px solid ${isLogged?C.green:C.border}`, borderRadius:12, padding:"10px 0", color:isLogged?C.green:C.text, fontSize:14, fontWeight:700, cursor:isLogged?"default":"pointer", fontFamily:FONT, transition:"all 0.2s" }}>{isLogged ? "✓ Logged" : "+ Log Meal"}</button>
+          <button onClick={()=>{ 
+            if(isLogged) {
+              const idx = (mealLog[today]||[]).findIndex(l=>l.id===m?.id);
+              if(idx !== -1) onRemoveLog(idx);
+            } else {
+              onLog(m);
+            }
+          }} style={{ flex:1, background:isLogged?`${C.green}15`:"none", border:`1.5px solid ${isLogged?C.green:C.border}`, borderRadius:12, padding:"10px 0", color:isLogged?C.green:C.text, fontSize:14, fontWeight:700, cursor:"pointer", fontFamily:FONT, transition:"all 0.2s" }}>{isLogged ? "✓ Logged — tap to undo" : "+ Log Meal"}</button>
         </div>
       )}
 
