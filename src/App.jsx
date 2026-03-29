@@ -3048,7 +3048,7 @@ const TrackTab = ({ profile, entries, setEntries, measurements, setMeasurements,
 };
 
 // ── PROFILE TAB ───────────────────────────────────────────────────────────────
-const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDarkOverride, isPro, proData, onUpgrade, user, onShowAuth }) => {
+const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDarkOverride, isPro, proData, onUpgrade, user, onShowAuth, onClearMealPlan }) => {
   const [editing, setEditing] = useState(null);
   const [tempData, setTempData] = useState({});
   const [showChangePw, setShowChangePw] = useState(false);
@@ -3059,7 +3059,14 @@ const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDar
   const [pwSuccess, setPwSuccess] = useState(false);
   const toggleArr = (k,v) => setTempData(d=>({...d,[k]:d[k].includes(v)?d[k].filter(x=>x!==v):[...d[k],v]}));
   const startEdit = (s) => { setTempData({...profile}); setEditing(s); };
-  const save = () => { setProfile({...profile,...tempData}); setEditing(null); };
+  const save = () => {
+    // If meal plan length changed, clear the existing plan so user regenerates
+    if (tempData.mealPlanDays && tempData.mealPlanDays !== profile.mealPlanDays) {
+      onClearMealPlan?.();
+    }
+    setProfile({...profile,...tempData});
+    setEditing(null);
+  };
 
   if (showChangePw) return (
     <div style={{ padding:"0 20px", maxWidth:480, margin:"0 auto" }}>
@@ -3270,8 +3277,8 @@ const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDar
           </div>
         ))}
         {tempData.mealPlanDays !== (profile.mealPlanDays||5) && (
-          <div style={{ background:`${C.orange}12`, border:`1px solid ${C.orange}33`, borderRadius:12, padding:"10px 14px", marginTop:4 }}>
-            <p style={{ color:C.orange, fontSize:13, margin:0 }}>⚠️ After saving, regenerate your meal plan in the Meals tab to apply the new length.</p>
+          <div style={{ background:`${C.green}12`, border:`1px solid ${C.green}33`, borderRadius:12, padding:"10px 14px", marginTop:4 }}>
+            <p style={{ color:C.green, fontSize:13, margin:0 }}>✓ Saving will clear your current plan — a new {tempData.mealPlanDays}-day plan will be ready to generate.</p>
           </div>
         )}
       </>}
@@ -4788,7 +4795,7 @@ function AppInner() {
         {tab==="Train"&&(effectiveIsPro ? <TrainTab profile={profile} workoutLog={workoutLog} setWorkoutLog={setWorkoutLog} setProfile={setProfile} savedWorkout={todaysWorkout} setSavedWorkout={setTodaysWorkout} /> : <LockedTab feature="Workout tracking, lift tracker and rest day planner" onUpgrade={()=>setShowPaywall(true)} />)}
         {tab==="Track"&&(effectiveIsPro ? <TrackTab profile={profile} entries={entries} setEntries={fn=>setEntries(typeof fn==="function"?fn(entries):fn)} measurements={measurements} setMeasurements={setMeasurements} workoutLog={workoutLog} /> : <LockedTab feature="Progress tracking, measurements and body stats" onUpgrade={()=>setShowPaywall(true)} />)}
         {tab==="Coach"&&(effectiveIsPro ? <CoachTab profile={profile} setProfile={setProfile} mealPlan={mealPlan} mealLog={mealLog} workoutLog={workoutLog} entries={entries} /> : <LockedTab feature="AI personal coach" onUpgrade={()=>setShowPaywall(true)} />)}
-        {tab==="Profile"&&<ProfileTab profile={profile} setProfile={setProfile} onReset={handleReset} isDark={isDark} darkOverride={darkOverride} setDarkOverride={setDarkOverride} isPro={effectiveIsPro} proData={proData} onUpgrade={()=>setShowPaywall(true)} user={user} onShowAuth={()=>setShowAuth(true)} />}
+        {tab==="Profile"&&<ProfileTab profile={profile} setProfile={setProfile} onReset={handleReset} isDark={isDark} darkOverride={darkOverride} setDarkOverride={setDarkOverride} isPro={effectiveIsPro} proData={proData} onUpgrade={()=>setShowPaywall(true)} user={user} onShowAuth={()=>setShowAuth(true)} onClearMealPlan={()=>saveMealPlan(null)} />}
 
       </div>
 
