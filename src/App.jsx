@@ -2087,7 +2087,7 @@ const MealsTab = ({ profile, favourites, setFavourites, removed, setRemoved, mea
           // Plan exists — compact single-line bar
           <div style={{ marginBottom:12 }}>
             {/* Expiry nudge — shown when all plan days are in the past */}
-            {mealPlan.days && mealPlan.days.every(d => d.date < today) && (
+            {mealPlan.days && !mealPlan.days.some(d => d.date > today) && (
               <div style={{ background:`${C.orange}12`, border:`1px solid ${C.orange}44`, borderRadius:14, padding:"12px 14px", marginBottom:10, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
                 <div>
                   <p style={{ color:C.orange, fontWeight:700, fontSize:13, margin:0 }}>Your meal plan has ended</p>
