@@ -4443,6 +4443,15 @@ function AppInner() {
       if (data.measurements?.length) setMeasurements(data.measurements);
       if (data.dark_override !== null && data.dark_override !== undefined) setDarkOverride(data.dark_override);
       if (data.is_pro) { setIsPro(true); setProData({ customerId: data.stripe_customer_id, subscriptionId: data.stripe_subscription_id, plan: data.stripe_plan, cancelAt: data.cancel_at || null }); }
+      if (data.meal_plan && data.meal_plan.days) {
+        // Only load if plan has future/today dates
+        const today = new Date().toISOString().split("T")[0];
+        const hasFuture = data.meal_plan.days.some(d => d.date >= today);
+        if (hasFuture) {
+          setMealPlan(data.meal_plan);
+          localStorage.setItem("leanplan_meal_plan", JSON.stringify(data.meal_plan));
+        }
+      }
     } catch(e){ console.error("Supabase load error:", e); }
   };
 
@@ -4460,6 +4469,7 @@ function AppInner() {
         journal: data.journal || {},
         measurements: data.measurements || [],
         dark_override: data.darkOverride,
+        meal_plan: data.mealPlan || null,
         updated_at: new Date().toISOString(),
       });
     } catch(e){ console.error("Supabase save error:", e); }
@@ -4543,14 +4553,14 @@ function AppInner() {
   // Save to both localStorage and Supabase when data changes
   useEffect(()=>{
     if (loading) return;
-    const data = {profile,entries,favourites,removed,mealLog,workoutLog,water,journal,measurements,darkOverride};
+    const data = {profile,entries,favourites,removed,mealLog,workoutLog,water,journal,measurements,darkOverride,mealPlan};
     try { localStorage.setItem("leanplan_v4", JSON.stringify(data)); } catch(e){}
     if (user) {
       // Debounce Supabase saves to avoid too many writes
       const timer = setTimeout(() => saveToSupabase(user.id, data), 2000);
       return () => clearTimeout(timer);
     }
-  },[profile,entries,favourites,removed,mealLog,workoutLog,water,journal,measurements,darkOverride,loading,user]);
+  },[profile,entries,favourites,removed,mealLog,workoutLog,water,journal,measurements,darkOverride,mealPlan,loading,user]);
 
   const loadBg = systemDark ? "#000" : "#f2f2f7";
   const loadText = systemDark ? "#8e8e93" : "#8e8e93";
