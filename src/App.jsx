@@ -1769,8 +1769,16 @@ const MealCarousel = ({ meals, favourites, likedMeals, mealLog, today, onLike, o
             title="Never show this meal again"
           >👎</button>
           <button
-            onClick={()=>{ if(!isLogged) onLog(m); }}
-            style={{ width:44, height:44, background:isLogged?`${C.green}15`:"none", border:`1.5px solid ${isLogged?C.green:C.border}`, borderRadius:12, color:isLogged?C.green:C.text, fontSize:18, cursor:isLogged?"default":"pointer", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}
+            onClick={()=>{ 
+              if(isLogged) {
+                const idx = (mealLog[today]||[]).findIndex(l=>l.id===m?.id);
+                if(idx !== -1) onRemoveLog(idx);
+              } else {
+                onLog(m);
+              }
+            }}
+            style={{ width:44, height:44, background:isLogged?`${C.green}15`:"none", border:`1.5px solid ${isLogged?C.green:C.border}`, borderRadius:12, color:isLogged?C.green:C.text, fontSize:18, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}
+            title={isLogged?"Tap to undo log":"Log this meal"}
           >{isLogged?"✓":"+"}</button>
         </div>
       ) : (
