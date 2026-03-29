@@ -2099,6 +2099,7 @@ const MealsTab = ({ profile, favourites, setFavourites, removed, setRemoved, mea
               </div>
             )}
             {/* Smart nutrition bar */}
+            <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:14, padding:"10px 14px", marginBottom:8 }}>
               {isGuided && (() => {
                 const dayTarget = mealPlan.dailyCalTarget || targetCals;
                 const protTarget = mealPlan.dailyProteinTarget || displayProteinTarget;
