@@ -776,8 +776,8 @@ const buildMealTemplate = (profile, days, usesProteinPowder) => {
   }
 
   let proteins = (allProteins[dietType] || allProteins.omnivore).filter(p => {
-    if (dislikes.includes("fish") && ["tinned tuna","tinned salmon","cod","haddock","king prawns"].includes(p)) return false;
-    if (dislikes.includes("oily fish") && ["tinned salmon","mackerel"].includes(p)) return false;
+    if (dislikes.includes("fish") && ["tinned tuna","tinned salmon","cod","haddock","king prawns","mackerel","salmon"].includes(p)) return false;
+    if (dislikes.includes("oily fish") && ["tinned salmon","tinned tuna","mackerel","salmon"].includes(p)) return false;
     if (dislikes.includes("shellfish") && ["king prawns"].includes(p)) return false;
     if (dislikes.includes("pork") && ["pork"].includes(p)) return false;
     if (dislikes.includes("red meat") && ["lean beef mince","turkey mince"].includes(p)) return false;
@@ -888,16 +888,17 @@ app.post("/api/generate-meal-plan-v2", async (req, res) => {
   // Age-specific guidance
   const age = parseFloat(profile?.age) || 0;
   const ageGuidance = (() => {
+    const likesOilyFish = !profile?.dislikes?.some(d => ["oily fish","fish","salmon","tuna"].includes(d.toLowerCase()));
     if (age >= 50) return `AGE-SPECIFIC GUIDANCE (${age} years old):
 - Higher protein is critical at this age to prevent muscle loss — prioritise protein at every meal
 - Smaller, more frequent meals are better tolerated than large ones
-- Include anti-inflammatory foods: oily fish, berries, leafy greens, olive oil
-- Calcium-rich foods important for bone density: sardines, leafy greens, fortified alternatives
+- Include anti-inflammatory foods: ${likesOilyFish ? "oily fish, " : ""}berries, leafy greens, olive oil
+- Calcium-rich foods important for bone density: ${likesOilyFish ? "sardines, " : ""}leafy greens, fortified alternatives
 - Creatine is especially beneficial over 50 — include a note if creatine is being used
 - Avoid very high-fibre meals in one sitting — can cause discomfort`;
     if (age >= 40) return `AGE-SPECIFIC GUIDANCE (${age} years old):
 - Protein needs are increasing — aim for protein at every meal
-- Include anti-inflammatory foods regularly: berries, oily fish, leafy greens
+- Include anti-inflammatory foods regularly: berries, ${likesOilyFish ? "oily fish, " : ""}leafy greens
 - Metabolism is slowing — calorie targets are more important to stick to`;
     return "";
   })();
@@ -1319,6 +1320,7 @@ const selectCoreIngredients = (profile) => {
   let proteins = (proteinPools[dietType] || proteinPools.omnivore).filter(p => {
     if (dislikes.some(d => p.includes(d))) return false;
     if (dislikes.includes("fish") && ["tinned tuna","tinned salmon","cod fillet"].includes(p)) return false;
+    if (dislikes.includes("oily fish") && ["tinned tuna","tinned salmon"].includes(p)) return false;
     if (dislikes.includes("red meat") && p === "lean beef mince") return false;
     return true;
   }).slice(0, 3);
