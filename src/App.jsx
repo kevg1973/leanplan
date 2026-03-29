@@ -4145,11 +4145,18 @@ const AuthScreen = ({ onAuth, onSkip, onStartFresh }) => {
   const handleForgot = async () => {
     if (!email) { setError("Enter your email address first"); return; }
     setLoading(true);
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}?type=recovery`,
-    });
-    if (error) setError(error.message);
-    else setMessage("Password reset email sent! Check your inbox.");
+    try {
+      const res = await fetch("/api/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to send reset email");
+      setMessage("Check your inbox — we've sent you a temporary password.");
+    } catch(err) {
+      setError(err.message);
+    }
     setLoading(false);
   };
 
