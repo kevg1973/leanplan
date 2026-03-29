@@ -2086,8 +2086,19 @@ const MealsTab = ({ profile, favourites, setFavourites, removed, setRemoved, mea
         ) : mealPlan && isPro ? (
           // Plan exists — compact single-line bar
           <div style={{ marginBottom:12 }}>
+            {/* Expiry nudge — shown when all plan days are in the past */}
+            {mealPlan.days && mealPlan.days.every(d => d.date < today) && (
+              <div style={{ background:`${C.orange}12`, border:`1px solid ${C.orange}44`, borderRadius:14, padding:"12px 14px", marginBottom:10, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                <div>
+                  <p style={{ color:C.orange, fontWeight:700, fontSize:13, margin:0 }}>Your meal plan has ended</p>
+                  <p style={{ color:C.muted, fontSize:12, margin:"2px 0 0" }}>Ready for a fresh plan?</p>
+                </div>
+                <button onClick={generatePlan} disabled={generating} style={{ background:C.orange, border:"none", borderRadius:99, padding:"8px 14px", color:"#fff", fontSize:12, fontWeight:700, cursor:"pointer", fontFamily:FONT, flexShrink:0, marginLeft:12 }}>
+                  Generate →
+                </button>
+              </div>
+            )}
             {/* Smart nutrition bar */}
-            <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:14, padding:"10px 14px", marginBottom:8 }}>
               {isGuided && (() => {
                 const dayTarget = mealPlan.dailyCalTarget || targetCals;
                 const protTarget = mealPlan.dailyProteinTarget || displayProteinTarget;
