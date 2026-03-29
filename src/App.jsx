@@ -2993,69 +2993,9 @@ const TrackTab = ({ profile, entries, setEntries, measurements, setMeasurements,
 const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDarkOverride, isPro, proData, onUpgrade, user, onShowAuth }) => {
   const [editing, setEditing] = useState(null);
   const [tempData, setTempData] = useState({});
-  const [showChangePw, setShowChangePw] = useState(false);
-  const [newPw, setNewPw] = useState("");
-  const [confirmPw, setConfirmPw] = useState("");
-  const [pwLoading, setPwLoading] = useState(false);
-  const [pwError, setPwError] = useState(null);
-  const [pwSuccess, setPwSuccess] = useState(false);
   const toggleArr = (k,v) => setTempData(d=>({...d,[k]:d[k].includes(v)?d[k].filter(x=>x!==v):[...d[k],v]}));
   const startEdit = (s) => { setTempData({...profile}); setEditing(s); };
   const save = () => { setProfile({...profile,...tempData}); setEditing(null); };
-
-  if (showChangePw) return (
-    <div style={{ padding:"0 20px", maxWidth:480, margin:"0 auto" }}>
-      <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:28, paddingTop:8 }}>
-        <button onClick={()=>{ setShowChangePw(false); setNewPw(""); setConfirmPw(""); setPwError(null); setPwSuccess(false); }} style={{ background:"none", border:"none", color:C.accent, fontSize:16, cursor:"pointer", fontFamily:FONT }}>←</button>
-        <h2 style={{ color:C.text, fontSize:20, fontWeight:700, margin:0 }}>Change Password</h2>
-      </div>
-
-      {pwSuccess ? (
-        <div style={{ textAlign:"center", padding:"40px 0" }}>
-          <div style={{ fontSize:48, marginBottom:16 }}>✅</div>
-          <h3 style={{ color:C.text, fontSize:20, fontWeight:700, marginBottom:8 }}>Password updated!</h3>
-          <p style={{ color:C.muted, fontSize:15 }}>Your new password is saved.</p>
-          <Btn color={C.accent} onClick={()=>{ setShowChangePw(false); setNewPw(""); setConfirmPw(""); setPwSuccess(false); }} style={{ marginTop:24 }}>Done</Btn>
-        </div>
-      ) : (
-        <>
-          <div style={{ marginBottom:14 }}>
-            <p style={{ color:C.textSec, fontSize:13, fontWeight:500, marginBottom:6 }}>New password</p>
-            <TInput
-              value={newPw}
-              onChange={e=>setNewPw(e.target.value)}
-              placeholder="Min 6 characters"
-              type="password"
-              autoComplete="new-password"
-            />
-          </div>
-          <div style={{ marginBottom:20 }}>
-            <p style={{ color:C.textSec, fontSize:13, fontWeight:500, marginBottom:6 }}>Confirm password</p>
-            <TInput
-              value={confirmPw}
-              onChange={e=>setConfirmPw(e.target.value)}
-              placeholder="Repeat new password"
-              type="password"
-              autoComplete="new-password"
-            />
-          </div>
-          {pwError && <div style={{ background:`${C.red}10`, border:`1px solid ${C.red}33`, borderRadius:10, padding:"10px 14px", marginBottom:14 }}>
-            <p style={{ color:C.red, fontSize:13, margin:0 }}>{pwError}</p>
-          </div>}
-          <Btn color={C.accent} disabled={pwLoading} onClick={async()=>{
-            if (!newPw || newPw.length < 6) { setPwError("Password must be at least 6 characters"); return; }
-            if (newPw !== confirmPw) { setPwError("Passwords don't match"); return; }
-            setPwLoading(true); setPwError(null);
-            const { error } = await supabase.auth.updateUser({ password: newPw });
-            if (error) { setPwError(error.message); setPwLoading(false); return; }
-            setPwSuccess(true); setPwLoading(false);
-          }} style={{ width:"100%" }}>
-            {pwLoading ? "Updating..." : "Update Password"}
-          </Btn>
-        </>
-      )}
-    </div>
-  );
 
   if (editing) return (
     <div>
@@ -3412,13 +3352,9 @@ const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDar
         {user ? (
           <div>
             <Row label="Signed in as" value={user.email} />
-            <Row label="Data sync" value="✓ Synced to cloud" color={C.green} />
-            <Row label="Change password" value="••••••••" onClick={()=>setShowChangePw(true)} last />
-            <div style={{ padding:"8px 16px 4px" }}>
-              <p onClick={async()=>{ await supabase.auth.signOut(); setUser(null); }}
-                style={{ color:C.red, fontSize:14, fontWeight:500, textAlign:"center", cursor:"pointer", padding:"8px 0" }}>
-                Sign Out
-              </p>
+            <Row label="Data sync" value="✓ Synced to cloud" color={C.green} last />
+            <div style={{ padding:"12px 16px" }}>
+              <Btn outline color={C.red} onClick={async()=>{ await supabase.auth.signOut(); }} style={{ width:"100%" }}>Sign Out</Btn>
             </div>
           </div>
         ) : (
@@ -3962,98 +3898,6 @@ class ErrorBoundary extends React.Component {
 
 
 
-// ── Create Account Screen (shown after onboarding) ───────────────────────────
-const CreateAccountScreen = ({ profileData, onDone }) => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-
-  const handleCreate = async () => {
-    if (!email) { setError("Please enter your email address"); return; }
-    if (!password || password.length < 6) { setError("Password must be at least 6 characters"); return; }
-    setLoading(true); setError(null);
-
-    // Create Supabase account
-    const { data, error: signUpError } = await supabase.auth.signUp({ email, password });
-    if (signUpError) { setError(signUpError.message); setLoading(false); return; }
-
-    const userId = data.user?.id;
-    if (!userId) { setError("Something went wrong — please try again"); setLoading(false); return; }
-
-    // Save profile data to Supabase immediately
-    const trialStart = new Date().toISOString();
-    try {
-      await supabase.from("profiles").upsert({
-        id: userId,
-        email,
-        profile_data: profileData,
-        trial_start: trialStart,
-        reminder_sent: false,
-        entries: [],
-        favourites: [],
-        removed: [],
-        meal_log: {},
-        workout_log: {},
-        water: {},
-        journal: {},
-        measurements: [],
-      });
-    } catch(e) { console.error("Profile save error:", e); }
-
-    setLoading(false);
-    onDone(data.user, email);
-  };
-
-  return (
-    <div style={{ minHeight:"100vh", background:C.bg, fontFamily:FONT, display:"flex", flexDirection:"column", justifyContent:"center", padding:"0 20px" }}>
-      <div style={{ maxWidth:400, margin:"0 auto", width:"100%" }}>
-
-        {/* Header */}
-        <div style={{ textAlign:"center", marginBottom:36 }}>
-          <div style={{ fontSize:48, marginBottom:12 }}>🎉</div>
-          <h1 style={{ fontSize:26, fontWeight:800, color:C.text, margin:"0 0 10px" }}>Your personal plan is ready</h1>
-          <p style={{ color:C.muted, fontSize:15, lineHeight:1.6, margin:0 }}>Create your account to save it. You'll have 7 days free to explore the app.</p>
-        </div>
-
-        {/* Form */}
-        <div style={{ marginBottom:14 }}>
-          <p style={{ color:C.textSec, fontSize:13, fontWeight:500, marginBottom:6 }}>Email address</p>
-          <TInput
-            value={email}
-            onChange={e=>setEmail(e.target.value)}
-            placeholder="your@email.com"
-            type="email"
-            autoComplete="email"
-          />
-        </div>
-        <div style={{ marginBottom:20 }}>
-          <p style={{ color:C.textSec, fontSize:13, fontWeight:500, marginBottom:6 }}>Password</p>
-          <TInput
-            value={password}
-            onChange={e=>setPassword(e.target.value)}
-            placeholder="Min 6 characters"
-            type="password"
-            autoComplete="new-password"
-          />
-        </div>
-
-        {error && <div style={{ background:`${C.red}10`, border:`1px solid ${C.red}33`, borderRadius:10, padding:"10px 14px", marginBottom:14 }}>
-          <p style={{ color:C.red, fontSize:13, margin:0 }}>{error}</p>
-        </div>}
-
-        <Btn onClick={handleCreate} disabled={loading} color={C.accent} style={{ width:"100%", fontSize:17, padding:"16px 0", marginBottom:12 }}>
-          {loading ? "Creating your account..." : "Save My Plan"}
-        </Btn>
-
-        <p style={{ color:C.muted, fontSize:12, textAlign:"center", lineHeight:1.6, margin:0 }}>
-          By continuing you agree to our terms. Your 7-day free trial starts now. Cancel anytime.
-        </p>
-      </div>
-    </div>
-  );
-};
-
 // ── Welcome Screen ────────────────────────────────────────────────────────────
 const WelcomeScreen = ({ onNew, onSignIn }) => (
   <div style={{ minHeight:"100vh", background:C.bg, fontFamily:FONT, display:"flex", flexDirection:"column", justifyContent:"center", padding:"0 20px" }}>
@@ -4109,8 +3953,98 @@ const TrialExpiredScreen = ({ onSubscribe }) => (
   </div>
 );
 
+// ── Set Password Screen (after clicking email link) ───────────────────────────
+const SetPasswordScreen = ({ onDone }) => {
+  const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [done, setDone] = useState(false);
+
+  const handleSet = async () => {
+    if (!password || password.length < 6) { setError("Password must be at least 6 characters"); return; }
+    if (password !== confirm) { setError("Passwords don't match"); return; }
+    setLoading(true); setError(null);
+
+    // Restore session from stored tokens if needed
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      const accessToken = localStorage.getItem("leanplan_recovery_token");
+      const refreshToken = localStorage.getItem("leanplan_recovery_refresh");
+      if (accessToken && refreshToken) {
+        const { error: sessionError } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken,
+        });
+        if (sessionError) {
+          setError("Your link has expired. Please use 'Forgot password' to get a new one.");
+          setLoading(false);
+          return;
+        }
+      } else {
+        setError("Your link has expired. Please use 'Forgot password' to get a new one.");
+        setLoading(false);
+        return;
+      }
+    }
+
+    const { error } = await supabase.auth.updateUser({ password });
+    if (error) { setError(error.message); setLoading(false); return; }
+    localStorage.removeItem("leanplan_recovery");
+    localStorage.removeItem("leanplan_recovery_token");
+    localStorage.removeItem("leanplan_recovery_refresh");
+    setDone(true);
+    setTimeout(() => onDone(), 2000);
+  };
+
+  return (
+    <div style={{ minHeight:"100vh", background:C.bg, fontFamily:FONT, display:"flex", flexDirection:"column", justifyContent:"center", padding:"0 20px" }}>
+      <div style={{ maxWidth:400, margin:"0 auto", width:"100%" }}>
+        <div style={{ textAlign:"center", marginBottom:40 }}>
+          <img src="/leanplan_app_icon.png" alt="" style={{ height:72, width:72, borderRadius:18, marginBottom:16 }} />
+          <h1 style={{ fontSize:32, fontWeight:800, color:C.text, margin:"0 0 8px" }}>
+            <span style={{ color:C.text }}>Lean</span><span style={{ color:C.accent }}>Plan</span>
+          </h1>
+        </div>
+
+        {done ? (
+          <div style={{ textAlign:"center" }}>
+            <div style={{ fontSize:48, marginBottom:16 }}>✅</div>
+            <h2 style={{ color:C.text, fontSize:22, fontWeight:700, marginBottom:8 }}>Password set!</h2>
+            <p style={{ color:C.muted, fontSize:15 }}>Taking you into the app...</p>
+          </div>
+        ) : (
+          <>
+            <div style={{ marginBottom:24 }}>
+              <h2 style={{ color:C.text, fontSize:22, fontWeight:700, margin:"0 0 6px" }}>Set your password</h2>
+              <p style={{ color:C.muted, fontSize:14, margin:0 }}>Choose a password to sign in across all your devices.</p>
+            </div>
+
+            <div style={{ marginBottom:14 }}>
+              <p style={{ color:C.textSec, fontSize:13, fontWeight:500, marginBottom:6 }}>New password</p>
+              <TInput value={password} onChange={e=>setPassword(e.target.value)} placeholder="Min 6 characters" type="password" />
+            </div>
+            <div style={{ marginBottom:20 }}>
+              <p style={{ color:C.textSec, fontSize:13, fontWeight:500, marginBottom:6 }}>Confirm password</p>
+              <TInput value={confirm} onChange={e=>setConfirm(e.target.value)} placeholder="Repeat password" type="password" />
+            </div>
+
+            {error && <div style={{ background:`${C.red}10`, border:`1px solid ${C.red}33`, borderRadius:10, padding:"10px 14px", marginBottom:14 }}>
+              <p style={{ color:C.red, fontSize:13, margin:0 }}>{error}</p>
+            </div>}
+
+            <Btn onClick={handleSet} disabled={loading} color={C.accent} style={{ width:"100%", marginBottom:12 }}>
+              {loading ? "Saving..." : "Set Password"}
+            </Btn>
+          </>
+        )}
+      </div>
+    </div>
+  );
+};
+
 // ── Auth Screen ───────────────────────────────────────────────────────────────
-const AuthScreen = ({ onAuth, onSkip, onStartFresh }) => {
+const AuthScreen = ({ onAuth, onSkip }) => {
   const [mode, setMode] = useState("login"); // login, signup, forgot
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -4146,7 +4080,7 @@ const AuthScreen = ({ onAuth, onSkip, onStartFresh }) => {
     if (!email) { setError("Enter your email address first"); return; }
     setLoading(true);
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}?type=recovery`,
+      redirectTo: `${window.location.origin}/reset-password`
     });
     if (error) setError(error.message);
     else setMessage("Password reset email sent! Check your inbox.");
@@ -4206,17 +4140,6 @@ const AuthScreen = ({ onAuth, onSkip, onStartFresh }) => {
         {mode === "forgot" && <p onClick={()=>{setMode("login");setError(null);}} style={{ color:C.accent, fontSize:13, textAlign:"center", cursor:"pointer", marginBottom:16 }}>← Back to sign in</p>}
         {mode === "login" && onSkip && <p onClick={onSkip} style={{ color:C.muted, fontSize:13, textAlign:"center", cursor:"pointer", marginBottom:16 }}>← Back</p>}
 
-        {onStartFresh && mode === "login" && <>
-          <div style={{ display:"flex", alignItems:"center", gap:12, margin:"16px 0" }}>
-            <div style={{ flex:1, height:1, background:C.border }} />
-            <span style={{ color:C.muted, fontSize:13 }}>or</span>
-            <div style={{ flex:1, height:1, background:C.border }} />
-          </div>
-          <p onClick={onStartFresh} style={{ color:C.muted, fontSize:13, textAlign:"center", cursor:"pointer" }}>
-            Start fresh with a new account
-          </p>
-        </>}
-
         {onSkip && <>
           <div style={{ display:"flex", alignItems:"center", gap:12, margin:"16px 0" }}>
             <div style={{ flex:1, height:1, background:C.border }} />
@@ -4240,12 +4163,6 @@ const AuthScreen = ({ onAuth, onSkip, onStartFresh }) => {
 
 // ── MAIN ──────────────────────────────────────────────────────────────────────
 function AppInner() {
-  const RESET_KEYS = [
-    "leanplan_v4", "leanplan_lifts", "leanplan_pro", "leanplan_device_id",
-    "leanplan_trial_start", "leanplan_gen_count", "leanplan_disliked_meals",
-    "leanplan_liked_meals", "leanplan_meal_plan", "leanplan_todays_meals",
-    "leanplan_pantry",
-  ];
   const [profile, setProfile] = useState(null);
   const [tab, setTab] = useState("Today");
   const [isPro, setIsPro] = useState(false);
@@ -4291,8 +4208,7 @@ function AppInner() {
   const [user, setUser] = useState(null); // Supabase user
   const [authChecked, setAuthChecked] = useState(false); // has auth been checked
   const [showAuth, setShowAuth] = useState(false); // show auth screen
-  const [showCreateAccount, setShowCreateAccount] = useState(false); // show create account after onboarding
-  const [pendingProfile, setPendingProfile] = useState(null); // profile data waiting for account creation
+  const [showSetPassword, setShowSetPassword] = useState(false); // set password after email link
   const [showTipSplash, setShowTipSplash] = useState(true);
   const [splashTipIdx] = useState(()=>Math.floor(Math.random()*DAILY_TIPS.length)); // show tip on open
   const [showWelcome, setShowWelcome] = useState(false);
@@ -4400,7 +4316,7 @@ function AppInner() {
       if (data.journal && Object.keys(data.journal).length) setJournal(data.journal);
       if (data.measurements?.length) setMeasurements(data.measurements);
       if (data.dark_override !== null && data.dark_override !== undefined) setDarkOverride(data.dark_override);
-      if (data.is_pro) { setIsPro(true); setProData({ customerId: data.stripe_customer_id, subscriptionId: data.stripe_subscription_id, plan: data.stripe_plan, cancelAt: data.cancel_at || null }); }
+      if (data.is_pro) { setIsPro(true); setProData({ customerId: data.stripe_customer_id, subscriptionId: data.stripe_subscription_id, plan: data.stripe_plan }); }
     } catch(e){ console.error("Supabase load error:", e); }
   };
 
@@ -4431,10 +4347,24 @@ function AppInner() {
     loadFromLocal();
     setLoading(false); // Show the app straight away from cache
 
-    // Clear any leftover recovery flags from previous attempts
-    localStorage.removeItem("leanplan_recovery");
-    localStorage.removeItem("leanplan_recovery_token");
-    localStorage.removeItem("leanplan_recovery_refresh");
+    // Check for password recovery link — Supabase uses either hash or query param format
+    const hash = window.location.hash;
+    const search = window.location.search;
+    const isRecovery = hash?.includes("type=recovery") || search?.includes("type=recovery");
+    const hasAuthCode = search?.includes("code=") || hash?.includes("access_token");
+
+    if (isRecovery) {
+      localStorage.setItem("leanplan_recovery", "1");
+      setShowSetPassword(true);
+      window.history.replaceState({}, "", "/");
+    } else if (hasAuthCode) {
+      window.history.replaceState({}, "", "/");
+    }
+
+    // Also check localStorage flag — survives PWA redirect on mobile
+    if (localStorage.getItem("leanplan_recovery") === "1") {
+      setShowSetPassword(true);
+    }
 
     const finishLoading = () => {
       if (!loadingDone) {
@@ -4451,6 +4381,20 @@ function AppInner() {
 
     // onAuthStateChange catches ALL auth events including email confirmation
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === "PASSWORD_RECOVERY") {
+        // User clicked set-password link from email — show the set password screen
+        localStorage.setItem("leanplan_recovery", "1");
+        // Store the access token so we can use it to update password
+        if (session?.access_token) {
+          localStorage.setItem("leanplan_recovery_token", session.access_token);
+          localStorage.setItem("leanplan_recovery_refresh", session.refresh_token || "");
+        }
+        setShowSetPassword(true);
+        setUser(session?.user || null);
+        clearTimeout(safetyTimer);
+        finishLoading();
+        return;
+      }
       if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED" || event === "USER_UPDATED") {
         if (session?.user) {
           setUser(session.user);
@@ -4519,8 +4463,13 @@ function AppInner() {
 
   // ── Render sequence ──────────────────────────────────────────────────────────
 
+  // 0. Set password screen — shown when user arrives via email recovery link
+  if (showSetPassword) return <SetPasswordScreen onDone={() => {
+    setShowSetPassword(false);
+  }} />;
+
   // Show tip splash on every open (after profile is loaded)
-  if (showTipSplash && profile && !showAuth && !showWelcome && !showOnboarding) {
+  if (showTipSplash && profile && !showAuth && !showWelcome && !showOnboarding && !showSetPassword) {
     return <TipSplashScreen tip={DAILY_TIPS[splashTipIdx]} onDismiss={()=>setShowTipSplash(false)} />;
   }
 
@@ -4552,69 +4501,22 @@ function AppInner() {
 
   // 3. Welcome screen — first time, no profile, no user
   if (!profile && !user && !showOnboarding) return <WelcomeScreen
-    onNew={()=>{ setShowOnboarding(true); }}
+    onNew={()=>{ setTrialStart(); setShowOnboarding(true); }}
     onSignIn={()=>setShowAuth(true)}
   />;
 
-  // 3b. Signed out but have local data — show sign in screen
-  if (profile && !user) return <AuthScreen
-    onAuth={async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        setUser(session.user);
-        setSyncing(true);
-        try {
-          await loadFromSupabase(session.user.id);
-          const { data } = await supabase.from("profiles").select("profile_data").eq("id", session.user.id).single();
-          if (!data?.profile_data || Object.keys(data.profile_data).length === 0) {
-            const local = JSON.parse(localStorage.getItem("leanplan_v4") || "{}");
-            if (local.profile) await saveToSupabase(session.user.id, local);
-          }
-        } catch(e){}
-        setSyncing(false);
-      }
-    }}
-    onSkip={null}
-    onStartFresh={() => {
-      if (!window.confirm("Start fresh? This will clear all your current data and cannot be undone.")) return;
-      RESET_KEYS.forEach(k => localStorage.removeItem(k));
-      setProfile(null); setEntries([]); setFavourites([]); setRemoved([]);
-      setMealLog({}); setWorkoutLog({}); setWater({}); setJournal({}); setMeasurements([]);
-      setIsPro(false); setProData(null); setMealPlan(null);
-    }}
-  />;
-
   // 4. Onboarding — after Get Started
-  if (!profile && !showCreateAccount) return <Onboarding onDone={p=>{ 
-    setPendingProfile(p);
-    setShowCreateAccount(true);
+  if (!profile) return <Onboarding onDone={p=>{ 
+    setProfile(p);
+    setTrialStart();
     try {
       localStorage.setItem("leanplan_v4", JSON.stringify({profile:p, entries:[], favourites:[], removed:[], mealLog:{}, workoutLog:{}, water:{}, journal:{}, measurements:[], darkOverride:null}));
     } catch(e){}
+    // If logged in, save to Supabase too
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) saveToSupabase(session.user.id, { profile:p, entries:[], favourites:[], removed:[], mealLog:{}, workoutLog:{}, water:{}, journal:{}, measurements:[], darkOverride:null });
+    });
   }} />;
-
-  // 4b. Create account — mandatory after onboarding (skip if already signed in)
-  if (showCreateAccount && pendingProfile) {
-    if (user) {
-      // Already signed in (e.g. after reset) — just save profile and continue
-      setProfile(pendingProfile);
-      setShowCreateAccount(false);
-      setPendingProfile(null);
-      setTrialStart();
-      saveToSupabase(user.id, { profile: pendingProfile, entries:[], favourites:[], removed:[], mealLog:{}, workoutLog:{}, water:{}, journal:{}, measurements:[], darkOverride:null });
-      return null;
-    }
-    return <CreateAccountScreen
-      profileData={pendingProfile}
-      onDone={async (supabaseUser, email) => {
-        setUser(supabaseUser);
-        setProfile(pendingProfile);
-        setShowCreateAccount(false);
-        setPendingProfile(null);
-        setTrialStart();
-      }}
-    />;
-  }
 
   // 5. Trial expired — show subscribe screen
   if (isTrialExpired() && !isPro) return <TrialExpiredScreen onSubscribe={()=>setShowPaywall(true)} />;
@@ -4623,6 +4525,13 @@ function AppInner() {
   const lost = Math.max(0,profile.startWeightLbs-cur);
   const pct = Math.min(100,Math.round((lost/profile.targetLbs)*100));
   const TAB_COLORS = {Today:"#007aff",Meals:"#34c759",Train:"#5ac8fa",Track:"#af52de",Coach:"#ff2d55",Profile:"#ff9500"};
+
+  const RESET_KEYS = [
+    "leanplan_v4", "leanplan_lifts", "leanplan_pro", "leanplan_device_id",
+    "leanplan_trial_start", "leanplan_gen_count", "leanplan_disliked_meals",
+    "leanplan_liked_meals", "leanplan_meal_plan", "leanplan_todays_meals",
+    "leanplan_pantry",
+  ];
 
   const handleReset = () => {
     const savedPro = localStorage.getItem("leanplan_pro");
@@ -4637,14 +4546,12 @@ function AppInner() {
       setProfile(null); setEntries([]); setFavourites([]); setRemoved([]);
       setMealLog({}); setWorkoutLog({}); setWater({}); setJournal({}); setMeasurements([]);
       setIsPro(false); setProData(null); setMealPlan(null);
-      setUser(null); supabase.auth.signOut();
     } else {
       if (!window.confirm("Reset all data? This cannot be undone.")) return;
       RESET_KEYS.forEach(k => localStorage.removeItem(k));
       setProfile(null); setEntries([]); setFavourites([]); setRemoved([]);
       setMealLog({}); setWorkoutLog({}); setWater({}); setJournal({}); setMeasurements([]);
       setIsPro(false); setProData(null); setMealPlan(null);
-      setUser(null); supabase.auth.signOut();
     }
   };
 
@@ -4672,27 +4579,14 @@ function AppInner() {
       </div>
 
       <div style={{ padding:"8px 14px 100px" }}>
-        {/* Cancellation notice */}
-        {isPro && proData?.cancelAt && (
-          <div style={{ background:`linear-gradient(135deg, #2d1f00, #3d2a00)`, border:`1px solid rgba(255,159,10,0.4)`, borderRadius:14, padding:"12px 16px", marginBottom:14, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-            <div>
-              <p style={{ color:"#ff9f0a", fontWeight:700, fontSize:13, margin:0 }}>⚠️ Subscription cancelled</p>
-              <p style={{ color:"rgba(255,255,255,0.6)", fontSize:11, margin:"2px 0 0" }}>
-                Access continues until {new Date(proData.cancelAt).toLocaleDateString("en-GB", { day:"numeric", month:"long", year:"numeric" })}
-              </p>
-            </div>
-            <button onClick={()=>setShowPaywall(true)} style={{ background:"#ff9f0a", border:"none", borderRadius:99, padding:"7px 14px", color:"#000", fontSize:12, fontWeight:700, cursor:"pointer", fontFamily:FONT, whiteSpace:"nowrap" }}>Resubscribe</button>
-          </div>
-        )}
-
-        {/* Trial banner */}
+        {/* Trial banner or Pro upgrade banner */}
         {!isPro && isTrialActive() && (
-          <div style={{ background:`linear-gradient(135deg, #0a2a1f, #0d3d2a)`, border:`1px solid rgba(52,199,89,0.5)`, borderRadius:14, padding:"12px 16px", marginBottom:14, display:"flex", justifyContent:"space-between", alignItems:"center", boxShadow:"0 4px 16px rgba(52,199,89,0.15)" }}>
+          <div style={{ background:`linear-gradient(135deg, #1c1c2e, #2d2b55)`, border:`1px solid rgba(88,86,214,0.4)`, borderRadius:14, padding:"12px 16px", marginBottom:14, display:"flex", justifyContent:"space-between", alignItems:"center", boxShadow:"0 4px 16px rgba(88,86,214,0.2)" }}>
             <div>
-              <p style={{ color:"#34c759", fontWeight:700, fontSize:13, margin:0 }}>✦ Free trial — {getTrialDaysLeft()} day{getTrialDaysLeft()!==1?"s":""} left</p>
+              <p style={{ color:"#fff", fontWeight:700, fontSize:13, margin:0 }}>✦ Full access — {getTrialDaysLeft()} day{getTrialDaysLeft()!==1?"s":""} left</p>
               <p style={{ color:"rgba(255,255,255,0.6)", fontSize:11, margin:"2px 0 0" }}>Subscribe before your trial ends to keep everything</p>
             </div>
-            <button onClick={()=>setShowPaywall(true)} style={{ background:"#34c759", border:"none", borderRadius:99, padding:"7px 14px", color:"#000", fontSize:12, fontWeight:700, cursor:"pointer", fontFamily:FONT, whiteSpace:"nowrap" }}>Subscribe →</button>
+            <button onClick={()=>setShowPaywall(true)} style={{ background:"#5856d6", border:"none", borderRadius:99, padding:"7px 14px", color:"#fff", fontSize:12, fontWeight:700, cursor:"pointer", fontFamily:FONT, whiteSpace:"nowrap" }}>Subscribe →</button>
           </div>
         )}
         {!effectiveIsPro && <ProBanner onUpgrade={()=>setShowPaywall(true)} />}
