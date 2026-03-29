@@ -2069,10 +2069,6 @@ const MealsTab = ({ profile, favourites, setFavourites, removed, setRemoved, mea
             <Icon name="check" size={14} color={C.green} />
             <p style={{ color:C.green, fontSize:12, fontWeight:700, letterSpacing:"0.06em", margin:0 }}>TODAY'S LOG</p>
           </div>
-          {tdee&&<div style={{ marginBottom:10 }}>
-            <div style={{ display:"flex", justifyContent:"space-between", marginBottom:4 }}><span style={{ color:C.muted, fontSize:12 }}>Calories</span><span style={{ color:todayCals>targetCals?C.red:C.green, fontSize:12, fontWeight:600 }}>{todayCals} / {targetCals}</span></div>
-            <ProgressBar value={todayCals} max={targetCals} color={todayCals>targetCals?C.red:C.green} />
-          </div>}
           {todayLogged.map((m,i)=>(
             <div key={i} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"5px 0", borderBottom:i<todayLogged.length-1?`1px solid ${C.border}`:"none" }}>
               <div><span style={{ color:C.text, fontSize:13 }}>{m.name}</span><span style={{ color:C.muted, fontSize:11, marginLeft:8 }}>{m.time}</span></div>
