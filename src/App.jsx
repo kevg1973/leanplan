@@ -1761,11 +1761,11 @@ const MealCarousel = ({ meals, favourites, likedMeals, mealLog, today, onLike, o
           <button
             onClick={()=>onSwap(m)}
             disabled={swappingId === m.id}
-            style={{ flex:1, background:swappingId===m.id?C.sectionBg:`${C.accent}12`, border:`1.5px solid ${C.accent}`, borderRadius:12, padding:"10px 0", color:C.accent, fontSize:14, fontWeight:700, cursor:swappingId===m.id?"default":"pointer", fontFamily:FONT }}
-          >{swappingId===m.id ? "⏳ Finding swap..." : "⇄ Swap meal"}</button>
+            style={{ background:swappingId===m.id?C.sectionBg:`${C.accent}12`, border:`1.5px solid ${C.accent}`, borderRadius:12, padding:"8px 14px", color:C.accent, fontSize:12, fontWeight:700, cursor:swappingId===m.id?"default":"pointer", fontFamily:FONT, flexShrink:0 }}
+          >{swappingId===m.id ? "⏳ Swapping..." : "⇄ Swap"}</button>
           <button
             onClick={()=>onDislike(m)}
-            style={{ width:44, height:44, background:"none", border:`1.5px solid ${C.border}`, borderRadius:12, color:C.red, fontSize:18, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}
+            style={{ width:40, height:40, background:"none", border:`1.5px solid ${C.border}`, borderRadius:12, color:C.red, fontSize:16, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}
             title="Never show this meal again"
           >👎</button>
           <button
@@ -1777,9 +1777,8 @@ const MealCarousel = ({ meals, favourites, likedMeals, mealLog, today, onLike, o
                 onLog(m);
               }
             }}
-            style={{ width:44, height:44, background:isLogged?`${C.green}15`:"none", border:`1.5px solid ${isLogged?C.green:C.border}`, borderRadius:12, color:isLogged?C.green:C.text, fontSize:18, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}
-            title={isLogged?"Tap to undo log":"Log this meal"}
-          >{isLogged?"✓":"+"}</button>
+            style={{ flex:1, background:isLogged?`${C.green}15`:"none", border:`1.5px solid ${isLogged?C.green:C.border}`, borderRadius:12, padding:"8px 0", color:isLogged?C.green:C.text, fontSize:13, fontWeight:700, cursor:"pointer", fontFamily:FONT, transition:"all 0.2s" }}
+          >{isLogged ? "✓ Undo" : "+ Log meal"}</button>
         </div>
       ) : (
         <div style={{ display:"flex", gap:8, marginBottom:8 }}>
