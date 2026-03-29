@@ -1404,6 +1404,8 @@ const TodayTab = ({ profile, entries, mealLog, setMealLog, workoutLog, water, se
   const tdee = calcTDEE(profile);
   const targetCals = tdee ? tdee - Math.round(pace.lbs*500) : 2000;
   const targetProtein = profile.age>=50 ? Math.round((profile.startWeightLbs*0.453592)*2.4) : Math.round((profile.startWeightLbs*0.453592)*2.2);
+  const targetCarbs = Math.round((targetCals * 0.4) / 4);
+  const targetFat = Math.round((targetCals * 0.3) / 9);
   const todayMeals = mealLog[today]||[];
   const todayCalories = todayMeals.reduce((a,m)=>a+m.cals,0);
   const todayProtein = todayMeals.reduce((a,m)=>a+m.protein,0);
@@ -1411,8 +1413,10 @@ const TodayTab = ({ profile, entries, mealLog, setMealLog, workoutLog, water, se
   const todayFat = todayMeals.reduce((a,m)=>a+(m.fat||0),0);
   const todayWater = water[today]||0;
   const todayWorked = workoutLog[today];
-  const targetCarbs = Math.round((targetCals * 0.4) / 4);
-  const targetFat = Math.round((targetCals * 0.3) / 9);
+
+  // Planned meals count
+  const todayPlan = mealPlan?.days?.find(d => d.date === today);
+  const plannedCount = todayPlan?.meals?.length || 5;
 
   // Streak
   let streak=0;
@@ -1423,7 +1427,7 @@ const TodayTab = ({ profile, entries, mealLog, setMealLog, workoutLog, water, se
     else break;
   }
 
-  // Today's workout from weekly plan
+  // Today's workout
   const weekPlan = getWeeklyPlan(profile);
   const dayMap = { Mon:1, Tue:2, Wed:3, Thu:4, Fri:5, Sat:6, Sun:0 };
   const todayDayOfWeek = new Date().getDay();
@@ -1431,28 +1435,25 @@ const TodayTab = ({ profile, entries, mealLog, setMealLog, workoutLog, water, se
   const todaySession = sessionIdx !== -1 ? weekPlan.sessions[sessionIdx] : null;
   const block = getCurrentBlock(profile);
 
-  // Today's planned meals from meal plan
-  const todayPlan = mealPlan?.days?.find(d => d.date === today);
-  const plannedMeals = todayPlan?.meals || [];
-
-  // Date greeting
-  const dayName = new Date().toLocaleDateString("en-GB", { weekday:"long", day:"numeric", month:"long" });
-
   // Calorie ring
-  const calPct = Math.min(100, Math.round((todayCalories / targetCals) * 100));
   const circumference = 2 * Math.PI * 34;
-  const calOffset = circumference - (circumference * calPct / 100);
+  const calOffset = circumference - (circumference * Math.min(1, todayCalories / targetCals));
+
+  // Date + greeting
+  const dayName = new Date().toLocaleDateString("en-GB", { weekday:"long", day:"numeric", month:"long" });
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
 
   return (
     <div>
       {/* Greeting */}
       <div style={{ marginBottom:16 }}>
         <p style={{ color:C.muted, fontSize:13, margin:"0 0 2px" }}>{dayName}</p>
-        <h2 style={{ color:C.text, fontSize:22, fontWeight:700, margin:0 }}>Good {new Date().getHours()<12?"morning":new Date().getHours()<18?"afternoon":"evening"}{profile.name?`, ${profile.name}`:""} 👋</h2>
+        <h2 style={{ color:C.text, fontSize:22, fontWeight:700, margin:0 }}>{greeting}{profile.name?`, ${profile.name}`:""} 👋</h2>
       </div>
 
-      {/* Calories ring + macros */}
-      <div style={{ background:C.card, borderRadius:16, padding:"14px 16px", marginBottom:12, border:`1px solid ${C.border}`, display:"flex", alignItems:"center", gap:16 }}>
+      {/* Calorie ring + macros */}
+      <div style={{ background:C.card, borderRadius:16, padding:"14px 16px", marginBottom:10, border:`1px solid ${C.border}`, display:"flex", alignItems:"center", gap:16 }}>
         <div style={{ position:"relative", width:80, height:80, flexShrink:0 }}>
           <svg width="80" height="80" viewBox="0 0 80 80">
             <circle cx="40" cy="40" r="34" fill="none" stroke={C.sectionBg} strokeWidth="8"/>
@@ -1470,12 +1471,12 @@ const TodayTab = ({ profile, entries, mealLog, setMealLog, workoutLog, water, se
           <p style={{ color:C.muted, fontSize:11, fontWeight:600, letterSpacing:"0.06em", margin:"0 0 8px" }}>CALORIES TODAY</p>
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:8 }}>
             {[
-              { label:"protein", val:todayProtein, target:targetProtein, unit:"g", color:C.green },
-              { label:"carbs", val:todayCarbs, target:targetCarbs, unit:"g", color:C.orange },
-              { label:"fat", val:todayFat, target:targetFat, unit:"g", color:C.red },
+              { label:"protein", val:todayProtein, target:targetProtein, color:C.green },
+              { label:"carbs", val:todayCarbs, target:targetCarbs, color:C.orange },
+              { label:"fat", val:todayFat, target:targetFat, color:C.red },
             ].map(m=>(
               <div key={m.label}>
-                <p style={{ color:C.text, fontSize:14, fontWeight:700, margin:0 }}>{m.val}{m.unit}</p>
+                <p style={{ color:C.text, fontSize:14, fontWeight:700, margin:0 }}>{m.val}g</p>
                 <p style={{ color:C.muted, fontSize:11, margin:0 }}>{m.label}</p>
                 <div style={{ height:3, background:C.sectionBg, borderRadius:99, marginTop:4 }}>
                   <div style={{ width:`${Math.min(100, Math.round((m.val/m.target)*100))}%`, height:"100%", background:m.color, borderRadius:99 }} />
@@ -1486,67 +1487,42 @@ const TodayTab = ({ profile, entries, mealLog, setMealLog, workoutLog, water, se
         </div>
       </div>
 
-      {/* Today's workout */}
-      <div style={{ background:C.card, borderRadius:16, padding:"14px 16px", marginBottom:12, border:`1px solid ${C.border}`, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-        <div style={{ display:"flex", alignItems:"center", gap:12 }}>
-          <div style={{ width:40, height:40, borderRadius:12, background:`${todaySession?C.accent:C.muted}18`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:20 }}>
-            {todayWorked ? "✅" : todaySession ? "🏋️" : "🛋️"}
-          </div>
-          <div>
-            <p style={{ color:C.muted, fontSize:11, fontWeight:600, letterSpacing:"0.06em", margin:0 }}>TODAY'S WORKOUT</p>
-            {todayWorked ? (
-              <p style={{ color:C.green, fontSize:15, fontWeight:600, margin:"2px 0 0" }}>Completed — {todayWorked.type.split("-").join(" ")}</p>
-            ) : todaySession ? (
-              <>
-                <p style={{ color:C.text, fontSize:15, fontWeight:600, margin:"2px 0 0" }}>{todaySession.label}</p>
-                <p style={{ color:C.muted, fontSize:12, margin:"2px 0 0" }}>Week {block.week} · {block.sets} sets · {block.reps} reps</p>
-              </>
-            ) : (
-              <p style={{ color:C.muted, fontSize:15, fontWeight:600, margin:"2px 0 0" }}>Rest day — recover well</p>
-            )}
-          </div>
+      {/* Meals + Workout summary */}
+      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:10 }}>
+        <div style={{ background:C.card, borderRadius:16, padding:14, border:`1px solid ${C.border}` }}>
+          <p style={{ color:C.muted, fontSize:11, fontWeight:600, letterSpacing:"0.06em", margin:"0 0 6px" }}>MEALS</p>
+          <p style={{ color:C.text, fontSize:22, fontWeight:700, margin:"0 0 2px" }}>{todayMeals.length}<span style={{ color:C.muted, fontSize:14, fontWeight:400 }}> / {plannedCount}</span></p>
+          <p style={{ color:C.muted, fontSize:12, margin:"0 0 10px" }}>logged today</p>
+          <button onClick={()=>setTab("Meals")} style={{ width:"100%", background:C.accent, border:"none", borderRadius:10, padding:"7px 0", color:"#fff", fontSize:12, fontWeight:700, cursor:"pointer", fontFamily:FONT }}>View meals →</button>
         </div>
-        {!todayWorked && todaySession && (
-          <button onClick={()=>setTab("Train")} style={{ background:C.accent, border:"none", borderRadius:99, padding:"8px 16px", color:"#fff", fontSize:13, fontWeight:700, cursor:"pointer", fontFamily:FONT, flexShrink:0 }}>Start</button>
-        )}
-      </div>
-
-      {/* Today's meals */}
-      <div style={{ background:C.card, borderRadius:16, padding:"14px 16px", marginBottom:12, border:`1px solid ${C.border}` }}>
-        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
-          <p style={{ color:C.muted, fontSize:11, fontWeight:600, letterSpacing:"0.06em", margin:0 }}>TODAY'S MEALS</p>
-          <span style={{ color:C.accent, fontSize:13, fontWeight:600 }}>{todayMeals.length} of {plannedMeals.length||5} logged</span>
+        <div style={{ background:C.card, borderRadius:16, padding:14, border:`1px solid ${C.border}` }}>
+          <p style={{ color:C.muted, fontSize:11, fontWeight:600, letterSpacing:"0.06em", margin:"0 0 6px" }}>WORKOUT</p>
+          {todayWorked ? (
+            <>
+              <p style={{ color:C.green, fontSize:15, fontWeight:700, margin:"0 0 2px" }}>Done ✓</p>
+              <p style={{ color:C.muted, fontSize:12, margin:"0 0 10px" }}>{todayWorked.type.split("-").join(" ")}</p>
+            </>
+          ) : todaySession ? (
+            <>
+              <p style={{ color:C.text, fontSize:15, fontWeight:700, margin:"0 0 2px" }}>{todaySession.label}</p>
+              <p style={{ color:C.muted, fontSize:12, margin:"0 0 10px" }}>Week {block.week} · {block.sets} sets</p>
+            </>
+          ) : (
+            <>
+              <p style={{ color:C.text, fontSize:15, fontWeight:700, margin:"0 0 2px" }}>Rest day</p>
+              <p style={{ color:C.muted, fontSize:12, margin:"0 0 10px" }}>Recover well</p>
+            </>
+          )}
+          {!todayWorked && todaySession ? (
+            <button onClick={()=>setTab("Train")} style={{ width:"100%", background:C.accent, border:"none", borderRadius:10, padding:"7px 0", color:"#fff", fontSize:12, fontWeight:700, cursor:"pointer", fontFamily:FONT }}>Start →</button>
+          ) : (
+            <button onClick={()=>setTab("Train")} style={{ width:"100%", background:"none", border:`1px solid ${C.border}`, borderRadius:10, padding:"7px 0", color:C.muted, fontSize:12, fontWeight:600, cursor:"pointer", fontFamily:FONT }}>View plan →</button>
+          )}
         </div>
-        {plannedMeals.length > 0 ? (
-          <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
-            {plannedMeals.map((meal, i) => {
-              const logged = todayMeals.find(m => m.id === meal.id || m.name === meal.name);
-              return (
-                <div key={i} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"10px 12px", background:logged?`${C.green}10`:C.sectionBg, borderRadius:12, border:`1px solid ${logged?`${C.green}33`:C.border}` }}>
-                  <div style={{ display:"flex", alignItems:"center", gap:10, flex:1, minWidth:0 }}>
-                    <span style={{ color:logged?C.green:C.border, fontSize:14, flexShrink:0 }}>{logged?"✓":"○"}</span>
-                    <div style={{ minWidth:0 }}>
-                      <p style={{ color:logged?C.text:C.textSec, fontSize:13, fontWeight:600, margin:0, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{meal.name}</p>
-                      <p style={{ color:C.muted, fontSize:11, margin:"2px 0 0" }}>{meal.type.charAt(0).toUpperCase()+meal.type.slice(1)} · {meal.cals} cal · {meal.protein}g protein</p>
-                    </div>
-                  </div>
-                  {!logged && (
-                    <button onClick={()=>setMealLog(ml=>({...ml,[today]:[...(ml[today]||[]),{...meal,loggedAt:new Date().toISOString()}]}))} style={{ background:"none", border:`1px solid ${C.accent}`, borderRadius:8, padding:"5px 12px", color:C.accent, fontSize:12, fontWeight:600, cursor:"pointer", fontFamily:FONT, flexShrink:0, marginLeft:8 }}>Log</button>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        ) : (
-          <div style={{ textAlign:"center", padding:"16px 0" }}>
-            <p style={{ color:C.muted, fontSize:14, margin:0 }}>No meal plan for today</p>
-            <p style={{ color:C.muted, fontSize:12, margin:"4px 0 0" }}>Go to Meals tab to generate your plan</p>
-          </div>
-        )}
       </div>
 
       {/* Water + Progress */}
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:12 }}>
+      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:10 }}>
         <div style={{ background:C.card, borderRadius:16, padding:14, border:`1px solid ${C.border}` }}>
           <p style={{ color:C.muted, fontSize:11, fontWeight:600, letterSpacing:"0.06em", margin:"0 0 6px" }}>WATER</p>
           <p style={{ color:C.teal, fontSize:22, fontWeight:700, margin:"0 0 4px" }}>{(todayWater*0.25).toFixed(2)}L</p>
@@ -1571,6 +1547,7 @@ const TodayTab = ({ profile, entries, mealLog, setMealLog, workoutLog, water, se
     </div>
   );
 };
+
 
 // ── MEALS TAB ─────────────────────────────────────────────────────────────────
 // ── Meal Loading Indicator ────────────────────────────────────────────────────
