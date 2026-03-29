@@ -1381,27 +1381,38 @@ const TipSplashScreen = ({ tip, onDismiss }) => {
   );
 };
 
-const TodayTab = ({ profile, entries, mealLog, workoutLog, water, setWater, journal, setJournal, measurements }) => {
-  const [tipIdx, setTipIdx] = useState(()=>Math.floor(Math.random()*DAILY_TIPS.length));
+const JournalCard = ({ journal, setJournal, today }) => {
   const [showJournal, setShowJournal] = useState(false);
+  return (
+    <Card>
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:showJournal?12:0 }}>
+        <div style={{ display:"flex", alignItems:"center", gap:6 }}><Icon name="note" size={14} color={C.muted} /><p style={{ color:C.muted, fontSize:12, fontWeight:600, letterSpacing:"0.06em", margin:0 }}>DAILY JOURNAL</p></div>
+        <button onClick={()=>setShowJournal(s=>!s)} style={{ background:"none", border:"none", color:C.accent, fontSize:13, cursor:"pointer", fontFamily:FONT, fontWeight:600 }}>{showJournal?"Done":"Write"}</button>
+      </div>
+      {showJournal&&<textarea value={journal[today]||""} onChange={e=>setJournal(j=>({...j,[today]:e.target.value}))} placeholder="How are you feeling today? Energy levels, sleep, anything notable..." style={{ width:"100%", minHeight:80, background:C.sectionBg, border:`1px solid ${C.border}`, borderRadius:10, padding:"10px 12px", fontSize:14, fontFamily:FONT, color:C.text, outline:"none", resize:"vertical" }} />}
+      {!showJournal&&journal[today]&&<p style={{ color:C.textSec, fontSize:14, margin:0, marginTop:8, lineHeight:1.6 }}>{journal[today]}</p>}
+    </Card>
+  );
+};
+
+const TodayTab = ({ profile, entries, mealLog, setMealLog, workoutLog, water, setWater, journal, setJournal, measurements, mealPlan, setTab }) => {
   const today = todayKey();
   const cur = entries.length>0?entries[entries.length-1].weight:profile.startWeightLbs;
   const lost = Math.max(0,profile.startWeightLbs-cur);
   const lostKg = parseFloat((lost*0.453592).toFixed(1));
   const pace = getPace(profile.paceId||"normal");
-  const pct = profile.targetLbs>0?Math.min(100,Math.round((lost/profile.targetLbs)*100)):0;
-  const eta = profile.targetLbs>0?Math.ceil((profile.targetLbs-lost)/pace.lbs):0;
   const tdee = calcTDEE(profile);
-  const targetCals = tdee ? tdee - Math.round(pace.lbs*500) : null;
+  const targetCals = tdee ? tdee - Math.round(pace.lbs*500) : 2000;
+  const targetProtein = profile.age>=50 ? Math.round((profile.startWeightLbs*0.453592)*2.4) : Math.round((profile.startWeightLbs*0.453592)*2.2);
   const todayMeals = mealLog[today]||[];
   const todayCalories = todayMeals.reduce((a,m)=>a+m.cals,0);
   const todayProtein = todayMeals.reduce((a,m)=>a+m.protein,0);
+  const todayCarbs = todayMeals.reduce((a,m)=>a+(m.carbs||0),0);
+  const todayFat = todayMeals.reduce((a,m)=>a+(m.fat||0),0);
   const todayWater = water[today]||0;
   const todayWorked = workoutLog[today];
-
-  // Weekly summary (Sunday trigger)
-  const isMonday = new Date().getDay()===1;
-  const lastWeekWorkouts = Array.from({length:7},(_,i)=>{ const d=new Date(); d.setDate(d.getDate()-i-1); return workoutLog[d.toISOString().split("T")[0]]?1:0; }).reduce((a,b)=>a+b,0);
+  const targetCarbs = Math.round((targetCals * 0.4) / 4);
+  const targetFat = Math.round((targetCals * 0.3) / 9);
 
   // Streak
   let streak=0;
@@ -1412,104 +1423,151 @@ const TodayTab = ({ profile, entries, mealLog, workoutLog, water, setWater, jour
     else break;
   }
 
-  const [showCalories, setShowCalories] = useState(true);
+  // Today's workout from weekly plan
+  const weekPlan = getWeeklyPlan(profile);
+  const dayMap = { Mon:1, Tue:2, Wed:3, Thu:4, Fri:5, Sat:6, Sun:0 };
+  const todayDayOfWeek = new Date().getDay();
+  const sessionIdx = weekPlan.days.findIndex(d => dayMap[d] === todayDayOfWeek);
+  const todaySession = sessionIdx !== -1 ? weekPlan.sessions[sessionIdx] : null;
+  const block = getCurrentBlock(profile);
+
+  // Today's planned meals from meal plan
+  const todayPlan = mealPlan?.days?.find(d => d.date === today);
+  const plannedMeals = todayPlan?.meals || [];
+
+  // Date greeting
+  const dayName = new Date().toLocaleDateString("en-GB", { weekday:"long", day:"numeric", month:"long" });
+
+  // Calorie ring
+  const calPct = Math.min(100, Math.round((todayCalories / targetCals) * 100));
+  const circumference = 2 * Math.PI * 34;
+  const calOffset = circumference - (circumference * calPct / 100);
 
   return (
     <div>
-      {/* Hero — compact */}
-      <div style={{ background:`linear-gradient(145deg, ${C.accent}, #5ac8fa)`, borderRadius:16, padding:"14px 16px", marginBottom:12, color:"#fff" }}>
-        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
+      {/* Greeting */}
+      <div style={{ marginBottom:16 }}>
+        <p style={{ color:C.muted, fontSize:13, margin:"0 0 2px" }}>{dayName}</p>
+        <h2 style={{ color:C.text, fontSize:22, fontWeight:700, margin:0 }}>Good {new Date().getHours()<12?"morning":new Date().getHours()<18?"afternoon":"evening"}{profile.name?`, ${profile.name}`:""} 👋</h2>
+      </div>
+
+      {/* Calories ring + macros */}
+      <div style={{ background:C.card, borderRadius:16, padding:"14px 16px", marginBottom:12, border:`1px solid ${C.border}`, display:"flex", alignItems:"center", gap:16 }}>
+        <div style={{ position:"relative", width:80, height:80, flexShrink:0 }}>
+          <svg width="80" height="80" viewBox="0 0 80 80">
+            <circle cx="40" cy="40" r="34" fill="none" stroke={C.sectionBg} strokeWidth="8"/>
+            <circle cx="40" cy="40" r="34" fill="none" stroke={C.accent} strokeWidth="8"
+              strokeDasharray={circumference} strokeDashoffset={calOffset}
+              strokeLinecap="round" transform="rotate(-90 40 40)"
+              style={{ transition:"stroke-dashoffset 0.6s ease" }}/>
+          </svg>
+          <div style={{ position:"absolute", inset:0, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center" }}>
+            <span style={{ color:C.text, fontSize:16, fontWeight:700, lineHeight:1 }}>{todayCalories}</span>
+            <span style={{ color:C.muted, fontSize:10 }}>/ {targetCals}</span>
+          </div>
+        </div>
+        <div style={{ flex:1 }}>
+          <p style={{ color:C.muted, fontSize:11, fontWeight:600, letterSpacing:"0.06em", margin:"0 0 8px" }}>CALORIES TODAY</p>
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:8 }}>
+            {[
+              { label:"protein", val:todayProtein, target:targetProtein, unit:"g", color:C.green },
+              { label:"carbs", val:todayCarbs, target:targetCarbs, unit:"g", color:C.orange },
+              { label:"fat", val:todayFat, target:targetFat, unit:"g", color:C.red },
+            ].map(m=>(
+              <div key={m.label}>
+                <p style={{ color:C.text, fontSize:14, fontWeight:700, margin:0 }}>{m.val}{m.unit}</p>
+                <p style={{ color:C.muted, fontSize:11, margin:0 }}>{m.label}</p>
+                <div style={{ height:3, background:C.sectionBg, borderRadius:99, marginTop:4 }}>
+                  <div style={{ width:`${Math.min(100, Math.round((m.val/m.target)*100))}%`, height:"100%", background:m.color, borderRadius:99 }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Today's workout */}
+      <div style={{ background:C.card, borderRadius:16, padding:"14px 16px", marginBottom:12, border:`1px solid ${C.border}`, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+        <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+          <div style={{ width:40, height:40, borderRadius:12, background:`${todaySession?C.accent:C.muted}18`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:20 }}>
+            {todayWorked ? "✅" : todaySession ? "🏋️" : "🛋️"}
+          </div>
           <div>
-            <p style={{ opacity:0.85, fontSize:12, margin:"0 0 1px" }}>Hello{profile.name?`, ${profile.name}`:""}  👋</p>
-            <h2 style={{ fontSize:18, fontWeight:700, margin:0 }}>{profile.targetLbs>0?`Lose ${toKg(profile.targetLbs)} kg`:profile.goal?.replace(/_/g," ")||"Get Healthy"}</h2>
+            <p style={{ color:C.muted, fontSize:11, fontWeight:600, letterSpacing:"0.06em", margin:0 }}>TODAY'S WORKOUT</p>
+            {todayWorked ? (
+              <p style={{ color:C.green, fontSize:15, fontWeight:600, margin:"2px 0 0" }}>Completed — {todayWorked.type.split("-").join(" ")}</p>
+            ) : todaySession ? (
+              <>
+                <p style={{ color:C.text, fontSize:15, fontWeight:600, margin:"2px 0 0" }}>{todaySession.label}</p>
+                <p style={{ color:C.muted, fontSize:12, margin:"2px 0 0" }}>Week {block.week} · {block.sets} sets · {block.reps} reps</p>
+              </>
+            ) : (
+              <p style={{ color:C.muted, fontSize:15, fontWeight:600, margin:"2px 0 0" }}>Rest day — recover well</p>
+            )}
           </div>
-          <div style={{ textAlign:"right" }}>
-            <p style={{ opacity:0.9, fontSize:16, fontWeight:700, margin:"0 0 1px" }}>{pct}%</p>
-            <p style={{ opacity:0.7, fontSize:11, margin:0 }}>{lostKg}kg lost</p>
-          </div>
         </div>
-        <div style={{ background:"rgba(255,255,255,0.25)", borderRadius:99, height:5, overflow:"hidden" }}>
-          <div style={{ width:`${pct}%`, height:"100%", background:"rgba(255,255,255,0.9)", borderRadius:99, transition:"width 0.6s" }} />
-        </div>
-        <div style={{ display:"flex", justifyContent:"space-between", marginTop:4, opacity:0.7, fontSize:10 }}>
-          <span>{profile.startWeightLbs?toKg(profile.startWeightLbs):"—"} kg start</span>
-          <span>~{eta>0?eta:0} wks to go</span>
-          <span>{toKg(cur)} kg now</span>
-        </div>
+        {!todayWorked && todaySession && (
+          <button onClick={()=>setTab("Train")} style={{ background:C.accent, border:"none", borderRadius:99, padding:"8px 16px", color:"#fff", fontSize:13, fontWeight:700, cursor:"pointer", fontFamily:FONT, flexShrink:0 }}>Start</button>
+        )}
       </div>
 
-      {/* Weekly summary on Mondays */}
-      {isMonday&&lastWeekWorkouts>0&&<Card style={{ background:`${C.green}08`, borderColor:`${C.green}33`, marginBottom:12 }}>
-        <p style={{ color:C.green, fontSize:13, margin:0 }}>🎯 Last week: <strong>{lastWeekWorkouts} workout{lastWeekWorkouts!==1?"s":""}</strong> — {lastWeekWorkouts>=profile.workoutsPerWeek?"Goal hit!":"keep pushing!"}</p>
-      </Card>}
-
-      {/* Quick stats row */}
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr 1fr", gap:8, marginBottom:14 }}>
-        <StatBox label="Calories" val={todayCalories||"—"} sub={targetCals?`/ ${targetCals}`:""} color={targetCals&&todayCalories>targetCals?C.red:C.accent} />
-        <StatBox label="Protein" val={todayProtein>0?`${todayProtein}g`:"—"} sub="120g+" color={todayProtein>=120?C.green:C.orange} />
-        <StatBox label="Water" val={`${(todayWater*0.25).toFixed(1)}L`} sub="/ 2.0L" color={C.teal} />
-        <StatBox label="Streak" val={`${streak}d`} color={streak>=7?C.orange:C.purple} />
+      {/* Today's meals */}
+      <div style={{ background:C.card, borderRadius:16, padding:"14px 16px", marginBottom:12, border:`1px solid ${C.border}` }}>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
+          <p style={{ color:C.muted, fontSize:11, fontWeight:600, letterSpacing:"0.06em", margin:0 }}>TODAY'S MEALS</p>
+          <span style={{ color:C.accent, fontSize:13, fontWeight:600 }}>{todayMeals.length} of {plannedMeals.length||5} logged</span>
+        </div>
+        {plannedMeals.length > 0 ? (
+          <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+            {plannedMeals.map((meal, i) => {
+              const logged = todayMeals.find(m => m.id === meal.id || m.name === meal.name);
+              return (
+                <div key={i} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"10px 12px", background:logged?`${C.green}10`:C.sectionBg, borderRadius:12, border:`1px solid ${logged?`${C.green}33`:C.border}` }}>
+                  <div style={{ display:"flex", alignItems:"center", gap:10, flex:1, minWidth:0 }}>
+                    <span style={{ color:logged?C.green:C.border, fontSize:14, flexShrink:0 }}>{logged?"✓":"○"}</span>
+                    <div style={{ minWidth:0 }}>
+                      <p style={{ color:logged?C.text:C.textSec, fontSize:13, fontWeight:600, margin:0, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{meal.name}</p>
+                      <p style={{ color:C.muted, fontSize:11, margin:"2px 0 0" }}>{meal.type.charAt(0).toUpperCase()+meal.type.slice(1)} · {meal.cals} cal · {meal.protein}g protein</p>
+                    </div>
+                  </div>
+                  {!logged && (
+                    <button onClick={()=>setMealLog(ml=>({...ml,[today]:[...(ml[today]||[]),{...meal,loggedAt:new Date().toISOString()}]}))} style={{ background:"none", border:`1px solid ${C.accent}`, borderRadius:8, padding:"5px 12px", color:C.accent, fontSize:12, fontWeight:600, cursor:"pointer", fontFamily:FONT, flexShrink:0, marginLeft:8 }}>Log</button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div style={{ textAlign:"center", padding:"16px 0" }}>
+            <p style={{ color:C.muted, fontSize:14, margin:0 }}>No meal plan for today</p>
+            <p style={{ color:C.muted, fontSize:12, margin:"4px 0 0" }}>Go to Meals tab to generate your plan</p>
+          </div>
+        )}
       </div>
 
-      {/* Today's actions - compact row */}
-      <div style={{ display:"flex", gap:8, marginBottom:14 }}>
-        <div style={{ flex:1, background:C.card, borderRadius:14, padding:"12px 10px", border:`1px solid ${C.border}`, textAlign:"center" }}>
-          <div style={{ fontSize:20, marginBottom:2 }}>{todayWorked?"✅":"🏋️"}</div>
-          <div style={{ color:C.text, fontSize:11, fontWeight:600, lineHeight:1.3 }}>{todayWorked?todayWorked.type.split("-").join(" "):"No workout"}</div>
+      {/* Water + Progress */}
+      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:12 }}>
+        <div style={{ background:C.card, borderRadius:16, padding:14, border:`1px solid ${C.border}` }}>
+          <p style={{ color:C.muted, fontSize:11, fontWeight:600, letterSpacing:"0.06em", margin:"0 0 6px" }}>WATER</p>
+          <p style={{ color:C.teal, fontSize:22, fontWeight:700, margin:"0 0 4px" }}>{(todayWater*0.25).toFixed(2)}L</p>
+          <div style={{ height:4, background:C.sectionBg, borderRadius:99, marginBottom:8 }}>
+            <div style={{ width:`${Math.min(100, Math.round((todayWater/8)*100))}%`, height:"100%", background:C.teal, borderRadius:99 }} />
+          </div>
+          <div style={{ display:"flex", gap:6 }}>
+            <button onClick={()=>setWater(w=>({...w,[today]:Math.max(0,(w[today]||0)-1)}))} style={{ flex:1, background:C.sectionBg, border:"none", borderRadius:8, padding:"6px 0", color:C.teal, fontSize:13, fontWeight:700, cursor:"pointer", fontFamily:FONT }}>−</button>
+            <button onClick={()=>setWater(w=>({...w,[today]:Math.min(16,(w[today]||0)+1)}))} style={{ flex:2, background:`${C.teal}18`, border:`1px solid ${C.teal}44`, borderRadius:8, padding:"6px 0", color:C.teal, fontSize:12, fontWeight:600, cursor:"pointer", fontFamily:FONT }}>+250ml</button>
+          </div>
         </div>
-        <div style={{ flex:1, background:C.card, borderRadius:14, padding:"12px 10px", border:`1px solid ${C.border}`, textAlign:"center" }}>
-          <div style={{ fontSize:20, marginBottom:2 }}>🍽️</div>
-          <div style={{ color:C.text, fontSize:11, fontWeight:600 }}>{todayMeals.length} meals logged</div>
-        </div>
-        <div style={{ flex:1, background:C.card, borderRadius:14, padding:"12px 10px", border:`1px solid ${C.border}`, textAlign:"center" }}>
-          <div style={{ fontSize:20, marginBottom:2 }}>⚖️</div>
-          <div style={{ color:C.text, fontSize:11, fontWeight:600 }}>{toKg(cur)} kg</div>
+        <div style={{ background:C.card, borderRadius:16, padding:14, border:`1px solid ${C.border}` }}>
+          <p style={{ color:C.muted, fontSize:11, fontWeight:600, letterSpacing:"0.06em", margin:"0 0 6px" }}>PROGRESS</p>
+          <p style={{ color:C.text, fontSize:22, fontWeight:700, margin:"0 0 2px" }}>{toKg(cur)}<span style={{ fontSize:14, color:C.muted }}> kg</span></p>
+          <p style={{ color:lostKg>0?C.green:C.muted, fontSize:12, fontWeight:600, margin:"0 0 6px" }}>{lostKg>0?`${lostKg} kg lost`:"Starting weight"}</p>
+          <p style={{ color:C.muted, fontSize:11, margin:0 }}>🔥 {streak} day streak</p>
         </div>
       </div>
-
-      {/* Water tracker */}
-      <Card style={{ marginBottom:14 }}>
-        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
-          <div style={{ display:"flex", alignItems:"center", gap:6 }}><Icon name="water" size={14} color={C.teal} /><p style={{ color:C.muted, fontSize:12, fontWeight:600, letterSpacing:"0.06em", margin:0 }}>WATER</p></div>
-          <span style={{ color:C.teal, fontWeight:700, fontSize:13 }}>{(todayWater*0.25).toFixed(2)}L / 2.0L</span>
-        </div>
-        <ProgressBar value={todayWater} max={8} color={C.teal} height={8} />
-        <div style={{ display:"flex", gap:8, marginTop:10 }}>
-          <Btn onClick={()=>setWater(w=>({...w,[today]:Math.max(0,(w[today]||0)-1)}))} color={C.teal} outline small style={{ flex:1 }}>− 250ml</Btn>
-          <Btn onClick={()=>setWater(w=>({...w,[today]:Math.min(16,(w[today]||0)+1)}))} color={C.teal} small style={{ flex:2 }}>+ 250ml</Btn>
-        </div>
-      </Card>
-
-      {/* Calorie targets — collapsible */}
-      {tdee&&<Card style={{ marginBottom:14, cursor:"pointer" }} onClick={()=>setShowCalories(s=>!s)}>
-        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-          <div style={{ display:"flex", alignItems:"center", gap:6 }}>
-            <Icon name="flame" size={14} color={C.orange} />
-            <p style={{ color:C.muted, fontSize:12, fontWeight:600, letterSpacing:"0.06em", margin:0 }}>CALORIE TARGETS</p>
-          </div>
-          <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-            <span style={{ color:C.accent, fontWeight:700, fontSize:14 }}>{targetCals} cal</span>
-            <span style={{ color:C.muted, fontSize:12 }}>{showCalories?"▲":"▼"}</span>
-          </div>
-        </div>
-        {showCalories&&<div style={{ display:"flex", gap:8, marginTop:12 }}>
-          <div style={{ flex:1, textAlign:"center", padding:"8px 0" }}><div style={{ color:C.text, fontSize:17, fontWeight:700 }}>{tdee}</div><div style={{ color:C.muted, fontSize:11 }}>maintenance</div></div>
-          <div style={{ width:1, background:C.border }} />
-          <div style={{ flex:1, textAlign:"center", padding:"8px 0" }}><div style={{ color:C.accent, fontSize:17, fontWeight:700 }}>{targetCals}</div><div style={{ color:C.muted, fontSize:11 }}>target (deficit)</div></div>
-          <div style={{ width:1, background:C.border }} />
-          <div style={{ flex:1, textAlign:"center", padding:"8px 0" }}><div style={{ color:C.orange, fontSize:17, fontWeight:700 }}>{pace.kgPerWk}kg</div><div style={{ color:C.muted, fontSize:11 }}>per week</div></div>
-        </div>}
-      </Card>}
 
       {/* Journal */}
-      <Card>
-        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:showJournal?12:0 }}>
-          <div style={{ display:"flex", alignItems:"center", gap:6 }}><Icon name="note" size={14} color={C.muted} /><p style={{ color:C.muted, fontSize:12, fontWeight:600, letterSpacing:"0.06em", margin:0 }}>DAILY JOURNAL</p></div>
-          <button onClick={()=>setShowJournal(s=>!s)} style={{ background:"none", border:"none", color:C.accent, fontSize:13, cursor:"pointer", fontFamily:FONT, fontWeight:600 }}>{showJournal?"Done":"Write"}</button>
-        </div>
-        {showJournal&&<textarea value={journal[today]||""} onChange={e=>setJournal(j=>({...j,[today]:e.target.value}))} placeholder="How are you feeling today? Energy levels, sleep, anything notable..." style={{ width:"100%", minHeight:80, background:C.sectionBg, border:`1px solid ${C.border}`, borderRadius:10, padding:"10px 12px", fontSize:14, fontFamily:FONT, color:C.text, outline:"none", resize:"vertical" }} />}
-        {!showJournal&&journal[today]&&<p style={{ color:C.textSec, fontSize:14, margin:0, marginTop:8, lineHeight:1.6 }}>{journal[today]}</p>}
-      </Card>
+      <JournalCard journal={journal} setJournal={setJournal} today={today} />
     </div>
   );
 };
@@ -4715,7 +4773,7 @@ function AppInner() {
         )}
         {!effectiveIsPro && <ProBanner onUpgrade={()=>setShowPaywall(true)} />}
 
-        {tab==="Today"&&<TodayTab profile={profile} entries={entries} mealLog={mealLog} workoutLog={workoutLog} water={water} setWater={setWater} journal={journal} setJournal={setJournal} measurements={measurements} />}
+        {tab==="Today"&&<TodayTab profile={profile} entries={entries} mealLog={mealLog} setMealLog={setMealLog} workoutLog={workoutLog} water={water} setWater={setWater} journal={journal} setJournal={setJournal} measurements={measurements} mealPlan={mealPlan} setTab={setTab} />}
         {tab==="Meals"&&<MealsTab profile={profile} favourites={favourites} setFavourites={setFavourites} removed={removed} setRemoved={setRemoved} mealLog={mealLog} setMealLog={setMealLog} isPro={effectiveIsPro} onUpgrade={()=>setShowPaywall(true)} mealPlan={mealPlan} onSaveMealPlan={saveMealPlan} />}
         {tab==="Train"&&(effectiveIsPro ? <TrainTab profile={profile} workoutLog={workoutLog} setWorkoutLog={setWorkoutLog} setProfile={setProfile} savedWorkout={todaysWorkout} setSavedWorkout={setTodaysWorkout} /> : <LockedTab feature="Workout tracking, lift tracker and rest day planner" onUpgrade={()=>setShowPaywall(true)} />)}
         {tab==="Track"&&(effectiveIsPro ? <TrackTab profile={profile} entries={entries} setEntries={fn=>setEntries(typeof fn==="function"?fn(entries):fn)} measurements={measurements} setMeasurements={setMeasurements} workoutLog={workoutLog} /> : <LockedTab feature="Progress tracking, measurements and body stats" onUpgrade={()=>setShowPaywall(true)} />)}
