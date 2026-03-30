@@ -1489,8 +1489,8 @@ const TodayTab = ({ profile, entries, mealLog, setMealLog, workoutLog, water, se
       <div style={{ marginBottom:12 }}>
         <p style={{ color:C.muted, fontSize:13, margin:"0 0 2px" }}>{dayName}</p>
         <h2 style={{ color:C.text, fontSize:22, fontWeight:700, margin:"0 0 8px" }}>{greeting}{profile.name?`, ${profile.name}`:""} 👋</h2>
-        <div style={{ background:`${C.accent}12`, border:`1px solid ${C.accent}22`, borderRadius:10, padding:"8px 12px" }}>
-          <p style={{ color:C.accent, fontSize:13, fontWeight:600, margin:0 }}>{insights.text}</p>
+        <div style={{ background:`${C.accent}18`, border:`1px solid ${C.accent}44`, borderRadius:12, padding:"10px 14px" }}>
+          <p style={{ color:C.accent, fontSize:14, fontWeight:600, margin:0 }}>{insights.text}</p>
         </div>
       </div>
 
