@@ -1439,6 +1439,45 @@ const TodayTab = ({ profile, entries, mealLog, setMealLog, workoutLog, water, se
   const circumference = 2 * Math.PI * 34;
   const calOffset = circumference - (circumference * Math.min(1, todayCalories / targetCals));
 
+  // Personalised insights — pick the most relevant one for today
+  const insights = (() => {
+    const msgs = [];
+    const hour = new Date().getHours();
+
+    // Workout insights
+    const weekWorkouts = Array.from({length:7},(_,i)=>{ const d=new Date(); d.setDate(d.getDate()-d.getDay()+1+i); return workoutLog[d.toISOString().split("T")[0]]?1:0; }).reduce((a,b)=>a+b,0);
+    if (todayWorked) msgs.push({ text:`Workout done ✓ — ${weekWorkouts} of ${profile.workoutsPerWeek||3} this week`, priority:2 });
+    if (!todayWorked && todaySession && hour >= 16) msgs.push({ text:`Still time for your ${todaySession.label} today 💪`, priority:3 });
+
+    // Protein insights
+    const proteinDaysHit = Array.from({length:7},(_,i)=>{ const d=new Date(); d.setDate(d.getDate()-i); const k=d.toISOString().split("T")[0]; return (mealLog[k]||[]).reduce((a,m)=>a+m.protein,0) >= targetProtein ? 1 : 0; }).reduce((a,b)=>a+b,0);
+    if (proteinDaysHit >= 4) msgs.push({ text:`Protein target hit ${proteinDaysHit} days this week 💪`, priority:2 });
+    if (todayProtein >= targetProtein) msgs.push({ text:`Protein target hit today — great work!`, priority:1 });
+    if (todayProtein > 0 && todayProtein < targetProtein * 0.5 && hour >= 18) msgs.push({ text:`You're low on protein today — add a shake or snack`, priority:4 });
+
+    // Calorie insights
+    if (todayCalories > 0 && todayCalories < targetCals * 0.6 && hour >= 19) msgs.push({ text:`You're ${targetCals - todayCalories} calories under today — consider a snack`, priority:3 });
+    if (todayCalories > targetCals * 1.1) msgs.push({ text:`Over your calorie target today — balance it out tomorrow`, priority:3 });
+
+    // Streak insights
+    if (streak >= 7) msgs.push({ text:`${streak} day streak — you're on fire! 🔥`, priority:1 });
+    if (streak >= 3 && streak < 7) msgs.push({ text:`${streak} day streak — keep it going! 🔥`, priority:2 });
+
+    // Water insights
+    if (todayWater >= 8) msgs.push({ text:`Hydration goal hit today — well done 💧`, priority:1 });
+    if (todayWater === 0 && hour >= 12) msgs.push({ text:`Don't forget to drink water today 💧`, priority:3 });
+
+    // Weight progress
+    if (lostKg >= 1) msgs.push({ text:`${lostKg}kg lost so far — you're making real progress`, priority:2 });
+
+    // Weekly workout goal hit
+    if (weekWorkouts >= (profile.workoutsPerWeek||3)) msgs.push({ text:`Weekly workout goal hit! 🎯 Rest up or go for a bonus session`, priority:1 });
+
+    // Sort by priority (lower = more important) and return top one
+    if (msgs.length === 0) return { text:`Log your meals and workouts to get personalised insights`, priority:5 };
+    return msgs.sort((a,b) => a.priority - b.priority)[0];
+  })();
+
   // Date + greeting
   const dayName = new Date().toLocaleDateString("en-GB", { weekday:"long", day:"numeric", month:"long" });
   const hour = new Date().getHours();
@@ -1447,9 +1486,12 @@ const TodayTab = ({ profile, entries, mealLog, setMealLog, workoutLog, water, se
   return (
     <div>
       {/* Greeting */}
-      <div style={{ marginBottom:16 }}>
+      <div style={{ marginBottom:12 }}>
         <p style={{ color:C.muted, fontSize:13, margin:"0 0 2px" }}>{dayName}</p>
-        <h2 style={{ color:C.text, fontSize:22, fontWeight:700, margin:0 }}>{greeting}{profile.name?`, ${profile.name}`:""} 👋</h2>
+        <h2 style={{ color:C.text, fontSize:22, fontWeight:700, margin:"0 0 8px" }}>{greeting}{profile.name?`, ${profile.name}`:""} 👋</h2>
+        <div style={{ background:`${C.accent}12`, border:`1px solid ${C.accent}22`, borderRadius:10, padding:"8px 12px" }}>
+          <p style={{ color:C.accent, fontSize:13, fontWeight:600, margin:0 }}>{insights.text}</p>
+        </div>
       </div>
 
       {/* Calorie ring + macros */}
