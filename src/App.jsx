@@ -2440,13 +2440,29 @@ const TrainTab = ({ profile, workoutLog, setWorkoutLog, setProfile, savedWorkout
   const [lifts, setLifts] = useState(() => {
     try { return JSON.parse(localStorage.getItem("leanplan_lifts")||"{}" ); } catch { return {}; }
   });
+  const [prToast, setPrToast] = useState(null);
+
+  const showPrToast = (msg) => {
+    setPrToast(msg);
+    setTimeout(() => setPrToast(null), 3000);
+  };
+
   const saveLift = (exName, weight, reps, sets) => {
     if (!weight) return;
-    const entry = { date:todayKey(), weight:parseFloat(weight), reps:parseInt(reps)||0, sets:parseInt(sets)||3, timestamp:Date.now() };
-    const updated = {...lifts, [exName]: [...(lifts[exName]||[]), entry].slice(-20)};
+    const newWeight = parseFloat(weight);
+    const entry = { date:todayKey(), weight:newWeight, reps:parseInt(reps)||0, sets:parseInt(sets)||3, timestamp:Date.now() };
+    const previous = lifts[exName] || [];
+    const updated = {...lifts, [exName]: [...previous, entry].slice(-20)};
     setLifts(updated);
     localStorage.setItem("leanplan_lifts", JSON.stringify(updated));
     setLoggedWeights(lw => ({...lw, [exName]: true}));
+
+    // Check for personal best
+    const prevBest = previous.length > 0 ? Math.max(...previous.map(e => e.weight)) : 0;
+    if (newWeight > prevBest && previous.length > 0) {
+      showPrToast(`🏆 New PB! ${exName} — ${newWeight}kg`);
+    }
+
     // Auto-log the workout on first exercise saved
     if (!workoutLog[todayKey()] && activeWorkout) {
       setWorkoutLog(wl=>({...wl,[todayKey()]:{type:selectedType,date:todayKey(),time:new Date().toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"})}}));
@@ -2512,6 +2528,12 @@ const TrainTab = ({ profile, workoutLog, setWorkoutLog, setProfile, savedWorkout
 
   return (
     <div>
+      {/* PR Toast */}
+      {prToast && (
+        <div style={{ position:"fixed", top:80, left:"50%", transform:"translateX(-50%)", background:"linear-gradient(135deg, #f5a623, #f76b1c)", color:"#fff", borderRadius:14, padding:"12px 20px", fontSize:14, fontWeight:700, zIndex:999, boxShadow:"0 4px 20px rgba(0,0,0,0.25)", whiteSpace:"nowrap" }}>
+          {prToast}
+        </div>
+      )}
       <div style={{ display:"flex", background:C.card, border:`1px solid ${C.border}`, borderRadius:12, padding:3, marginBottom:12, gap:2 }}>
         {[["workout", isGuided?"Custom":"Workout"],["calendar","Programme"],["lifts","Progress"]].map(([k,l])=>(
           <button key={k} onClick={()=>setView(k)} style={{ flex:1, background:view===k?C.accent:"transparent", color:view===k?"#fff":C.muted, border:"none", borderRadius:10, padding:"8px 0", fontSize:13, fontWeight:600, cursor:"pointer", fontFamily:FONT, transition:"all 0.2s" }}>{l}</button>
@@ -2710,7 +2732,11 @@ const TrainTab = ({ profile, workoutLog, setWorkoutLog, setProfile, savedWorkout
             const isExp = expandedEx === i;
             const fullEx = EXERCISE_DB.find(e=>e.name===ex.name);
             const lastLift = getLastLift(ex.name);
+            const allLifts = lifts[ex.name] || [];
+            const personalBest = allLifts.length > 0 ? Math.max(...allLifts.map(e => e.weight)) : null;
             const isLogged = loggedWeights[ex.name];
+            const loggedEntry = allLifts.length > 0 ? allLifts[allLifts.length - 1] : null;
+            const isNewPB = isLogged && loggedEntry && personalBest && loggedEntry.weight >= personalBest;
             const inputs = liftInputs[ex.name] || { weight:"", reps: String(ex.reps?.split("-")?.[0]||"10"), sets: String(ex.sets||"3") };
             const setInput = (field, val) => setLiftInputs(li => ({...li, [ex.name]: {...(li[ex.name]||{weight:"",reps:String(ex.reps?.split("-")?.[0]||"10"),sets:String(ex.sets||"3")}), [field]: val}}));
             return <Card key={i} style={{ borderLeft:`3px solid ${isLogged ? C.green : activeWorkout.color}` }}>
@@ -2740,6 +2766,7 @@ const TrainTab = ({ profile, workoutLog, setWorkoutLog, setProfile, savedWorkout
                   <div style={{ display:"flex", alignItems:"center", gap:8 }}>
                     <div style={{ flex:1, background:`${C.green}10`, border:`1px solid ${C.green}33`, borderRadius:10, padding:"8px 12px" }}>
                       <span style={{ color:C.green, fontSize:13, fontWeight:600 }}>✓ Logged: {inputs.weight}kg × {inputs.reps} reps × {inputs.sets} sets</span>
+                      {isNewPB && <p style={{ color:"#f5a623", fontSize:11, fontWeight:600, margin:"4px 0 0" }}>🏆 New personal best!</p>}
                     </div>
                     <button onClick={()=>setLoggedWeights(lw=>({...lw,[ex.name]:false}))} style={{ background:"none", border:"none", color:C.muted, fontSize:12, cursor:"pointer", fontFamily:FONT, padding:"4px 6px" }}>Edit</button>
                   </div>
