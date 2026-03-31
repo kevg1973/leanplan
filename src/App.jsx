@@ -4382,15 +4382,14 @@ const PaywallModal = ({ onClose }) => {
   ];
 
   const proFeatures = [
-    { icon:"meals", text:"AI meal plan generation — tailored to your diet" },
-    { icon:"tip", text:"Personal AI health coach — available 24/7" },
-    { icon:"train", text:"Personalised training programme — structured blocks that progress week by week" },
-    { icon:"track", text:"Progress photos — see your transformation week by week" },
-    { icon:"chart", text:"Calorie & macro targets — automatically adjusted on training days" },
-    { icon:"meals", text:"Swap any meal instantly — same calories, different food" },
-    { icon:"barbell", text:"Lift tracker — beat your personal best every session" },
-    { icon:"bag", text:"Smart shopping lists with supermarket links" },
-    { icon:"water", text:"Water tracker, journal & daily streaks" },
+    { emoji:"🍽️", text:"AI meal plans tailored to you" },
+    { emoji:"🤖", text:"Personal AI coach 24/7" },
+    { emoji:"🏋️", text:"Personalised training programme" },
+    { emoji:"📸", text:"Progress photos & transformation" },
+    { emoji:"🔄", text:"Swap meals, same calories" },
+    { emoji:"🏆", text:"Lift tracker & personal bests" },
+    { emoji:"🛒", text:"Smart shopping lists" },
+    { emoji:"💧", text:"Water, journal & streaks" },
   ];
 
   const checkout = async () => {
@@ -4451,14 +4450,12 @@ const PaywallModal = ({ onClose }) => {
           <p style={{ color:C.muted, fontSize:14, margin:0 }}>Everything you need to reach your goal</p>
         </div>
 
-        {/* Features */}
-        <div style={{ marginBottom:24 }}>
+        {/* Features — 2 column grid */}
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginBottom:24 }}>
           {proFeatures.map((f,i) => (
-            <div key={i} style={{ display:"flex", alignItems:"center", gap:12, padding:"8px 0", borderBottom:i<proFeatures.length-1?`1px solid ${C.border}`:"none" }}>
-              <div style={{ width:32, height:32, borderRadius:10, background:`${C.accent}15`, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
-                <Icon name={f.icon} size={16} color={C.accent} />
-              </div>
-              <span style={{ color:C.text, fontSize:14 }}>{f.text}</span>
+            <div key={i} style={{ background:`${C.accent}08`, border:`1px solid ${C.accent}18`, borderRadius:12, padding:"10px 12px" }}>
+              <div style={{ fontSize:18, marginBottom:4 }}>{f.emoji}</div>
+              <div style={{ color:C.text, fontSize:12, fontWeight:600, lineHeight:1.4 }}>{f.text}</div>
             </div>
           ))}
         </div>
