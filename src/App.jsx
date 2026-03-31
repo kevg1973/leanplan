@@ -4434,7 +4434,7 @@ const PaywallModal = ({ onClose }) => {
       <div onClick={onClose} style={{ position:"absolute", inset:0, background:"rgba(0,0,0,0.6)", backdropFilter:"blur(4px)" }} />
 
       {/* Sheet */}
-      <div style={{ position:"relative", background:C.bg, borderRadius:"24px 24px 0 0", padding:"24px 20px 40px", maxHeight:"95vh", overflowY:"auto" }}>
+      <div style={{ position:"relative", background:C.bg, borderRadius:"24px 24px 0 0", padding:"24px 20px 40px", height:"92vh", overflowY:"auto" }}>
         {/* Handle */}
         <div style={{ width:36, height:4, background:C.divider, borderRadius:99, margin:"0 auto 20px" }} />
 
