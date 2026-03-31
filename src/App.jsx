@@ -4606,6 +4606,10 @@ function AppInner() {
       if (data.measurements?.length) setMeasurements(data.measurements);
       if (data.dark_override !== null && data.dark_override !== undefined) setDarkOverride(data.dark_override);
       if (data.is_pro) { setIsPro(true); setProData({ customerId: data.stripe_customer_id, subscriptionId: data.stripe_subscription_id, plan: data.stripe_plan, cancelAt: data.cancel_at || null }); }
+      // Sync trial_start from Supabase — ensures consistent trial across devices
+      if (data.trial_start && !localStorage.getItem("leanplan_trial_start")) {
+        localStorage.setItem("leanplan_trial_start", data.trial_start);
+      }
       if (data.meal_plan && data.meal_plan.days) {
         // Only load if plan has future/today dates
         const today = new Date().toISOString().split("T")[0];
@@ -4633,6 +4637,7 @@ function AppInner() {
         measurements: data.measurements || [],
         dark_override: data.darkOverride,
         meal_plan: data.mealPlan || null,
+        trial_start: localStorage.getItem("leanplan_trial_start") || null,
         updated_at: new Date().toISOString(),
       });
     } catch(e){ console.error("Supabase save error:", e); }
