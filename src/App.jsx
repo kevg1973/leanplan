@@ -3347,7 +3347,7 @@ const TrackTab = ({ profile, entries, setEntries, measurements, setMeasurements,
   return (
     <div>
       <div style={{ display:"flex", background:C.card, border:`1px solid ${C.border}`, borderRadius:12, padding:3, marginBottom:12, gap:2 }}>
-        {[["weight","Weight"],["measurements","Measurements"],["stats","Stats"],["workouts","Workouts"],["photos","Photos"]].map(([k,l])=>(
+        {[["weight","Weight"],["stats","Stats"],["workouts","Workouts"],["photos","Photos"]].map(([k,l])=>(
           <button key={k} onClick={()=>setActiveSection(k)} style={{ flex:1, background:activeSection===k?C.purple:"transparent", color:activeSection===k?"#fff":C.muted, border:"none", borderRadius:10, padding:"8px 0", fontSize:12, fontWeight:600, cursor:"pointer", fontFamily:FONT, transition:"all 0.2s" }}>{l}</button>
         ))}
       </div>
@@ -3402,7 +3402,8 @@ const TrackTab = ({ profile, entries, setEntries, measurements, setMeasurements,
 
       {activeSection==="photos"&&<ProgressPhotos user={user} entries={entries} profile={profile} />}
 
-      {activeSection==="measurements"&&<>
+      {activeSection==="stats"&&<>
+        {/* Measurements section merged into Stats */}
         <Card style={{ background:`${C.pink}08`, borderColor:`${C.pink}22` }}>
           <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:6 }}><Icon name="ruler" size={14} color={C.pink} /><p style={{ color:C.pink, fontSize:12, fontWeight:700, margin:0 }}>WHY MEASURE?</p></div>
           <p style={{ color:C.text, fontSize:13, lineHeight:1.6, margin:0 }}>The scale can lie — especially with creatine and muscle gain. Measurements show the real body composition changes that matter.</p>
@@ -3434,9 +3435,8 @@ const TrackTab = ({ profile, entries, setEntries, measurements, setMeasurements,
         </>}
 
         {measurements.length===0&&<Card><p style={{ color:C.muted, fontSize:14, textAlign:"center", margin:0 }}>No measurements logged yet. Monthly tracking is ideal.</p></Card>}
-      </>}
 
-      {activeSection==="stats"&&<>
+        <div style={{ height:8 }} />
         {tdee&&<Section title="Calorie Targets">
           <Row label="TDEE (maintenance)" value={`${tdee} cal`} color={C.text} />
           <Row label="Your target (deficit)" value={`${tdee-Math.round(getPace(profile.paceId||"normal").lbs*500)} cal`} color={C.accent} />
