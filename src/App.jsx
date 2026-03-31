@@ -1864,13 +1864,11 @@ const MealCarousel = ({ meals, favourites, likedMeals, mealLog, today, onLike, o
   );
 };
 
-const MealsTab = ({ profile, favourites, setFavourites, removed, setRemoved, mealLog, setMealLog, isPro, onUpgrade, mealPlan, onSaveMealPlan }) => {
+const MealsTab = ({ profile, favourites, setFavourites, removed, setRemoved, mealLog, setMealLog, isPro, onUpgrade, mealPlan, onSaveMealPlan, generating, setGenerating, generateProgress, setGenerateProgress, generateError, setGenerateError }) => {
   const isGuided = profile?.appMode !== "custom";
   const [section, setSection] = useState("meals");
   const [suppOpen, setSuppOpen] = useState(null);
-  const [generating, setGenerating] = useState(false);
-  const [generateProgress, setGenerateProgress] = useState(null);
-  const [generateError, setGenerateError] = useState(null);
+  // generating/generateProgress/generateError lifted to App level (survives tab switches)
   const [swapConfirm, setSwapConfirm] = useState(null); // { meal, slotIndex }
   const [swappingId, setSwappingId] = useState(null);
   const [style, setStyle] = useState("all"); // kept for non-guided
@@ -4635,6 +4633,9 @@ function AppInner() {
       else localStorage.removeItem("leanplan_meal_plan");
     } catch(e){}
   };
+  // Meal generation state — lives at App level so it survives tab switches
+  // generating/generateProgress/generateError lifted to App level (survives tab switches)
+
   // todaysMeals derived from mealPlan for backward compat
   const todayKey2 = new Date().toISOString().split("T")[0];
   const todaysMeals = mealPlan?.days?.find(d => d.date === todayKey2)?.meals || null;
@@ -5104,9 +5105,16 @@ function AppInner() {
           </div>
         )}
         {!effectiveIsPro && <ProBanner onUpgrade={()=>setShowPaywall(true)} />}
+        {generating && tab !== "Meals" && (
+          <div onClick={()=>setTab("Meals")} style={{ background:`${C.accent}15`, border:`1px solid ${C.accent}33`, borderRadius:10, padding:"10px 14px", marginBottom:10, display:"flex", alignItems:"center", gap:10, cursor:"pointer" }}>
+            <div style={{ width:8, height:8, borderRadius:"50%", background:C.accent, flexShrink:0, animation:"pulse 1.2s ease-in-out infinite" }} />
+            <p style={{ color:C.accent, fontSize:13, fontWeight:600, margin:0, flex:1 }}>Generating your meal plan...</p>
+            <span style={{ color:C.accent, fontSize:12 }}>View →</span>
+          </div>
+        )}
 
         {tab==="Today"&&<TodayTab profile={profile} entries={entries} mealLog={mealLog} setMealLog={setMealLog} workoutLog={workoutLog} water={water} setWater={setWater} journal={journal} setJournal={setJournal} measurements={measurements} mealPlan={mealPlan} setTab={setTab} />}
-        {tab==="Meals"&&<MealsTab profile={profile} favourites={favourites} setFavourites={setFavourites} removed={removed} setRemoved={setRemoved} mealLog={mealLog} setMealLog={setMealLog} isPro={effectiveIsPro} onUpgrade={()=>setShowPaywall(true)} mealPlan={mealPlan} onSaveMealPlan={saveMealPlan} />}
+        {tab==="Meals"&&<MealsTab profile={profile} favourites={favourites} setFavourites={setFavourites} removed={removed} setRemoved={setRemoved} mealLog={mealLog} setMealLog={setMealLog} isPro={effectiveIsPro} onUpgrade={()=>setShowPaywall(true)} mealPlan={mealPlan} onSaveMealPlan={saveMealPlan} generating={generating} setGenerating={setGenerating} generateProgress={generateProgress} setGenerateProgress={setGenerateProgress} generateError={generateError} setGenerateError={setGenerateError} />}
         {tab==="Train"&&(effectiveIsPro ? <TrainTab profile={profile} workoutLog={workoutLog} setWorkoutLog={setWorkoutLog} setProfile={setProfile} savedWorkout={todaysWorkout} setSavedWorkout={setTodaysWorkout} /> : <LockedTab feature="Workout tracking, lift tracker and rest day planner" onUpgrade={()=>setShowPaywall(true)} />)}
         {tab==="Track"&&(effectiveIsPro ? <TrackTab profile={profile} entries={entries} setEntries={fn=>setEntries(typeof fn==="function"?fn(entries):fn)} measurements={measurements} setMeasurements={setMeasurements} workoutLog={workoutLog} /> : <LockedTab feature="Progress tracking, measurements and body stats" onUpgrade={()=>setShowPaywall(true)} />)}
         {tab==="Coach"&&(effectiveIsPro ? <CoachTab profile={profile} setProfile={setProfile} mealPlan={mealPlan} mealLog={mealLog} workoutLog={workoutLog} entries={entries} isAdmin={proData?.customerId === "bypass"} /> : <LockedTab feature="AI personal coach" onUpgrade={()=>setShowPaywall(true)} />)}
