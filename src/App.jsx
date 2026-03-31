@@ -4014,8 +4014,8 @@ For example:
           style={{ flex:1, background:C.card, border:`1px solid ${C.border}`, borderRadius:16, padding:"12px 14px", fontSize:15, fontFamily:FONT, color:C.text, outline:"none", resize:"none", lineHeight:1.5, maxHeight:100, overflowY:"auto", boxShadow:"0 1px 3px rgba(0,0,0,0.06)" }}
           onInput={e => { e.target.style.height="auto"; e.target.style.height=Math.min(e.target.scrollHeight,100)+"px"; }}
         />
-        <button onClick={send} disabled={!input.trim()||loading} style={{ width:44, height:44, borderRadius:99, background:input.trim()&&!loading?C.pink:"#e5e5ea", border:"none", cursor:input.trim()&&!loading?"pointer":"default", display:"flex", alignItems:"center", justifyContent:"center", transition:"background 0.2s", flexShrink:0 }}>
-          <Icon name="arrow" size={20} color="#fff" />
+        <button onClick={send} disabled={!input.trim()||loading} style={{ width:44, height:44, borderRadius:99, background:input.trim()&&!loading?C.pink:C.border, border:`1.5px solid ${input.trim()&&!loading?C.pink:C.divider}`, cursor:input.trim()&&!loading?"pointer":"default", display:"flex", alignItems:"center", justifyContent:"center", transition:"background 0.2s", flexShrink:0 }}>
+          <Icon name="arrow" size={20} color={input.trim()&&!loading?"#fff":C.muted} />
         </button>
       </div>
 
