@@ -4429,12 +4429,12 @@ const PaywallModal = ({ onClose }) => {
   };
 
   return (
-    <div style={{ position:"fixed", inset:0, zIndex:1000, display:"flex", flexDirection:"column", justifyContent:"flex-end" }}>
+    <div style={{ position:"fixed", inset:0, zIndex:1000, display:"flex", flexDirection:"column", justifyContent:"flex-end" }} onTouchMove={e=>e.stopPropagation()}>
       {/* Backdrop */}
-      <div onClick={onClose} style={{ position:"absolute", inset:0, background:"rgba(0,0,0,0.6)", backdropFilter:"blur(4px)" }} />
+      <div onClick={onClose} onTouchMove={e=>e.preventDefault()} style={{ position:"absolute", inset:0, background:"rgba(0,0,0,0.6)", backdropFilter:"blur(4px)" }} />
 
       {/* Sheet */}
-      <div style={{ position:"relative", background:C.bg, borderRadius:"24px 24px 0 0", padding:"24px 20px calc(40px + env(safe-area-inset-bottom))", height:"98vh", overflowY:"auto" }}>
+      <div style={{ position:"relative", background:C.bg, borderRadius:"24px 24px 0 0", padding:"24px 20px calc(40px + env(safe-area-inset-bottom))", height:`calc(98vh - env(safe-area-inset-top))`, overflowY:"auto" }}>
         {/* Handle */}
         <div style={{ width:36, height:4, background:C.divider, borderRadius:99, margin:"0 auto 20px" }} />
 
