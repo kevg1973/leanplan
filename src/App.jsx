@@ -4634,7 +4634,9 @@ function AppInner() {
     } catch(e){}
   };
   // Meal generation state — lives at App level so it survives tab switches
-  // generating/generateProgress/generateError lifted to App level (survives tab switches)
+  const [generating, setGenerating] = useState(false);
+  const [generateProgress, setGenerateProgress] = useState(null);
+  const [generateError, setGenerateError] = useState(null);
 
   // todaysMeals derived from mealPlan for backward compat
   const todayKey2 = new Date().toISOString().split("T")[0];
