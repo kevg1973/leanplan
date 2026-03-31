@@ -103,7 +103,7 @@ const PACE_OPTIONS = [
 ];
 const getPace = id => PACE_OPTIONS.find(p=>p.id===id)||PACE_OPTIONS[1];
 
-const ALLERGENS = ["Gluten","Dairy","Eggs","Nuts","Peanuts","Soya","Shellfish","Fish","Sesame","Celery","Mustard","Sulphites"];
+const ALLERGENS = ["Eggs","Nuts","Peanuts","Soya","Shellfish","Fish","Sesame","Celery","Mustard","Sulphites"];
 const DISLIKES_LIST = ["Fish","Oily fish","Shellfish","Lamb","Pork","Red meat","Mushrooms","Aubergine","Courgette","Brussels sprouts","Cauliflower","Broccoli","Olives","Avocado","Spicy food","Garlic","Onion","Cottage cheese","Tofu"];
 
 // ── TDEE Calculator ──────────────────────────────────────────────────────────
