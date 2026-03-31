@@ -1550,14 +1550,23 @@ Return JSON:
   };
 
   try {
-    // Generate day 1 first, then remaining days sequentially for leftover accuracy
-    const firstDay = await generateDay(template[0], dateKeys[0], null);
-    const finalDays = [firstDay];
-    for (let i = 1; i < days; i++) {
-      const prevDinner = finalDays[i-1]?.meals?.find(m => m.type === "dinner");
-      const day = await generateDay(template[i], dateKeys[i], prevDinner?.name || null);
-      finalDays.push(day);
-    }
+    // Generate all days in parallel — ~4x faster than sequential
+    const dayPromises = template.map((t, i) => generateDay(t, dateKeys[i], null));
+    const parallelDays = await Promise.all(dayPromises);
+
+    // Post-process: update leftover lunch names to reference actual previous dinner
+    const finalDays = parallelDays.map((day, i) => {
+      if (i === 0) return day;
+      const prevDinner = parallelDays[i-1]?.meals?.find(m => m.type === "dinner");
+      if (!prevDinner) return day;
+      const updatedMeals = day.meals.map(m => {
+        if (m.type === "lunch" && m.name?.toLowerCase().includes("leftover")) {
+          return { ...m, name: `Leftover ${prevDinner.name}` };
+        }
+        return m;
+      });
+      return { ...day, meals: updatedMeals };
+    });
 
     res.json({
       days: finalDays,
