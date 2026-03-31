@@ -4429,19 +4429,13 @@ const PaywallModal = ({ onClose }) => {
   };
 
   return (
-    <div style={{ position:"fixed", inset:0, zIndex:1000, display:"flex", flexDirection:"column", justifyContent:"flex-end" }} onTouchMove={e=>e.stopPropagation()}>
-      {/* Backdrop */}
-      <div onClick={onClose} onTouchMove={e=>e.preventDefault()} style={{ position:"absolute", inset:0, background:"rgba(0,0,0,0.6)", backdropFilter:"blur(4px)" }} />
-
-      {/* Sheet */}
-      <div style={{ position:"relative", background:C.bg, borderRadius:"24px 24px 0 0", padding:"24px 20px calc(40px + env(safe-area-inset-bottom))", height:`calc(98vh - env(safe-area-inset-top))`, overflowY:"auto" }}>
-        {/* Handle */}
-        <div style={{ width:36, height:4, background:C.divider, borderRadius:99, margin:"0 auto 20px" }} />
+    <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0, zIndex:1000, background:C.bg, overflowY:"auto", WebkitOverflowScrolling:"touch", paddingTop:"env(safe-area-inset-top)", paddingBottom:"env(safe-area-inset-bottom)" }}>
 
         {/* Close */}
-        <button onClick={onClose} style={{ position:"absolute", top:20, right:20, background:C.sectionBg, border:"none", borderRadius:99, width:32, height:32, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}>
+        <button onClick={onClose} style={{ position:"sticky", top:16, float:"right", marginRight:16, background:C.sectionBg, border:"none", borderRadius:99, width:32, height:32, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", zIndex:10 }}>
           <Icon name="close" size={16} color={C.muted} />
         </button>
+        <div style={{ padding:"16px 20px 40px" }}>
 
         {/* Header */}
         <div style={{ textAlign:"center", marginBottom:24 }}>
@@ -4481,7 +4475,7 @@ const PaywallModal = ({ onClose }) => {
         <p style={{ color:C.muted, fontSize:12, textAlign:"center", lineHeight:1.6 }}>
           Cancel anytime. Secure payment by Stripe.
         </p>
-      </div>
+        </div>
     </div>
   );
 };
