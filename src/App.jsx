@@ -3506,7 +3506,16 @@ const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDar
             )}
           </div>
         </div>
-      ) : proData?.customerId === "bypass" ? null : (
+      ) : proData?.customerId === "bypass" ? (
+        <div style={{ background:`${C.yellow}12`, border:`1px solid ${C.yellow}44`, borderRadius:14, padding:"14px 16px", marginBottom:16 }}>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+            <div>
+              <p style={{ color:C.yellow, fontWeight:700, fontSize:15, margin:0 }}>⭐ Lifetime Pro</p>
+              <p style={{ color:C.muted, fontSize:12, margin:"2px 0 0" }}>Admin access — all features unlocked</p>
+            </div>
+          </div>
+        </div>
+      ) : (
         <Btn onClick={onUpgrade} color="#5856d6" style={{ width:"100%", marginBottom:16 }}>✦ Upgrade to Pro from £4.99/mo</Btn>
       )}
 
