@@ -493,8 +493,7 @@ const getProgrammeLengthWeeks = (profile) => {
     const pace = getPace(profile?.paceId || "normal");
     if (kgToLose > 0 && pace.kgPerWk > 0) {
       const rawWeeks = Math.ceil(kgToLose / pace.kgPerWk);
-      const rounded = Math.ceil(rawWeeks / 4) * 4;
-      return Math.min(52, Math.max(4, rounded));
+      return Math.min(52, Math.max(4, rawWeeks));
     }
   }
   return 16;
@@ -2745,6 +2744,7 @@ const TrainTab = ({ profile, workoutLog, setWorkoutLog, setProfile, savedWorkout
               <p style={{ opacity:0.85, fontSize:11, fontWeight:700, letterSpacing:"0.08em", margin:"0 0 4px" }}>TRAINING BLOCK {block.id} OF 4</p>
               <h3 style={{ margin:0, fontSize:20, fontWeight:800 }}>{block.name}</h3>
               <p style={{ opacity:0.8, fontSize:12, margin:"3px 0 0" }}>{block.subtitle}</p>
+              <p style={{ opacity:0.7, fontSize:11, margin:"4px 0 0" }}>Week {(block.weeksSinceStart||0)+1} of {block.programmeLengthWeeks||16} · {Math.max(0,(block.programmeLengthWeeks||16)-((block.weeksSinceStart||0)+1))} weeks remaining</p>
             </div>
             <div style={{ background:"rgba(255,255,255,0.2)", borderRadius:12, padding:"8px 12px", textAlign:"center" }}>
               <div style={{ fontSize:18, fontWeight:800 }}>W{weekInBlock+1}</div>
