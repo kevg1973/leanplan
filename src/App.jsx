@@ -3127,32 +3127,89 @@ const ProgressPhotos = ({ user, entries, profile }) => {
     </Card>
   );
 
+  const todayEntry = photos.find(p => p.date === todayKey());
+  const todayComplete = todayEntry?.front && todayEntry?.side;
+
   return (
     <div>
-      {/* Header */}
-      <Card style={{ marginBottom:12 }}>
-        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-          <div>
-            <p style={{ color:C.text, fontWeight:700, fontSize:15, margin:"0 0 2px" }}>📸 Progress Photos</p>
-            <p style={{ color:C.muted, fontSize:12, margin:0 }}>🔒 Private — only you can see these</p>
-          </div>
+
+      {/* Upload section — hidden if today already has both photos */}
+      {!compareMode && (
+        <Card style={{ marginBottom:12 }}>
+          {todayComplete ? (
+            <div>
+              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:4 }}>
+                <p style={{ color:C.green, fontWeight:700, fontSize:14, margin:0 }}>✓ Today's photos added</p>
+                <button onClick={()=>{ const el = document.getElementById("photo-upload-front"); el && el.click(); }}
+                  style={{ background:"none", border:"none", color:C.muted, fontSize:12, cursor:"pointer", fontFamily:FONT }}>Replace</button>
+              </div>
+              <p style={{ color:C.muted, fontSize:12, margin:0 }}>Come back next week to track your progress</p>
+              <input type="file" accept="image/*" style={{ display:"none" }} id="photo-upload-front" onChange={e => handleFileSelect(e, "front")} />
+            </div>
+          ) : (
+            <div>
+              <p style={{ color:C.muted, fontSize:11, fontWeight:700, letterSpacing:"0.06em", marginBottom:10 }}>
+                {photos.length === 0 ? "ADD YOUR FIRST PHOTOS" : "ADD THIS WEEK'S PHOTOS"}
+              </p>
+              <div style={{ background:`${C.accent}08`, border:`1px solid ${C.accent}20`, borderRadius:10, padding:"8px 12px", marginBottom:12, display:"flex", gap:8, alignItems:"flex-start" }}>
+                <span style={{ fontSize:14, flexShrink:0 }}>💡</span>
+                <p style={{ color:C.textSec, fontSize:12, lineHeight:1.5, margin:0 }}>Same spot each week, 2 metres from camera, arms slightly away from body. Good lighting makes a big difference.</p>
+              </div>
+              {uploadError && <p style={{ color:C.red, fontSize:13, marginBottom:8 }}>{uploadError}</p>}
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
+                {["front","side"].map(pose => (
+                  <div key={pose}>
+                    <input type="file" accept="image/*" style={{ display:"none" }} id={`photo-upload-${pose}`} onChange={e => handleFileSelect(e, pose)} />
+                    <label htmlFor={`photo-upload-${pose}`}
+                      style={{ display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:6, aspectRatio:"3/4", background: todayEntry?.[pose] ? `${C.green}10` : C.sectionBg, border:`1.5px ${todayEntry?.[pose] ? "solid" : "dashed"} ${todayEntry?.[pose] ? C.green : C.border}`, borderRadius:12, cursor:"pointer" }}>
+                      {uploading ? <p style={{ color:C.muted, fontSize:12 }}>Uploading...</p> : todayEntry?.[pose] ? (
+                        <>
+                          <span style={{ fontSize:20 }}>✓</span>
+                          <span style={{ color:C.green, fontSize:13, fontWeight:600 }}>{pose.charAt(0).toUpperCase() + pose.slice(1)}</span>
+                          <span style={{ color:C.muted, fontSize:11 }}>Tap to replace</span>
+                        </>
+                      ) : (
+                        <>
+                          <span style={{ fontSize:24 }}>📷</span>
+                          <span style={{ color:C.accent, fontSize:13, fontWeight:600 }}>{pose.charAt(0).toUpperCase() + pose.slice(1)}</span>
+                          <span style={{ color:C.muted, fontSize:11 }}>Tap to add</span>
+                        </>
+                      )}
+                    </label>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </Card>
+      )}
+
+      {/* Timeline header + compare button */}
+      {photos.length > 0 && (
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8, paddingLeft:4 }}>
+          <p style={{ color:C.muted, fontSize:11, fontWeight:700, letterSpacing:"0.06em", margin:0 }}>PHOTO TIMELINE — {photos.length} {photos.length === 1 ? "ENTRY" : "ENTRIES"}</p>
           {photos.length >= 2 && (
             <button onClick={()=>{ setCompareMode(!compareMode); setSelectedForCompare([]); }}
-              style={{ background:compareMode?C.accent:"none", border:`1.5px solid ${compareMode?C.accent:C.border}`, borderRadius:10, padding:"6px 12px", color:compareMode?"#fff":C.muted, fontSize:12, fontWeight:600, cursor:"pointer", fontFamily:FONT }}>
-              {compareMode ? "Done" : "Compare"}
+              style={{ background:compareMode?C.accent:"none", border:`1.5px solid ${compareMode?C.accent:C.border}`, borderRadius:10, padding:"5px 12px", color:compareMode?"#fff":C.muted, fontSize:12, fontWeight:600, cursor:"pointer", fontFamily:FONT }}>
+              {compareMode ? "✕ Cancel" : "Compare"}
             </button>
           )}
         </div>
-        {compareMode && (
-          <p style={{ color:C.accent, fontSize:12, margin:"8px 0 0" }}>
-            {selectedForCompare.length === 0 ? "Tap any photo to select it" :
-             selectedForCompare.length === 1 ? "Now tap a second photo to compare" :
-             "Showing comparison below"}
-          </p>
-        )}
-      </Card>
+      )}
 
-      {/* Compare panel */}
+      {/* Compare instructions */}
+      {compareMode && (
+        <Card style={{ marginBottom:10, background:`${C.accent}08`, borderColor:`${C.accent}33` }}>
+          <p style={{ color:C.accent, fontSize:13, fontWeight:600, margin:"0 0 4px" }}>
+            {selectedForCompare.length === 0 ? "Select two photos to compare" :
+             selectedForCompare.length === 1 ? "Now select a second photo" :
+             "✓ Ready to compare — see results above"}
+          </p>
+          <p style={{ color:C.muted, fontSize:12, margin:0 }}>Use the Select buttons under each photo</p>
+        </Card>
+      )}
+
+      {/* Compare result panel */}
       {compareMode && selectedForCompare.length === 2 && (
         <Card style={{ marginBottom:12 }}>
           <p style={{ color:C.muted, fontSize:11, fontWeight:700, letterSpacing:"0.06em", marginBottom:10 }}>COMPARISON</p>
@@ -3178,33 +3235,6 @@ const ProgressPhotos = ({ user, entries, profile }) => {
           })()}
         </Card>
       )}
-
-      {/* Upload new */}
-      <Card style={{ marginBottom:12 }}>
-        <p style={{ color:C.muted, fontSize:11, fontWeight:700, letterSpacing:"0.06em", marginBottom:10 }}>ADD TODAY'S PHOTOS</p>
-        <div style={{ background:`${C.accent}08`, border:`1px solid ${C.accent}20`, borderRadius:10, padding:"8px 12px", marginBottom:12, display:"flex", gap:8, alignItems:"flex-start" }}>
-          <span style={{ fontSize:14, flexShrink:0 }}>💡</span>
-          <p style={{ color:C.textSec, fontSize:12, lineHeight:1.5, margin:0 }}>For best comparisons: stand 2 metres from the camera, good lighting, same spot each week. Arms slightly away from body.</p>
-        </div>
-        {uploadError && <p style={{ color:C.red, fontSize:13, marginBottom:8 }}>{uploadError}</p>}
-        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
-          {["front","side"].map(pose => (
-            <div key={pose}>
-              <input type="file" accept="image/*" style={{ display:"none" }} id={`photo-upload-${pose}`} onChange={e => handleFileSelect(e, pose)} />
-              <label htmlFor={`photo-upload-${pose}`}
-                style={{ display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:6, aspectRatio:"3/4", background:C.sectionBg, border:`1.5px dashed ${C.border}`, borderRadius:12, cursor:"pointer" }}>
-                {uploading ? <p style={{ color:C.muted, fontSize:12 }}>Uploading...</p> : (
-                  <>
-                    <span style={{ fontSize:24 }}>📷</span>
-                    <span style={{ color:C.accent, fontSize:13, fontWeight:600 }}>{pose.charAt(0).toUpperCase() + pose.slice(1)}</span>
-                    <span style={{ color:C.muted, fontSize:11 }}>Tap to add</span>
-                  </>
-                )}
-              </label>
-            </div>
-          ))}
-        </div>
-      </Card>
 
       {/* Timeline */}
       {photos.length === 0 ? (
