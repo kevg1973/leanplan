@@ -3229,23 +3229,17 @@ const ProgressPhotos = ({ user, entries, profile }) => {
               <div key={pose} style={{ position:"relative" }}>
                 {entry[pose] ? (
                   <>
-                    <div
-                      onClick={() => compareMode ? toggleCompare(entry, pose) : setViewPhoto({ url:entry[pose].url, date:entry.date, weightKg:entry.weightKg, pose })}
-                      style={{ position:"relative", cursor:"pointer" }}
-                    >
+                    <div style={{ position:"relative" }}>
                       <img src={entry[pose].url} alt={pose}
-                        style={{ width:"100%", aspectRatio:"3/4", objectFit:"cover", borderRadius:10, display:"block",
-                          border: compareMode && selectedForCompare.find(s=>s.key===`${entry.date}_${pose}`) ? `3px solid ${C.accent}` : `1px solid ${C.border}`,
-                          opacity: compareMode && !selectedForCompare.find(s=>s.key===`${entry.date}_${pose}`) ? 0.6 : 1 }}
+                        onClick={() => !compareMode && setViewPhoto({ url:entry[pose].url, date:entry.date, weightKg:entry.weightKg, pose })}
+                        style={{ width:"100%", aspectRatio:"3/4", objectFit:"cover", borderRadius:10, display:"block", cursor:compareMode?"default":"pointer",
+                          border: compareMode && selectedForCompare.find(s=>s.key===`${entry.date}_${pose}`) ? `3px solid ${C.accent}` : `1px solid ${C.border}` }}
                       />
                       {compareMode && (
-                        <div style={{ position:"absolute", inset:0, borderRadius:10, display:"flex", alignItems:"center", justifyContent:"center", background: selectedForCompare.find(s=>s.key===`${entry.date}_${pose}`) ? "rgba(10,132,255,0.25)" : "transparent" }}>
-                          {selectedForCompare.find(s=>s.key===`${entry.date}_${pose}`) && (
-                            <div style={{ width:32, height:32, borderRadius:99, background:C.accent, display:"flex", alignItems:"center", justifyContent:"center" }}>
-                              <span style={{ color:"#fff", fontSize:16, fontWeight:700 }}>✓</span>
-                            </div>
-                          )}
-                        </div>
+                        <button
+                          onClick={() => toggleCompare(entry, pose)}
+                          style={{ width:"100%", marginTop:4, background: selectedForCompare.find(s=>s.key===`${entry.date}_${pose}`) ? C.accent : C.sectionBg, border:`1.5px solid ${selectedForCompare.find(s=>s.key===`${entry.date}_${pose}`) ? C.accent : C.border}`, borderRadius:8, padding:"5px 0", color: selectedForCompare.find(s=>s.key===`${entry.date}_${pose}`) ? "#fff" : C.muted, fontSize:12, fontWeight:600, cursor:"pointer", fontFamily:FONT }}
+                        >{selectedForCompare.find(s=>s.key===`${entry.date}_${pose}`) ? "✓ Selected" : "Select"}</button>
                       )}
                     </div>
                     {!compareMode && (
