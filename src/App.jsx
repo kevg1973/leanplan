@@ -3689,7 +3689,24 @@ const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDar
 
 
 // ── COACH TAB ─────────────────────────────────────────────────────────────────
-const CoachTab = ({ profile, setProfile, mealPlan, mealLog, workoutLog, entries }) => {
+const CoachTab = ({ profile, setProfile, mealPlan, mealLog, workoutLog, entries, isAdmin=false }) => {
+  const COACH_DAILY_LIMIT = 20;
+  const getCoachUsage = () => {
+    try {
+      const raw = localStorage.getItem("leanplan_coach_count");
+      if (!raw) return { count:0, date:todayKey() };
+      const parsed = JSON.parse(raw);
+      if (parsed.date !== todayKey()) return { count:0, date:todayKey() };
+      return parsed;
+    } catch { return { count:0, date:todayKey() }; }
+  };
+  const incrementCoachUsage = () => {
+    const usage = getCoachUsage();
+    const updated = { count: usage.count + 1, date: todayKey() };
+    localStorage.setItem("leanplan_coach_count", JSON.stringify(updated));
+    return updated.count;
+  };
+
   // Build live context for the AI
   const buildContext = () => {
     const today = todayKey();
@@ -3779,6 +3796,7 @@ For example:
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [notification, setNotification] = useState(null);
+  const [coachUsage, setCoachUsage] = useState(() => getCoachUsage());
   const bottomRef = useState(null);
   const messagesEndRef = { current: null };
 
@@ -3818,11 +3836,16 @@ For example:
   const send = async () => {
     const text = input.trim();
     if (!text || loading) return;
+    if (!isAdmin && coachUsage.count >= COACH_DAILY_LIMIT) {
+      setMessages(m => [...m, { role:"assistant", content:"You've reached your 20 message limit for today. Your allowance resets at midnight — I'll be here when you're back! 💪" }]);
+      return;
+    }
     setInput("");
 
     const newMessages = [...messages, { role:"user", content:text }];
     setMessages(newMessages);
     setLoading(true);
+    if (!isAdmin) setCoachUsage({ count: incrementCoachUsage(), date: todayKey() });
 
     try {
       const res = await fetch("/api/chat", {
@@ -3976,6 +3999,13 @@ For example:
       )}
 
       {/* Input */}
+      {!isAdmin && (
+        <div style={{ display:"flex", justifyContent:"flex-end", marginBottom:4 }}>
+          <span style={{ fontSize:11, color: coachUsage.count >= COACH_DAILY_LIMIT ? C.red : coachUsage.count >= 15 ? C.orange : C.muted, fontWeight: coachUsage.count >= 15 ? 600 : 400 }}>
+            {coachUsage.count} / {COACH_DAILY_LIMIT} messages today
+          </span>
+        </div>
+      )}
       <div style={{ display:"flex", gap:8, alignItems:"flex-end" }}>
         <textarea
           value={input}
@@ -5049,7 +5079,7 @@ function AppInner() {
         {tab==="Meals"&&<MealsTab profile={profile} favourites={favourites} setFavourites={setFavourites} removed={removed} setRemoved={setRemoved} mealLog={mealLog} setMealLog={setMealLog} isPro={effectiveIsPro} onUpgrade={()=>setShowPaywall(true)} mealPlan={mealPlan} onSaveMealPlan={saveMealPlan} />}
         {tab==="Train"&&(effectiveIsPro ? <TrainTab profile={profile} workoutLog={workoutLog} setWorkoutLog={setWorkoutLog} setProfile={setProfile} savedWorkout={todaysWorkout} setSavedWorkout={setTodaysWorkout} /> : <LockedTab feature="Workout tracking, lift tracker and rest day planner" onUpgrade={()=>setShowPaywall(true)} />)}
         {tab==="Track"&&(effectiveIsPro ? <TrackTab profile={profile} entries={entries} setEntries={fn=>setEntries(typeof fn==="function"?fn(entries):fn)} measurements={measurements} setMeasurements={setMeasurements} workoutLog={workoutLog} /> : <LockedTab feature="Progress tracking, measurements and body stats" onUpgrade={()=>setShowPaywall(true)} />)}
-        {tab==="Coach"&&(effectiveIsPro ? <CoachTab profile={profile} setProfile={setProfile} mealPlan={mealPlan} mealLog={mealLog} workoutLog={workoutLog} entries={entries} /> : <LockedTab feature="AI personal coach" onUpgrade={()=>setShowPaywall(true)} />)}
+        {tab==="Coach"&&(effectiveIsPro ? <CoachTab profile={profile} setProfile={setProfile} mealPlan={mealPlan} mealLog={mealLog} workoutLog={workoutLog} entries={entries} isAdmin={proData?.customerId === "bypass"} /> : <LockedTab feature="AI personal coach" onUpgrade={()=>setShowPaywall(true)} />)}
         {tab==="Profile"&&<ProfileTab profile={profile} setProfile={setProfile} onReset={handleReset} isDark={isDark} darkOverride={darkOverride} setDarkOverride={setDarkOverride} isPro={effectiveIsPro} proData={proData} onUpgrade={()=>setShowPaywall(true)} user={user} onShowAuth={()=>setShowAuth(true)} onClearMealPlan={()=>saveMealPlan(null)} />}
 
       </div>
