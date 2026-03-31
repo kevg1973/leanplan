@@ -4384,8 +4384,11 @@ const PaywallModal = ({ onClose }) => {
   const proFeatures = [
     { icon:"meals", text:"AI meal plan generation — tailored to your diet" },
     { icon:"tip", text:"Personal AI health coach — available 24/7" },
-    { icon:"train", text:"Full workout tracking & lift progression" },
-    { icon:"track", text:"Body measurements, BMI & progress charts" },
+    { icon:"train", text:"Personalised training programme — structured blocks that progress week by week" },
+    { icon:"track", text:"Progress photos — see your transformation week by week" },
+    { icon:"chart", text:"Calorie & macro targets — automatically adjusted on training days" },
+    { icon:"meals", text:"Swap any meal instantly — same calories, different food" },
+    { icon:"barbell", text:"Lift tracker — beat your personal best every session" },
     { icon:"bag", text:"Smart shopping lists with supermarket links" },
     { icon:"water", text:"Water tracker, journal & daily streaks" },
   ];
