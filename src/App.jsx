@@ -4434,7 +4434,7 @@ const PaywallModal = ({ onClose }) => {
       <div onClick={onClose} style={{ position:"absolute", inset:0, background:"rgba(0,0,0,0.6)", backdropFilter:"blur(4px)" }} />
 
       {/* Sheet */}
-      <div style={{ position:"relative", background:C.bg, borderRadius:"24px 24px 0 0", padding:"24px 20px 40px", maxHeight:"90vh", overflowY:"auto" }}>
+      <div style={{ position:"relative", background:C.bg, borderRadius:"24px 24px 0 0", padding:"24px 20px 40px", maxHeight:"95vh", overflowY:"auto" }}>
         {/* Handle */}
         <div style={{ width:36, height:4, background:C.divider, borderRadius:99, margin:"0 auto 20px" }} />
 
@@ -4453,7 +4453,7 @@ const PaywallModal = ({ onClose }) => {
         {/* Features — 2 column grid */}
         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginBottom:24 }}>
           {proFeatures.map((f,i) => (
-            <div key={i} style={{ background:`${C.accent}08`, border:`1px solid ${C.accent}18`, borderRadius:12, padding:"10px 12px" }}>
+            <div key={i} style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:12, padding:"10px 12px" }}>
               <div style={{ fontSize:18, marginBottom:4 }}>{f.emoji}</div>
               <div style={{ color:C.text, fontSize:12, fontWeight:600, lineHeight:1.4 }}>{f.text}</div>
             </div>
