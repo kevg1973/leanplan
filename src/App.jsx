@@ -4530,8 +4530,9 @@ function AppInner() {
   }, []);
 
   useEffect(()=>{
-    // Check server-side bypass flag
-    fetch("/api/pro-status")
+    // Check server-side bypass flag — pass email for admin override
+    const emailParam = user?.email ? `?email=${encodeURIComponent(user.email)}` : "";
+    fetch(`/api/pro-status${emailParam}`)
       .then(r => r.json())
       .then(data => {
         if (data.bypass) {
@@ -4565,7 +4566,7 @@ function AppInner() {
         if (pd.isPro) { setIsPro(true); setProData(pd); }
       }
     } catch(e){}
-  }, []);
+  }, [user]);
 
   // Load data from localStorage first (fast), then sync from Supabase if logged in
   const loadFromLocal = () => {

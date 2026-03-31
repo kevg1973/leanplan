@@ -311,7 +311,10 @@ app.post("/api/stripe/portal", async (req, res) => {
 // ── Pro bypass check ─────────────────────────────────────────────────────────
 app.get("/api/pro-status", (req, res) => {
   const bypass = process.env.BYPASS_PRO === "true";
-  res.json({ bypass });
+  const adminEmails = (process.env.ADMIN_EMAILS || "").split(",").map(e => e.trim().toLowerCase()).filter(Boolean);
+  const email = (req.query.email || "").toLowerCase();
+  const isAdmin = email && adminEmails.includes(email);
+  res.json({ bypass: bypass || isAdmin });
 });
 
 // ── Forgot password — sends temp password via Resend ─────────────────────────
