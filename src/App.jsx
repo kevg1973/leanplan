@@ -483,13 +483,37 @@ const PERIODISATION_BLOCKS = [
   },
 ];
 
+// Calculate programme length in weeks based on goal, target weight, and pace
+const getProgrammeLengthWeeks = (profile) => {
+  const goal = profile?.goal || "lose_weight";
+  if (goal === "lose_weight" || goal === "all") {
+    const startKg = parseFloat(profile?.startWeight || profile?.startWeightKg || 80);
+    const targetKg = parseFloat(profile?.targetRaw || profile?.targetWeightKg || 70);
+    const kgToLose = Math.max(0, startKg - targetKg);
+    const pace = getPace(profile?.paceId || "normal");
+    if (kgToLose > 0 && pace.kgPerWk > 0) {
+      const rawWeeks = Math.ceil(kgToLose / pace.kgPerWk);
+      // Round up to nearest 4-week block so programme always ends on a deload
+      const rounded = Math.ceil(rawWeeks / 4) * 4;
+      // Cap between 4 and 52 weeks
+      return Math.min(52, Math.max(4, rounded));
+    }
+  }
+  // build_muscle, get_fitter, or fallback — one full 16-week cycle
+  return 16;
+};
+
 // Get current training block based on start date
 const getCurrentBlock = (profile) => {
-  if (!profile?.trainingStartDate) return PERIODISATION_BLOCKS[0];
+  if (!profile?.trainingStartDate) return { ...PERIODISATION_BLOCKS[0], weekInBlock: 0, weeksSinceStart: 0, isProgrammeComplete: false };
   const weeksSinceStart = Math.floor((Date.now() - new Date(profile.trainingStartDate)) / (7 * 24 * 60 * 60 * 1000));
-  const blockIndex = Math.floor(weeksSinceStart / 4) % PERIODISATION_BLOCKS.length;
-  const weekInBlock = (weeksSinceStart % 4); // 0-3
-  return { ...PERIODISATION_BLOCKS[blockIndex], weekInBlock };
+  const programmeLengthWeeks = getProgrammeLengthWeeks(profile);
+  const isProgrammeComplete = weeksSinceStart >= programmeLengthWeeks;
+  // Clamp to last block/week if complete (don't wrap)
+  const clampedWeeks = Math.min(weeksSinceStart, programmeLengthWeeks - 1);
+  const blockIndex = Math.min(Math.floor(clampedWeeks / 4), PERIODISATION_BLOCKS.length - 1);
+  const weekInBlock = clampedWeeks % 4;
+  return { ...PERIODISATION_BLOCKS[blockIndex], weekInBlock, weeksSinceStart, isProgrammeComplete, programmeLengthWeeks };
 };
 
 // Build a workout from the exercise database filtered by user profile
@@ -679,7 +703,7 @@ const Chip = ({ children, color=C.accent, active, onClick }) => {
 };
 
 const BigChip = ({ children, color=C.accent, active, onClick }) => (
-  <span onClick={onClick} style={{ background:active?color:`${color}12`, color:active?"#fff":color, border:`1.5px solid ${active?color:`${color}55`}`, borderRadius:99, padding:"13px 24px", fontSize:16, fontWeight:600, cursor:onClick?"pointer":"default", transition:"all 0.2s", display:"inline-block", whiteSpace:"nowrap" }}>{children}</span>
+  <span onClick={onClick} style={{ background:active?color:`${color}12`, color:active?"#fff":color, border:`1.5px solid ${active?color:`${color}55`}`, borderRadius:99, padding:"10px 20px", fontSize:15, fontWeight:600, cursor:onClick?"pointer":"default", transition:"all 0.2s", display:"inline-block", whiteSpace:"nowrap" }}>{children}</span>
 );
 
 const Toggle = ({ value, onChange }) => (
@@ -1381,42 +1405,27 @@ const TipSplashScreen = ({ tip, onDismiss }) => {
   );
 };
 
-const JournalCard = ({ journal, setJournal, today }) => {
+const TodayTab = ({ profile, entries, mealLog, workoutLog, water, setWater, journal, setJournal, measurements }) => {
+  const [tipIdx, setTipIdx] = useState(()=>Math.floor(Math.random()*DAILY_TIPS.length));
   const [showJournal, setShowJournal] = useState(false);
-  return (
-    <Card>
-      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:showJournal?12:0 }}>
-        <div style={{ display:"flex", alignItems:"center", gap:6 }}><Icon name="note" size={14} color={C.muted} /><p style={{ color:C.muted, fontSize:12, fontWeight:600, letterSpacing:"0.06em", margin:0 }}>DAILY JOURNAL</p></div>
-        <button onClick={()=>setShowJournal(s=>!s)} style={{ background:"none", border:"none", color:C.accent, fontSize:13, cursor:"pointer", fontFamily:FONT, fontWeight:600 }}>{showJournal?"Done":"Write"}</button>
-      </div>
-      {showJournal&&<textarea value={journal[today]||""} onChange={e=>setJournal(j=>({...j,[today]:e.target.value}))} placeholder="How are you feeling today? Energy levels, sleep, anything notable..." style={{ width:"100%", minHeight:80, background:C.sectionBg, border:`1px solid ${C.border}`, borderRadius:10, padding:"10px 12px", fontSize:14, fontFamily:FONT, color:C.text, outline:"none", resize:"vertical" }} />}
-      {!showJournal&&journal[today]&&<p style={{ color:C.textSec, fontSize:14, margin:0, marginTop:8, lineHeight:1.6 }}>{journal[today]}</p>}
-    </Card>
-  );
-};
-
-const TodayTab = ({ profile, entries, mealLog, setMealLog, workoutLog, water, setWater, journal, setJournal, measurements, mealPlan, setTab }) => {
   const today = todayKey();
   const cur = entries.length>0?entries[entries.length-1].weight:profile.startWeightLbs;
   const lost = Math.max(0,profile.startWeightLbs-cur);
   const lostKg = parseFloat((lost*0.453592).toFixed(1));
   const pace = getPace(profile.paceId||"normal");
+  const pct = profile.targetLbs>0?Math.min(100,Math.round((lost/profile.targetLbs)*100)):0;
+  const eta = profile.targetLbs>0?Math.ceil((profile.targetLbs-lost)/pace.lbs):0;
   const tdee = calcTDEE(profile);
-  const targetCals = tdee ? tdee - Math.round(pace.lbs*500) : 2000;
-  const targetProtein = profile.age>=50 ? Math.round((profile.startWeightLbs*0.453592)*2.4) : Math.round((profile.startWeightLbs*0.453592)*2.2);
-  const targetCarbs = Math.round((targetCals * 0.4) / 4);
-  const targetFat = Math.round((targetCals * 0.3) / 9);
+  const targetCals = tdee ? tdee - Math.round(pace.lbs*500) : null;
   const todayMeals = mealLog[today]||[];
   const todayCalories = todayMeals.reduce((a,m)=>a+m.cals,0);
   const todayProtein = todayMeals.reduce((a,m)=>a+m.protein,0);
-  const todayCarbs = todayMeals.reduce((a,m)=>a+(m.carbs||0),0);
-  const todayFat = todayMeals.reduce((a,m)=>a+(m.fat||0),0);
   const todayWater = water[today]||0;
   const todayWorked = workoutLog[today];
 
-  // Planned meals count
-  const todayPlan = mealPlan?.days?.find(d => d.date === today);
-  const plannedCount = todayPlan?.meals?.length || 5;
+  // Weekly summary (Sunday trigger)
+  const isMonday = new Date().getDay()===1;
+  const lastWeekWorkouts = Array.from({length:7},(_,i)=>{ const d=new Date(); d.setDate(d.getDate()-i-1); return workoutLog[d.toISOString().split("T")[0]]?1:0; }).reduce((a,b)=>a+b,0);
 
   // Streak
   let streak=0;
@@ -1427,169 +1436,107 @@ const TodayTab = ({ profile, entries, mealLog, setMealLog, workoutLog, water, se
     else break;
   }
 
-  // Today's workout
-  const weekPlan = getWeeklyPlan(profile);
-  const dayMap = { Mon:1, Tue:2, Wed:3, Thu:4, Fri:5, Sat:6, Sun:0 };
-  const todayDayOfWeek = new Date().getDay();
-  const sessionIdx = weekPlan.days.findIndex(d => dayMap[d] === todayDayOfWeek);
-  const todaySession = sessionIdx !== -1 ? weekPlan.sessions[sessionIdx] : null;
-  const block = getCurrentBlock(profile);
-
-  // Calorie ring
-  const circumference = 2 * Math.PI * 34;
-  const calOffset = circumference - (circumference * Math.min(1, todayCalories / targetCals));
-
-  // Personalised insights — pick the most relevant one for today
-  const insights = (() => {
-    const msgs = [];
-    const hour = new Date().getHours();
-
-    // Workout insights
-    const weekWorkouts = Array.from({length:7},(_,i)=>{ const d=new Date(); d.setDate(d.getDate()-d.getDay()+1+i); return workoutLog[d.toISOString().split("T")[0]]?1:0; }).reduce((a,b)=>a+b,0);
-    if (todayWorked) msgs.push({ text:`Workout done ✓ — ${weekWorkouts} of ${profile.workoutsPerWeek||3} this week`, priority:2 });
-    if (!todayWorked && todaySession && hour >= 16) msgs.push({ text:`Still time for your ${todaySession.label} today 💪`, priority:3 });
-
-    // Protein insights
-    const proteinDaysHit = Array.from({length:7},(_,i)=>{ const d=new Date(); d.setDate(d.getDate()-i); const k=d.toISOString().split("T")[0]; return (mealLog[k]||[]).reduce((a,m)=>a+m.protein,0) >= targetProtein ? 1 : 0; }).reduce((a,b)=>a+b,0);
-    if (proteinDaysHit >= 4) msgs.push({ text:`Protein target hit ${proteinDaysHit} days this week 💪`, priority:2 });
-    if (todayProtein >= targetProtein) msgs.push({ text:`Protein target hit today — great work!`, priority:1 });
-    if (todayProtein > 0 && todayProtein < targetProtein * 0.5 && hour >= 18) msgs.push({ text:`You're low on protein today — add a shake or snack`, priority:4 });
-
-    // Calorie insights
-    if (todayCalories > 0 && todayCalories < targetCals * 0.6 && hour >= 19) msgs.push({ text:`You're ${targetCals - todayCalories} calories under today — consider a snack`, priority:3 });
-    if (todayCalories > targetCals * 1.1) msgs.push({ text:`Over your calorie target today — balance it out tomorrow`, priority:3 });
-
-    // Streak insights
-    if (streak >= 7) msgs.push({ text:`${streak} day streak — you're on fire! 🔥`, priority:1 });
-    if (streak >= 3 && streak < 7) msgs.push({ text:`${streak} day streak — keep it going! 🔥`, priority:2 });
-
-    // Water insights
-    if (todayWater >= 8) msgs.push({ text:`Hydration goal hit today — well done 💧`, priority:1 });
-    if (todayWater === 0 && hour >= 12) msgs.push({ text:`Don't forget to drink water today 💧`, priority:3 });
-
-    // Weight progress
-    if (lostKg >= 1) msgs.push({ text:`${lostKg}kg lost so far — you're making real progress`, priority:2 });
-
-    // Weekly workout goal hit
-    if (weekWorkouts >= (profile.workoutsPerWeek||3)) msgs.push({ text:`Weekly workout goal hit! 🎯 Rest up or go for a bonus session`, priority:1 });
-
-    // Sort by priority (lower = more important) and return top one
-    if (msgs.length === 0) return { text:`Log your meals and workouts to get personalised insights`, priority:5 };
-    return msgs.sort((a,b) => a.priority - b.priority)[0];
-  })();
-
-  // Date + greeting
-  const dayName = new Date().toLocaleDateString("en-GB", { weekday:"long", day:"numeric", month:"long" });
-  const hour = new Date().getHours();
-  const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+  const [showCalories, setShowCalories] = useState(true);
 
   return (
     <div>
-      {/* Greeting */}
-      <div style={{ marginBottom:12 }}>
-        <p style={{ color:C.muted, fontSize:13, margin:"0 0 2px" }}>{dayName}</p>
-        <h2 style={{ color:C.text, fontSize:22, fontWeight:700, margin:"0 0 8px" }}>{greeting}{profile.name?`, ${profile.name}`:""} 👋</h2>
-        <div style={{ background:`${C.accent}18`, border:`1px solid ${C.accent}44`, borderRadius:12, padding:"10px 14px" }}>
-          <p style={{ color:C.accent, fontSize:14, fontWeight:600, margin:0 }}>{insights.text}</p>
+      {/* Hero — compact */}
+      <div style={{ background:`linear-gradient(145deg, ${C.accent}, #5ac8fa)`, borderRadius:16, padding:"14px 16px", marginBottom:12, color:"#fff" }}>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
+          <div>
+            <p style={{ opacity:0.85, fontSize:12, margin:"0 0 1px" }}>Hello{profile.name?`, ${profile.name}`:""}  👋</p>
+            <h2 style={{ fontSize:18, fontWeight:700, margin:0 }}>{profile.targetLbs>0?`Lose ${toKg(profile.targetLbs)} kg`:profile.goal?.replace(/_/g," ")||"Get Healthy"}</h2>
+          </div>
+          <div style={{ textAlign:"right" }}>
+            <p style={{ opacity:0.9, fontSize:16, fontWeight:700, margin:"0 0 1px" }}>{pct}%</p>
+            <p style={{ opacity:0.7, fontSize:11, margin:0 }}>{lostKg}kg lost</p>
+          </div>
+        </div>
+        <div style={{ background:"rgba(255,255,255,0.25)", borderRadius:99, height:5, overflow:"hidden" }}>
+          <div style={{ width:`${pct}%`, height:"100%", background:"rgba(255,255,255,0.9)", borderRadius:99, transition:"width 0.6s" }} />
+        </div>
+        <div style={{ display:"flex", justifyContent:"space-between", marginTop:4, opacity:0.7, fontSize:10 }}>
+          <span>{profile.startWeightLbs?toKg(profile.startWeightLbs):"—"} kg start</span>
+          <span>~{eta>0?eta:0} wks to go</span>
+          <span>{toKg(cur)} kg now</span>
         </div>
       </div>
 
-      {/* Calorie ring + macros */}
-      <div style={{ background:C.card, borderRadius:16, padding:"14px 16px", marginBottom:10, border:`1px solid ${C.border}`, display:"flex", alignItems:"center", gap:16 }}>
-        <div style={{ position:"relative", width:80, height:80, flexShrink:0 }}>
-          <svg width="80" height="80" viewBox="0 0 80 80">
-            <circle cx="40" cy="40" r="34" fill="none" stroke={C.sectionBg} strokeWidth="8"/>
-            <circle cx="40" cy="40" r="34" fill="none" stroke={C.accent} strokeWidth="8"
-              strokeDasharray={circumference} strokeDashoffset={calOffset}
-              strokeLinecap="round" transform="rotate(-90 40 40)"
-              style={{ transition:"stroke-dashoffset 0.6s ease" }}/>
-          </svg>
-          <div style={{ position:"absolute", inset:0, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center" }}>
-            <span style={{ color:C.text, fontSize:16, fontWeight:700, lineHeight:1 }}>{todayCalories}</span>
-            <span style={{ color:C.muted, fontSize:10 }}>/ {targetCals}</span>
-          </div>
+      {/* Weekly summary on Mondays */}
+      {isMonday&&lastWeekWorkouts>0&&<Card style={{ background:`${C.green}08`, borderColor:`${C.green}33`, marginBottom:12 }}>
+        <p style={{ color:C.green, fontSize:13, margin:0 }}>🎯 Last week: <strong>{lastWeekWorkouts} workout{lastWeekWorkouts!==1?"s":""}</strong> — {lastWeekWorkouts>=profile.workoutsPerWeek?"Goal hit!":"keep pushing!"}</p>
+      </Card>}
+
+      {/* Quick stats row */}
+      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr 1fr", gap:8, marginBottom:14 }}>
+        <StatBox label="Calories" val={todayCalories||"—"} sub={targetCals?`/ ${targetCals}`:""} color={targetCals&&todayCalories>targetCals?C.red:C.accent} />
+        <StatBox label="Protein" val={todayProtein>0?`${todayProtein}g`:"—"} sub="120g+" color={todayProtein>=120?C.green:C.orange} />
+        <StatBox label="Water" val={`${(todayWater*0.25).toFixed(1)}L`} sub="/ 2.0L" color={C.teal} />
+        <StatBox label="Streak" val={`${streak}d`} color={streak>=7?C.orange:C.purple} />
+      </div>
+
+      {/* Today's actions - compact row */}
+      <div style={{ display:"flex", gap:8, marginBottom:14 }}>
+        <div style={{ flex:1, background:C.card, borderRadius:14, padding:"12px 10px", border:`1px solid ${C.border}`, textAlign:"center" }}>
+          <div style={{ fontSize:20, marginBottom:2 }}>{todayWorked?"✅":"🏋️"}</div>
+          <div style={{ color:C.text, fontSize:11, fontWeight:600, lineHeight:1.3 }}>{todayWorked?todayWorked.type.split("-").join(" "):"No workout"}</div>
         </div>
-        <div style={{ flex:1 }}>
-          <p style={{ color:C.muted, fontSize:11, fontWeight:600, letterSpacing:"0.06em", margin:"0 0 8px" }}>CALORIES TODAY</p>
-          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:8 }}>
-            {[
-              { label:"protein", val:todayProtein, target:targetProtein, color:C.green },
-              { label:"carbs", val:todayCarbs, target:targetCarbs, color:C.orange },
-              { label:"fat", val:todayFat, target:targetFat, color:C.red },
-            ].map(m=>(
-              <div key={m.label}>
-                <p style={{ color:C.text, fontSize:14, fontWeight:700, margin:0 }}>{m.val}g</p>
-                <p style={{ color:C.muted, fontSize:11, margin:0 }}>{m.label}</p>
-                <div style={{ height:3, background:C.sectionBg, borderRadius:99, marginTop:4 }}>
-                  <div style={{ width:`${Math.min(100, Math.round((m.val/m.target)*100))}%`, height:"100%", background:m.color, borderRadius:99 }} />
-                </div>
-              </div>
-            ))}
-          </div>
+        <div style={{ flex:1, background:C.card, borderRadius:14, padding:"12px 10px", border:`1px solid ${C.border}`, textAlign:"center" }}>
+          <div style={{ fontSize:20, marginBottom:2 }}>🍽️</div>
+          <div style={{ color:C.text, fontSize:11, fontWeight:600 }}>{todayMeals.length} meals logged</div>
+        </div>
+        <div style={{ flex:1, background:C.card, borderRadius:14, padding:"12px 10px", border:`1px solid ${C.border}`, textAlign:"center" }}>
+          <div style={{ fontSize:20, marginBottom:2 }}>⚖️</div>
+          <div style={{ color:C.text, fontSize:11, fontWeight:600 }}>{toKg(cur)} kg</div>
         </div>
       </div>
 
-      {/* Meals + Workout summary */}
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:10 }}>
-        <div style={{ background:C.card, borderRadius:16, padding:14, border:`1px solid ${C.border}` }}>
-          <p style={{ color:C.muted, fontSize:11, fontWeight:600, letterSpacing:"0.06em", margin:"0 0 6px" }}>MEALS</p>
-          <p style={{ color:C.text, fontSize:22, fontWeight:700, margin:"0 0 2px" }}>{todayMeals.length}<span style={{ color:C.muted, fontSize:14, fontWeight:400 }}> / {plannedCount}</span></p>
-          <p style={{ color:C.muted, fontSize:12, margin:"0 0 10px" }}>logged today</p>
-          <button onClick={()=>setTab("Meals")} style={{ width:"100%", background:C.accent, border:"none", borderRadius:10, padding:"7px 0", color:"#fff", fontSize:12, fontWeight:700, cursor:"pointer", fontFamily:FONT }}>View meals →</button>
+      {/* Water tracker */}
+      <Card style={{ marginBottom:14 }}>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
+          <div style={{ display:"flex", alignItems:"center", gap:6 }}><Icon name="water" size={14} color={C.teal} /><p style={{ color:C.muted, fontSize:12, fontWeight:600, letterSpacing:"0.06em", margin:0 }}>WATER</p></div>
+          <span style={{ color:C.teal, fontWeight:700, fontSize:13 }}>{(todayWater*0.25).toFixed(2)}L / 2.0L</span>
         </div>
-        <div style={{ background:C.card, borderRadius:16, padding:14, border:`1px solid ${C.border}` }}>
-          <p style={{ color:C.muted, fontSize:11, fontWeight:600, letterSpacing:"0.06em", margin:"0 0 6px" }}>WORKOUT</p>
-          {todayWorked ? (
-            <>
-              <p style={{ color:C.green, fontSize:15, fontWeight:700, margin:"0 0 2px" }}>Done ✓</p>
-              <p style={{ color:C.muted, fontSize:12, margin:"0 0 10px" }}>{todayWorked.type.split("-").join(" ")}</p>
-            </>
-          ) : todaySession ? (
-            <>
-              <p style={{ color:C.text, fontSize:15, fontWeight:700, margin:"0 0 2px" }}>{todaySession.label}</p>
-              <p style={{ color:C.muted, fontSize:12, margin:"0 0 10px" }}>Week {block.week} · {block.sets} sets</p>
-            </>
-          ) : (
-            <>
-              <p style={{ color:C.text, fontSize:15, fontWeight:700, margin:"0 0 2px" }}>Rest day</p>
-              <p style={{ color:C.muted, fontSize:12, margin:"0 0 10px" }}>Recover well</p>
-            </>
-          )}
-          {!todayWorked && todaySession ? (
-            <button onClick={()=>setTab("Train")} style={{ width:"100%", background:C.accent, border:"none", borderRadius:10, padding:"7px 0", color:"#fff", fontSize:12, fontWeight:700, cursor:"pointer", fontFamily:FONT }}>Start →</button>
-          ) : (
-            <button onClick={()=>setTab("Train")} style={{ width:"100%", background:"none", border:`1px solid ${C.border}`, borderRadius:10, padding:"7px 0", color:C.muted, fontSize:12, fontWeight:600, cursor:"pointer", fontFamily:FONT }}>View plan →</button>
-          )}
+        <ProgressBar value={todayWater} max={8} color={C.teal} height={8} />
+        <div style={{ display:"flex", gap:8, marginTop:10 }}>
+          <Btn onClick={()=>setWater(w=>({...w,[today]:Math.max(0,(w[today]||0)-1)}))} color={C.teal} outline small style={{ flex:1 }}>− 250ml</Btn>
+          <Btn onClick={()=>setWater(w=>({...w,[today]:Math.min(16,(w[today]||0)+1)}))} color={C.teal} small style={{ flex:2 }}>+ 250ml</Btn>
         </div>
-      </div>
+      </Card>
 
-      {/* Water + Progress */}
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:10 }}>
-        <div style={{ background:C.card, borderRadius:16, padding:14, border:`1px solid ${C.border}` }}>
-          <p style={{ color:C.muted, fontSize:11, fontWeight:600, letterSpacing:"0.06em", margin:"0 0 6px" }}>WATER</p>
-          <p style={{ color:C.teal, fontSize:22, fontWeight:700, margin:"0 0 4px" }}>{(todayWater*0.25).toFixed(2)}L</p>
-          <div style={{ height:4, background:C.sectionBg, borderRadius:99, marginBottom:8 }}>
-            <div style={{ width:`${Math.min(100, Math.round((todayWater/8)*100))}%`, height:"100%", background:C.teal, borderRadius:99 }} />
+      {/* Calorie targets — collapsible */}
+      {tdee&&<Card style={{ marginBottom:14, cursor:"pointer" }} onClick={()=>setShowCalories(s=>!s)}>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+          <div style={{ display:"flex", alignItems:"center", gap:6 }}>
+            <Icon name="flame" size={14} color={C.orange} />
+            <p style={{ color:C.muted, fontSize:12, fontWeight:600, letterSpacing:"0.06em", margin:0 }}>CALORIE TARGETS</p>
           </div>
-          <div style={{ display:"flex", gap:6 }}>
-            <button onClick={()=>setWater(w=>({...w,[today]:Math.max(0,(w[today]||0)-1)}))} style={{ flex:1, background:C.sectionBg, border:"none", borderRadius:8, padding:"6px 0", color:C.teal, fontSize:13, fontWeight:700, cursor:"pointer", fontFamily:FONT }}>−</button>
-            <button onClick={()=>setWater(w=>({...w,[today]:Math.min(16,(w[today]||0)+1)}))} style={{ flex:2, background:`${C.teal}18`, border:`1px solid ${C.teal}44`, borderRadius:8, padding:"6px 0", color:C.teal, fontSize:12, fontWeight:600, cursor:"pointer", fontFamily:FONT }}>+250ml</button>
+          <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+            <span style={{ color:C.accent, fontWeight:700, fontSize:14 }}>{targetCals} cal</span>
+            <span style={{ color:C.muted, fontSize:12 }}>{showCalories?"▲":"▼"}</span>
           </div>
         </div>
-        <div style={{ background:C.card, borderRadius:16, padding:14, border:`1px solid ${C.border}` }}>
-          <p style={{ color:C.muted, fontSize:11, fontWeight:600, letterSpacing:"0.06em", margin:"0 0 6px" }}>PROGRESS</p>
-          <p style={{ color:C.text, fontSize:22, fontWeight:700, margin:"0 0 2px" }}>{toKg(cur)}<span style={{ fontSize:14, color:C.muted }}> kg</span></p>
-          <p style={{ color:lostKg>0?C.green:C.muted, fontSize:12, fontWeight:600, margin:"0 0 6px" }}>{lostKg>0?`${lostKg} kg lost`:"Starting weight"}</p>
-          <p style={{ color:C.muted, fontSize:11, margin:0 }}>🔥 {streak} day streak</p>
-        </div>
-      </div>
+        {showCalories&&<div style={{ display:"flex", gap:8, marginTop:12 }}>
+          <div style={{ flex:1, textAlign:"center", padding:"8px 0" }}><div style={{ color:C.text, fontSize:17, fontWeight:700 }}>{tdee}</div><div style={{ color:C.muted, fontSize:11 }}>maintenance</div></div>
+          <div style={{ width:1, background:C.border }} />
+          <div style={{ flex:1, textAlign:"center", padding:"8px 0" }}><div style={{ color:C.accent, fontSize:17, fontWeight:700 }}>{targetCals}</div><div style={{ color:C.muted, fontSize:11 }}>target (deficit)</div></div>
+          <div style={{ width:1, background:C.border }} />
+          <div style={{ flex:1, textAlign:"center", padding:"8px 0" }}><div style={{ color:C.orange, fontSize:17, fontWeight:700 }}>{pace.kgPerWk}kg</div><div style={{ color:C.muted, fontSize:11 }}>per week</div></div>
+        </div>}
+      </Card>}
 
       {/* Journal */}
-      <JournalCard journal={journal} setJournal={setJournal} today={today} />
+      <Card>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:showJournal?12:0 }}>
+          <div style={{ display:"flex", alignItems:"center", gap:6 }}><Icon name="note" size={14} color={C.muted} /><p style={{ color:C.muted, fontSize:12, fontWeight:600, letterSpacing:"0.06em", margin:0 }}>DAILY JOURNAL</p></div>
+          <button onClick={()=>setShowJournal(s=>!s)} style={{ background:"none", border:"none", color:C.accent, fontSize:13, cursor:"pointer", fontFamily:FONT, fontWeight:600 }}>{showJournal?"Done":"Write"}</button>
+        </div>
+        {showJournal&&<textarea value={journal[today]||""} onChange={e=>setJournal(j=>({...j,[today]:e.target.value}))} placeholder="How are you feeling today? Energy levels, sleep, anything notable..." style={{ width:"100%", minHeight:80, background:C.sectionBg, border:`1px solid ${C.border}`, borderRadius:10, padding:"10px 12px", fontSize:14, fontFamily:FONT, color:C.text, outline:"none", resize:"vertical" }} />}
+        {!showJournal&&journal[today]&&<p style={{ color:C.textSec, fontSize:14, margin:0, marginTop:8, lineHeight:1.6 }}>{journal[today]}</p>}
+      </Card>
     </div>
   );
 };
-
 
 // ── MEALS TAB ─────────────────────────────────────────────────────────────────
 // ── Meal Loading Indicator ────────────────────────────────────────────────────
@@ -1803,37 +1750,23 @@ const MealCarousel = ({ meals, favourites, likedMeals, mealLog, today, onLike, o
           <button
             onClick={()=>onSwap(m)}
             disabled={swappingId === m.id}
-            style={{ background:swappingId===m.id?C.sectionBg:`${C.accent}12`, border:`1.5px solid ${C.accent}`, borderRadius:12, padding:"8px 14px", color:C.accent, fontSize:12, fontWeight:700, cursor:swappingId===m.id?"default":"pointer", fontFamily:FONT, flexShrink:0 }}
-          >{swappingId===m.id ? "⏳ Swapping..." : "⇄ Swap"}</button>
+            style={{ flex:1, background:swappingId===m.id?C.sectionBg:`${C.accent}12`, border:`1.5px solid ${C.accent}`, borderRadius:12, padding:"10px 0", color:C.accent, fontSize:14, fontWeight:700, cursor:swappingId===m.id?"default":"pointer", fontFamily:FONT }}
+          >{swappingId===m.id ? "⏳ Finding swap..." : "⇄ Swap meal"}</button>
           <button
             onClick={()=>onDislike(m)}
-            style={{ width:40, height:40, background:"none", border:`1.5px solid ${C.border}`, borderRadius:12, color:C.red, fontSize:16, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}
+            style={{ width:44, height:44, background:"none", border:`1.5px solid ${C.border}`, borderRadius:12, color:C.red, fontSize:18, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}
             title="Never show this meal again"
           >👎</button>
           <button
-            onClick={()=>{ 
-              if(isLogged) {
-                const idx = (mealLog[today]||[]).findIndex(l=>l.id===m?.id);
-                if(idx !== -1) onRemoveLog(idx);
-              } else {
-                onLog(m);
-              }
-            }}
-            style={{ flex:1, background:isLogged?`${C.green}15`:"none", border:`1.5px solid ${isLogged?C.green:C.border}`, borderRadius:12, padding:"8px 0", color:isLogged?C.green:C.text, fontSize:13, fontWeight:700, cursor:"pointer", fontFamily:FONT, transition:"all 0.2s" }}
-          >{isLogged ? "✓ Undo" : "+ Log meal"}</button>
+            onClick={()=>{ if(!isLogged) onLog(m); }}
+            style={{ width:44, height:44, background:isLogged?`${C.green}15`:"none", border:`1.5px solid ${isLogged?C.green:C.border}`, borderRadius:12, color:isLogged?C.green:C.text, fontSize:18, cursor:isLogged?"default":"pointer", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}
+          >{isLogged?"✓":"+"}</button>
         </div>
       ) : (
         <div style={{ display:"flex", gap:8, marginBottom:8 }}>
           <button onClick={()=>onLike(m)} style={{ width:44, height:44, background:isLiked?`${C.green}20`:"none", border:`1.5px solid ${isLiked?C.green:C.border}`, borderRadius:12, color:C.green, fontSize:18, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }} title="Like this meal">👍</button>
           <button onClick={()=>onDislike(m)} style={{ width:44, height:44, background:"none", border:`1.5px solid ${C.border}`, borderRadius:12, color:C.red, fontSize:18, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }} title="Never show again">👎</button>
-          <button onClick={()=>{ 
-            if(isLogged) {
-              const idx = (mealLog[today]||[]).findIndex(l=>l.id===m?.id);
-              if(idx !== -1) onRemoveLog(idx);
-            } else {
-              onLog(m);
-            }
-          }} style={{ flex:1, background:isLogged?`${C.green}15`:"none", border:`1.5px solid ${isLogged?C.green:C.border}`, borderRadius:12, padding:"10px 0", color:isLogged?C.green:C.text, fontSize:14, fontWeight:700, cursor:"pointer", fontFamily:FONT, transition:"all 0.2s" }}>{isLogged ? "✓ Logged — tap to undo" : "+ Log Meal"}</button>
+          <button onClick={()=>{ if(!isLogged) onLog(m); }} style={{ flex:1, background:isLogged?`${C.green}15`:"none", border:`1.5px solid ${isLogged?C.green:C.border}`, borderRadius:12, padding:"10px 0", color:isLogged?C.green:C.text, fontSize:14, fontWeight:700, cursor:isLogged?"default":"pointer", fontFamily:FONT, transition:"all 0.2s" }}>{isLogged ? "✓ Logged" : "+ Log Meal"}</button>
         </div>
       )}
 
@@ -2105,24 +2038,32 @@ const MealsTab = ({ profile, favourites, setFavourites, removed, setRemoved, mea
 
       {section==="meals"&&<>
         {/* Daily log summary */}
+        {todayLogged.length>0&&<Card style={{ background:`${C.green}08`, borderColor:`${C.green}33` }}>
+          <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:10 }}>
+            <Icon name="check" size={14} color={C.green} />
+            <p style={{ color:C.green, fontSize:12, fontWeight:700, letterSpacing:"0.06em", margin:0 }}>TODAY'S LOG</p>
+          </div>
+          {tdee&&<div style={{ marginBottom:10 }}>
+            <div style={{ display:"flex", justifyContent:"space-between", marginBottom:4 }}><span style={{ color:C.muted, fontSize:12 }}>Calories</span><span style={{ color:todayCals>targetCals?C.red:C.green, fontSize:12, fontWeight:600 }}>{todayCals} / {targetCals}</span></div>
+            <ProgressBar value={todayCals} max={targetCals} color={todayCals>targetCals?C.red:C.green} />
+          </div>}
+          {todayLogged.map((m,i)=>(
+            <div key={i} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"5px 0", borderBottom:i<todayLogged.length-1?`1px solid ${C.border}`:"none" }}>
+              <div><span style={{ color:C.text, fontSize:13 }}>{m.name}</span><span style={{ color:C.muted, fontSize:11, marginLeft:8 }}>{m.time}</span></div>
+              <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                <span style={{ color:C.muted, fontSize:12 }}>{m.cals}cal</span>
+                <button onClick={()=>removeMealLog(i)} style={{ background:"none", border:"none", color:C.red, cursor:"pointer", fontSize:14 }}>×</button>
+              </div>
+            </div>
+          ))}
+        </Card>}
+
         {/* Smart nutrition bar + generate controls */}
         {generating ? (
           <MealPlanLoader progress={generateProgress} />
         ) : mealPlan && isPro ? (
           // Plan exists — compact single-line bar
           <div style={{ marginBottom:12 }}>
-            {/* Expiry nudge — shown when all plan days are in the past */}
-            {mealPlan.days && !mealPlan.days.some(d => d.date > today) && (
-              <div style={{ background:`${C.orange}12`, border:`1px solid ${C.orange}44`, borderRadius:14, padding:"12px 14px", marginBottom:10, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-                <div>
-                  <p style={{ color:C.orange, fontWeight:700, fontSize:13, margin:0 }}>Your meal plan has ended</p>
-                  <p style={{ color:C.muted, fontSize:12, margin:"2px 0 0" }}>Ready for a fresh plan?</p>
-                </div>
-                <button onClick={generatePlan} disabled={generating} style={{ background:C.orange, border:"none", borderRadius:99, padding:"8px 14px", color:"#fff", fontSize:12, fontWeight:700, cursor:"pointer", fontFamily:FONT, flexShrink:0, marginLeft:12 }}>
-                  Generate →
-                </button>
-              </div>
-            )}
             {/* Smart nutrition bar */}
             <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:14, padding:"10px 14px", marginBottom:8 }}>
               {isGuided && (() => {
@@ -2468,7 +2409,7 @@ const getWeeklyPlan = (profile) => {
 };
 
 // ── TRAIN TAB ─────────────────────────────────────────────────────────────────
-const TrainTab = ({ profile, workoutLog, setWorkoutLog, setProfile, savedWorkout, setSavedWorkout }) => {
+const TrainTab = ({ profile, workoutLog, setWorkoutLog, setProfile, savedWorkout, setSavedWorkout, entries=[] }) => {
   const [selectedType, setSelectedType] = useState("full-body");
   const activeWorkout = savedWorkout?.workout || null;
   const activeExercises = savedWorkout?.exercises || [];
@@ -2482,29 +2423,13 @@ const TrainTab = ({ profile, workoutLog, setWorkoutLog, setProfile, savedWorkout
   const [lifts, setLifts] = useState(() => {
     try { return JSON.parse(localStorage.getItem("leanplan_lifts")||"{}" ); } catch { return {}; }
   });
-  const [prToast, setPrToast] = useState(null);
-
-  const showPrToast = (msg) => {
-    setPrToast(msg);
-    setTimeout(() => setPrToast(null), 3000);
-  };
-
   const saveLift = (exName, weight, reps, sets) => {
     if (!weight) return;
-    const newWeight = parseFloat(weight);
-    const entry = { date:todayKey(), weight:newWeight, reps:parseInt(reps)||0, sets:parseInt(sets)||3, timestamp:Date.now() };
-    const previous = lifts[exName] || [];
-    const updated = {...lifts, [exName]: [...previous, entry].slice(-20)};
+    const entry = { date:todayKey(), weight:parseFloat(weight), reps:parseInt(reps)||0, sets:parseInt(sets)||3, timestamp:Date.now() };
+    const updated = {...lifts, [exName]: [...(lifts[exName]||[]), entry].slice(-20)};
     setLifts(updated);
     localStorage.setItem("leanplan_lifts", JSON.stringify(updated));
     setLoggedWeights(lw => ({...lw, [exName]: true}));
-
-    // Check for personal best
-    const prevBest = previous.length > 0 ? Math.max(...previous.map(e => e.weight)) : 0;
-    if (newWeight > prevBest && previous.length > 0) {
-      showPrToast(`🏆 New PB! ${exName} — ${newWeight}kg`);
-    }
-
     // Auto-log the workout on first exercise saved
     if (!workoutLog[todayKey()] && activeWorkout) {
       setWorkoutLog(wl=>({...wl,[todayKey()]:{type:selectedType,date:todayKey(),time:new Date().toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"})}}));
@@ -2570,12 +2495,6 @@ const TrainTab = ({ profile, workoutLog, setWorkoutLog, setProfile, savedWorkout
 
   return (
     <div>
-      {/* PR Toast */}
-      {prToast && (
-        <div style={{ position:"fixed", top:80, left:"50%", transform:"translateX(-50%)", background:"linear-gradient(135deg, #f5a623, #f76b1c)", color:"#fff", borderRadius:14, padding:"12px 20px", fontSize:14, fontWeight:700, zIndex:999, boxShadow:"0 4px 20px rgba(0,0,0,0.25)", whiteSpace:"nowrap" }}>
-          {prToast}
-        </div>
-      )}
       <div style={{ display:"flex", background:C.card, border:`1px solid ${C.border}`, borderRadius:12, padding:3, marginBottom:12, gap:2 }}>
         {[["workout", isGuided?"Custom":"Workout"],["calendar","Programme"],["lifts","Progress"]].map(([k,l])=>(
           <button key={k} onClick={()=>setView(k)} style={{ flex:1, background:view===k?C.accent:"transparent", color:view===k?"#fff":C.muted, border:"none", borderRadius:10, padding:"8px 0", fontSize:13, fontWeight:600, cursor:"pointer", fontFamily:FONT, transition:"all 0.2s" }}>{l}</button>
@@ -2584,8 +2503,98 @@ const TrainTab = ({ profile, workoutLog, setWorkoutLog, setProfile, savedWorkout
 
       {view==="calendar"&&<>
 
+        {/* End of programme celebration screen */}
+        {isGuided && block.isProgrammeComplete && (() => {
+          const goal = profile?.goal || "lose_weight";
+          const isWeightGoal = goal === "lose_weight" || goal === "all";
+          const startKg = parseFloat(profile?.startWeight || profile?.startWeightKg || 0);
+          const targetKg = parseFloat(profile?.targetRaw || profile?.targetWeightKg || 0);
+          const currentKg = entries?.length > 0 ? entries[entries.length-1].weight : startKg;
+          const lostKg = startKg > 0 ? parseFloat((startKg - currentKg).toFixed(1)) : 0;
+          const toGoKg = isWeightGoal ? parseFloat(Math.max(0, currentKg - targetKg).toFixed(1)) : 0;
+          const targetHit = isWeightGoal && toGoKg === 0;
+          const weeksCompleted = block.programmeLengthWeeks || 16;
+          // Count workouts since trainingStartDate
+          const startDate = profile?.trainingStartDate ? new Date(profile.trainingStartDate).toISOString().split("T")[0] : null;
+          const totalWorkouts = startDate ? Object.keys(workoutLog).filter(d => d >= startDate).length : Object.keys(workoutLog).length;
+
+          const motivationalLine = targetHit
+            ? "You set a goal and you crushed it. Time to set a new one."
+            : goal === "build_muscle"
+            ? "Sixteen weeks of consistent training. Your body is stronger than when you started."
+            : goal === "get_fitter"
+            ? "Sixteen weeks of showing up. Your fitness foundation is built — now build higher."
+            : `You've made real progress. ${toGoKg}kg to go — you know exactly what to do.`;
+
+          const handleContinueToTarget = () => {
+            const newProfile = { ...profile, trainingStartDate: new Date().toISOString() };
+            setProfile(newProfile);
+          };
+          const handleStartFresh = () => {
+            const newProfile = { ...profile, trainingStartDate: new Date().toISOString(), startWeight: String(currentKg), startWeightKg: currentKg };
+            setProfile(newProfile);
+          };
+
+          return (
+            <div style={{ marginBottom: 16 }}>
+              {/* Trophy header */}
+              <div style={{ background: `linear-gradient(135deg, ${C.yellow}22, ${C.orange}18)`, border: `1.5px solid ${C.yellow}55`, borderRadius: 20, padding: "22px 20px 18px", marginBottom: 12, textAlign: "center" }}>
+                <div style={{ fontSize: 52, marginBottom: 8 }}>🏆</div>
+                <h2 style={{ color: C.text, fontSize: 24, fontWeight: 800, margin: "0 0 6px" }}>Programme Complete!</h2>
+                <p style={{ color: C.muted, fontSize: 14, margin: "0 0 16px" }}>{weeksCompleted} weeks. You did it.</p>
+                <p style={{ color: C.textSec, fontSize: 13, lineHeight: 1.6, margin: "0 0 18px", fontStyle: "italic" }}>{motivationalLine}</p>
+
+                {/* Stats strip */}
+                <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
+                  <div style={{ background: C.card, borderRadius: 12, padding: "10px 14px", flex: 1 }}>
+                    <div style={{ color: C.accent, fontSize: 20, fontWeight: 800 }}>{totalWorkouts}</div>
+                    <div style={{ color: C.muted, fontSize: 11, marginTop: 2 }}>workouts</div>
+                  </div>
+                  {isWeightGoal && lostKg > 0 && (
+                    <div style={{ background: C.card, borderRadius: 12, padding: "10px 14px", flex: 1 }}>
+                      <div style={{ color: C.green, fontSize: 20, fontWeight: 800 }}>▼{lostKg}kg</div>
+                      <div style={{ color: C.muted, fontSize: 11, marginTop: 2 }}>lost</div>
+                    </div>
+                  )}
+                  {isWeightGoal && !targetHit && toGoKg > 0 && (
+                    <div style={{ background: C.card, borderRadius: 12, padding: "10px 14px", flex: 1 }}>
+                      <div style={{ color: C.orange, fontSize: 20, fontWeight: 800 }}>{toGoKg}kg</div>
+                      <div style={{ color: C.muted, fontSize: 11, marginTop: 2 }}>to go</div>
+                    </div>
+                  )}
+                  <div style={{ background: C.card, borderRadius: 12, padding: "10px 14px", flex: 1 }}>
+                    <div style={{ color: C.purple, fontSize: 20, fontWeight: 800 }}>{weeksCompleted}</div>
+                    <div style={{ color: C.muted, fontSize: 11, marginTop: 2 }}>weeks</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* CTAs */}
+              {targetHit ? (
+                <button
+                  onClick={handleStartFresh}
+                  style={{ width: "100%", background: C.accent, border: "none", borderRadius: 14, padding: "14px 0", color: "#fff", fontSize: 15, fontWeight: 700, cursor: "pointer", fontFamily: FONT }}
+                >Start a new programme →</button>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {isWeightGoal && toGoKg > 0 && (
+                    <button
+                      onClick={handleContinueToTarget}
+                      style={{ width: "100%", background: C.accent, border: "none", borderRadius: 14, padding: "14px 0", color: "#fff", fontSize: 15, fontWeight: 700, cursor: "pointer", fontFamily: FONT }}
+                    >Continue to my target ({toGoKg}kg to go) →</button>
+                  )}
+                  <button
+                    onClick={handleStartFresh}
+                    style={{ width: "100%", background: "none", border: `1.5px solid ${C.border}`, borderRadius: 14, padding: "13px 0", color: C.textSec, fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: FONT }}
+                  >{isWeightGoal ? "Change my goal and start fresh" : "Start a new programme"}</button>
+                </div>
+              )}
+            </div>
+          );
+        })()}
+
         {/* Today's session card */}
-        {isGuided && (
+        {isGuided && !block.isProgrammeComplete && (
           <div style={{ marginBottom:14 }}>
             {todaySession ? (
               <div style={{ background:`linear-gradient(135deg, ${todaySession.color}22, ${todaySession.color}08)`, border:`1.5px solid ${todaySession.color}44`, borderRadius:20, padding:"16px 18px" }}>
@@ -2642,6 +2651,8 @@ const TrainTab = ({ profile, workoutLog, setWorkoutLog, setProfile, savedWorkout
             )}
           </div>
         )}
+
+        {!block.isProgrammeComplete && <>
 
         {/* Training Block Card */}
         <div style={{ background:`linear-gradient(135deg, ${block.color}, ${block.color}aa)`, borderRadius:16, padding:"16px 18px", marginBottom:14, color:"#fff" }}>
@@ -2738,6 +2749,8 @@ const TrainTab = ({ profile, workoutLog, setWorkoutLog, setProfile, savedWorkout
         })()}
 
 
+        </>}
+
       </>}
 
       {view==="workout"&&<>
@@ -2774,11 +2787,7 @@ const TrainTab = ({ profile, workoutLog, setWorkoutLog, setProfile, savedWorkout
             const isExp = expandedEx === i;
             const fullEx = EXERCISE_DB.find(e=>e.name===ex.name);
             const lastLift = getLastLift(ex.name);
-            const allLifts = lifts[ex.name] || [];
-            const personalBest = allLifts.length > 0 ? Math.max(...allLifts.map(e => e.weight)) : null;
             const isLogged = loggedWeights[ex.name];
-            const loggedEntry = allLifts.length > 0 ? allLifts[allLifts.length - 1] : null;
-            const isNewPB = isLogged && loggedEntry && personalBest && loggedEntry.weight >= personalBest;
             const inputs = liftInputs[ex.name] || { weight:"", reps: String(ex.reps?.split("-")?.[0]||"10"), sets: String(ex.sets||"3") };
             const setInput = (field, val) => setLiftInputs(li => ({...li, [ex.name]: {...(li[ex.name]||{weight:"",reps:String(ex.reps?.split("-")?.[0]||"10"),sets:String(ex.sets||"3")}), [field]: val}}));
             return <Card key={i} style={{ borderLeft:`3px solid ${isLogged ? C.green : activeWorkout.color}` }}>
@@ -2808,7 +2817,6 @@ const TrainTab = ({ profile, workoutLog, setWorkoutLog, setProfile, savedWorkout
                   <div style={{ display:"flex", alignItems:"center", gap:8 }}>
                     <div style={{ flex:1, background:`${C.green}10`, border:`1px solid ${C.green}33`, borderRadius:10, padding:"8px 12px" }}>
                       <span style={{ color:C.green, fontSize:13, fontWeight:600 }}>✓ Logged: {inputs.weight}kg × {inputs.reps} reps × {inputs.sets} sets</span>
-                      {isNewPB && <p style={{ color:"#f5a623", fontSize:11, fontWeight:600, margin:"4px 0 0" }}>🏆 New personal best!</p>}
                     </div>
                     <button onClick={()=>setLoggedWeights(lw=>({...lw,[ex.name]:false}))} style={{ background:"none", border:"none", color:C.muted, fontSize:12, cursor:"pointer", fontFamily:FONT, padding:"4px 6px" }}>Edit</button>
                   </div>
@@ -3100,79 +3108,12 @@ const TrackTab = ({ profile, entries, setEntries, measurements, setMeasurements,
 };
 
 // ── PROFILE TAB ───────────────────────────────────────────────────────────────
-const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDarkOverride, isPro, proData, onUpgrade, user, onShowAuth, onClearMealPlan }) => {
+const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDarkOverride, isPro, proData, onUpgrade, user, onShowAuth }) => {
   const [editing, setEditing] = useState(null);
   const [tempData, setTempData] = useState({});
-  const [showChangePw, setShowChangePw] = useState(false);
-  const [newPw, setNewPw] = useState("");
-  const [confirmPw, setConfirmPw] = useState("");
-  const [pwLoading, setPwLoading] = useState(false);
-  const [pwError, setPwError] = useState(null);
-  const [pwSuccess, setPwSuccess] = useState(false);
   const toggleArr = (k,v) => setTempData(d=>({...d,[k]:d[k].includes(v)?d[k].filter(x=>x!==v):[...d[k],v]}));
   const startEdit = (s) => { setTempData({...profile}); setEditing(s); };
-  const save = () => {
-    // If meal plan length changed, clear the existing plan so user regenerates
-    if (tempData.mealPlanDays && tempData.mealPlanDays !== profile.mealPlanDays) {
-      onClearMealPlan?.();
-    }
-    setProfile({...profile,...tempData});
-    setEditing(null);
-  };
-
-  if (showChangePw) return (
-    <div style={{ padding:"0 20px", maxWidth:480, margin:"0 auto" }}>
-      <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:28, paddingTop:8 }}>
-        <button onClick={()=>{ setShowChangePw(false); setNewPw(""); setConfirmPw(""); setPwError(null); setPwSuccess(false); }} style={{ background:"none", border:"none", color:C.accent, fontSize:16, cursor:"pointer", fontFamily:FONT }}>←</button>
-        <h2 style={{ color:C.text, fontSize:20, fontWeight:700, margin:0 }}>Change Password</h2>
-      </div>
-
-      {pwSuccess ? (
-        <div style={{ textAlign:"center", padding:"40px 0" }}>
-          <div style={{ fontSize:48, marginBottom:16 }}>✅</div>
-          <h3 style={{ color:C.text, fontSize:20, fontWeight:700, marginBottom:8 }}>Password updated!</h3>
-          <p style={{ color:C.muted, fontSize:15 }}>Your new password is saved.</p>
-          <Btn color={C.accent} onClick={()=>{ setShowChangePw(false); setNewPw(""); setConfirmPw(""); setPwSuccess(false); }} style={{ marginTop:24 }}>Done</Btn>
-        </div>
-      ) : (
-        <>
-          <div style={{ marginBottom:14 }}>
-            <p style={{ color:C.textSec, fontSize:13, fontWeight:500, marginBottom:6 }}>New password</p>
-            <TInput
-              value={newPw}
-              onChange={e=>setNewPw(e.target.value)}
-              placeholder="Min 6 characters"
-              type="password"
-              autoComplete="new-password"
-            />
-          </div>
-          <div style={{ marginBottom:20 }}>
-            <p style={{ color:C.textSec, fontSize:13, fontWeight:500, marginBottom:6 }}>Confirm password</p>
-            <TInput
-              value={confirmPw}
-              onChange={e=>setConfirmPw(e.target.value)}
-              placeholder="Repeat new password"
-              type="password"
-              autoComplete="new-password"
-            />
-          </div>
-          {pwError && <div style={{ background:`${C.red}10`, border:`1px solid ${C.red}33`, borderRadius:10, padding:"10px 14px", marginBottom:14 }}>
-            <p style={{ color:C.red, fontSize:13, margin:0 }}>{pwError}</p>
-          </div>}
-          <Btn color={C.accent} disabled={pwLoading} onClick={async()=>{
-            if (!newPw || newPw.length < 6) { setPwError("Password must be at least 6 characters"); return; }
-            if (newPw !== confirmPw) { setPwError("Passwords don't match"); return; }
-            setPwLoading(true); setPwError(null);
-            const { error } = await supabase.auth.updateUser({ password: newPw });
-            if (error) { setPwError(error.message); setPwLoading(false); return; }
-            setPwSuccess(true); setPwLoading(false);
-          }} style={{ width:"100%" }}>
-            {pwLoading ? "Updating..." : "Update Password"}
-          </Btn>
-        </>
-      )}
-    </div>
-  );
+  const save = () => { setProfile({...profile,...tempData}); setEditing(null); };
 
   if (editing) return (
     <div>
@@ -3329,8 +3270,8 @@ const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDar
           </div>
         ))}
         {tempData.mealPlanDays !== (profile.mealPlanDays||5) && (
-          <div style={{ background:`${C.green}12`, border:`1px solid ${C.green}33`, borderRadius:12, padding:"10px 14px", marginTop:4 }}>
-            <p style={{ color:C.green, fontSize:13, margin:0 }}>✓ Saving will clear your current plan — a new {tempData.mealPlanDays}-day plan will be ready to generate.</p>
+          <div style={{ background:`${C.orange}12`, border:`1px solid ${C.orange}33`, borderRadius:12, padding:"10px 14px", marginTop:4 }}>
+            <p style={{ color:C.orange, fontSize:13, margin:0 }}>⚠️ After saving, regenerate your meal plan in the Meals tab to apply the new length.</p>
           </div>
         )}
       </>}
@@ -3529,13 +3470,9 @@ const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDar
         {user ? (
           <div>
             <Row label="Signed in as" value={user.email} />
-            <Row label="Data sync" value="✓ Synced to cloud" color={C.green} />
-            <Row label="Change password" value="••••••••" onClick={()=>setShowChangePw(true)} last />
-            <div style={{ padding:"8px 16px 4px" }}>
-              <p onClick={async()=>{ await supabase.auth.signOut(); setUser(null); }}
-                style={{ color:C.red, fontSize:14, fontWeight:500, textAlign:"center", cursor:"pointer", padding:"8px 0" }}>
-                Sign Out
-              </p>
+            <Row label="Data sync" value="✓ Synced to cloud" color={C.green} last />
+            <div style={{ padding:"12px 16px" }}>
+              <Btn outline color={C.red} onClick={async()=>{ await supabase.auth.signOut(); }} style={{ width:"100%" }}>Sign Out</Btn>
             </div>
           </div>
         ) : (
@@ -3569,7 +3506,16 @@ const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDar
             )}
           </div>
         </div>
-      ) : proData?.customerId === "bypass" ? null : (
+      ) : proData?.customerId === "bypass" ? (
+        <div style={{ background:`${C.yellow}12`, border:`1px solid ${C.yellow}44`, borderRadius:14, padding:"14px 16px", marginBottom:16 }}>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+            <div>
+              <p style={{ color:C.yellow, fontWeight:700, fontSize:15, margin:0 }}>⭐ Lifetime Pro</p>
+              <p style={{ color:C.muted, fontSize:12, margin:"2px 0 0" }}>Admin access — all features unlocked</p>
+            </div>
+          </div>
+        </div>
+      ) : (
         <Btn onClick={onUpgrade} color="#5856d6" style={{ width:"100%", marginBottom:16 }}>✦ Upgrade to Pro from £4.99/mo</Btn>
       )}
 
@@ -4079,178 +4025,6 @@ class ErrorBoundary extends React.Component {
 
 
 
-// ── Create Account Screen (shown after onboarding) ───────────────────────────
-const CreateAccountScreen = ({ profileData, onDone }) => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-
-  const handleCreate = async () => {
-    if (!email) { setError("Please enter your email address"); return; }
-    if (!password || password.length < 6) { setError("Password must be at least 6 characters"); return; }
-    setLoading(true); setError(null);
-
-    // Create Supabase account
-    const { data, error: signUpError } = await supabase.auth.signUp({ email, password });
-    if (signUpError) { setError(signUpError.message); setLoading(false); return; }
-
-    const userId = data.user?.id;
-    if (!userId) { setError("Something went wrong — please try again"); setLoading(false); return; }
-
-    // Save profile data to Supabase immediately
-    const trialStart = new Date().toISOString();
-    try {
-      await supabase.from("profiles").upsert({
-        id: userId,
-        email,
-        profile_data: profileData,
-        trial_start: trialStart,
-        reminder_sent: false,
-        entries: [],
-        favourites: [],
-        removed: [],
-        meal_log: {},
-        workout_log: {},
-        water: {},
-        journal: {},
-        measurements: [],
-      });
-    } catch(e) { console.error("Profile save error:", e); }
-
-    setLoading(false);
-    onDone(data.user, email);
-  };
-
-  return (
-    <div style={{ minHeight:"100vh", background:C.bg, fontFamily:FONT, display:"flex", flexDirection:"column", justifyContent:"center", padding:"0 20px" }}>
-      <div style={{ maxWidth:400, margin:"0 auto", width:"100%" }}>
-
-        {/* Header */}
-        <div style={{ textAlign:"center", marginBottom:36 }}>
-          <div style={{ fontSize:48, marginBottom:12 }}>🎉</div>
-          <h1 style={{ fontSize:26, fontWeight:800, color:C.text, margin:"0 0 10px" }}>Your personal plan is ready</h1>
-          <p style={{ color:C.muted, fontSize:15, lineHeight:1.6, margin:0 }}>Create your account to save it. You'll have 7 days free to explore the app.</p>
-        </div>
-
-        {/* Form */}
-        <div style={{ marginBottom:14 }}>
-          <p style={{ color:C.textSec, fontSize:13, fontWeight:500, marginBottom:6 }}>Email address</p>
-          <TInput
-            value={email}
-            onChange={e=>setEmail(e.target.value)}
-            placeholder="your@email.com"
-            type="email"
-            autoComplete="email"
-          />
-        </div>
-        <div style={{ marginBottom:20 }}>
-          <p style={{ color:C.textSec, fontSize:13, fontWeight:500, marginBottom:6 }}>Password</p>
-          <TInput
-            value={password}
-            onChange={e=>setPassword(e.target.value)}
-            placeholder="Min 6 characters"
-            type="password"
-            autoComplete="new-password"
-          />
-        </div>
-
-        {error && <div style={{ background:`${C.red}10`, border:`1px solid ${C.red}33`, borderRadius:10, padding:"10px 14px", marginBottom:14 }}>
-          <p style={{ color:C.red, fontSize:13, margin:0 }}>{error}</p>
-        </div>}
-
-        <Btn onClick={handleCreate} disabled={loading} color={C.accent} style={{ width:"100%", fontSize:17, padding:"16px 0", marginBottom:12 }}>
-          {loading ? "Creating your account..." : "Save My Plan"}
-        </Btn>
-
-        <p style={{ color:C.muted, fontSize:12, textAlign:"center", lineHeight:1.6, margin:0 }}>
-          By continuing you agree to our terms. Your 7-day free trial starts now. Cancel anytime.
-        </p>
-      </div>
-    </div>
-  );
-};
-
-// ── Weekly Check-in Modal ─────────────────────────────────────────────────────
-const WeeklyCheckIn = ({ profile, onDone, onAddEntry }) => {
-  const [weight, setWeight] = useState("");
-  const [energy, setEnergy] = useState(null);
-  const [note, setNote] = useState("");
-  const [done, setDone] = useState(false);
-
-  const energyLabels = ["😴 Drained", "😕 Low", "😐 OK", "😊 Good", "🔥 Great"];
-
-  const handleSubmit = () => {
-    // Save weight entry if provided
-    if (weight) {
-      const weightKg = parseFloat(weight);
-      const weightLbs = weightKg / 0.453592;
-      onAddEntry({ weight: weightLbs, weightKg, label: `W`, date: new Date().toLocaleDateString("en-GB", { day:"numeric", month:"short" }) });
-    }
-    // Record check-in date
-    const thisWeekMonday = (() => { const d = new Date(); d.setDate(d.getDate() - d.getDay() + 1); return d.toISOString().split("T")[0]; })();
-    localStorage.setItem("leanplan_last_checkin", thisWeekMonday);
-    setDone(true);
-    setTimeout(() => onDone(), 1500);
-  };
-
-  return (
-    <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.7)", display:"flex", alignItems:"flex-end", justifyContent:"center", zIndex:200, fontFamily:FONT }}>
-      <div style={{ background:C.bg, borderRadius:"20px 20px 0 0", padding:"24px 20px 40px", width:"100%", maxWidth:480 }}>
-        {done ? (
-          <div style={{ textAlign:"center", padding:"20px 0" }}>
-            <div style={{ fontSize:48, marginBottom:12 }}>🎯</div>
-            <h3 style={{ color:C.text, fontSize:20, fontWeight:700, margin:"0 0 8px" }}>Check-in saved!</h3>
-            <p style={{ color:C.muted, fontSize:14, margin:0 }}>Have a great week.</p>
-          </div>
-        ) : (
-          <>
-            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:20 }}>
-              <div>
-                <p style={{ color:C.muted, fontSize:12, fontWeight:600, letterSpacing:"0.06em", margin:"0 0 2px" }}>WEEKLY CHECK-IN</p>
-                <h3 style={{ color:C.text, fontSize:20, fontWeight:700, margin:0 }}>How was your week?</h3>
-              </div>
-              <button onClick={()=>{ localStorage.setItem("leanplan_last_checkin", (() => { const d = new Date(); d.setDate(d.getDate() - d.getDay() + 1); return d.toISOString().split("T")[0]; })()); onDone(); }} style={{ background:"none", border:"none", color:C.muted, fontSize:22, cursor:"pointer", lineHeight:1 }}>×</button>
-            </div>
-
-            {/* Weight */}
-            <div style={{ marginBottom:20 }}>
-              <p style={{ color:C.textSec, fontSize:13, fontWeight:600, margin:"0 0 8px" }}>Current weight (kg)</p>
-              <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-                <TInput value={weight} onChange={e=>setWeight(e.target.value)} placeholder={profile?.startWeightKg ? `Last: ${toKg(profile.startWeightLbs)} kg` : "e.g. 83.5"} type="number" style={{ flex:1 }} />
-                <span style={{ color:C.muted, fontSize:14 }}>kg</span>
-              </div>
-            </div>
-
-            {/* Energy rating */}
-            <div style={{ marginBottom:20 }}>
-              <p style={{ color:C.textSec, fontSize:13, fontWeight:600, margin:"0 0 8px" }}>Energy levels this week</p>
-              <div style={{ display:"flex", gap:8 }}>
-                {energyLabels.map((label, i) => (
-                  <button key={i} onClick={()=>setEnergy(i+1)} style={{ flex:1, background:energy===i+1?C.accent:`${C.accent}12`, border:`1.5px solid ${energy===i+1?C.accent:`${C.accent}33`}`, borderRadius:10, padding:"8px 4px", cursor:"pointer", fontFamily:FONT }}>
-                    <div style={{ fontSize:18, marginBottom:2 }}>{label.split(" ")[0]}</div>
-                    <div style={{ color:energy===i+1?"#fff":C.muted, fontSize:10, fontWeight:600 }}>{i+1}</div>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Note */}
-            <div style={{ marginBottom:20 }}>
-              <p style={{ color:C.textSec, fontSize:13, fontWeight:600, margin:"0 0 8px" }}>Anything to note? <span style={{ color:C.muted, fontWeight:400 }}>(optional)</span></p>
-              <textarea value={note} onChange={e=>setNote(e.target.value)} placeholder="Sleep, stress, injuries, wins..." style={{ width:"100%", background:C.sectionBg, border:`1px solid ${C.border}`, borderRadius:10, padding:"10px 12px", fontSize:14, fontFamily:FONT, color:C.text, outline:"none", resize:"none", height:72, boxSizing:"border-box" }} />
-            </div>
-
-            <Btn onClick={handleSubmit} color={C.accent} style={{ width:"100%", fontSize:16, padding:"14px 0" }}>
-              Save check-in
-            </Btn>
-          </>
-        )}
-      </div>
-    </div>
-  );
-};
-
 // ── Welcome Screen ────────────────────────────────────────────────────────────
 const WelcomeScreen = ({ onNew, onSignIn }) => (
   <div style={{ minHeight:"100vh", background:C.bg, fontFamily:FONT, display:"flex", flexDirection:"column", justifyContent:"center", padding:"0 20px" }}>
@@ -4307,7 +4081,7 @@ const TrialExpiredScreen = ({ onSubscribe }) => (
 );
 
 // ── Auth Screen ───────────────────────────────────────────────────────────────
-const AuthScreen = ({ onAuth, onSkip, onStartFresh }) => {
+const AuthScreen = ({ onAuth, onSkip }) => {
   const [mode, setMode] = useState("login"); // login, signup, forgot
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -4342,18 +4116,11 @@ const AuthScreen = ({ onAuth, onSkip, onStartFresh }) => {
   const handleForgot = async () => {
     if (!email) { setError("Enter your email address first"); return; }
     setLoading(true);
-    try {
-      const res = await fetch("/api/forgot-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to send reset email");
-      setMessage("Check your inbox — we've sent you a temporary password.");
-    } catch(err) {
-      setError(err.message);
-    }
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`
+    });
+    if (error) setError(error.message);
+    else setMessage("Password reset email sent! Check your inbox.");
     setLoading(false);
   };
 
@@ -4410,17 +4177,6 @@ const AuthScreen = ({ onAuth, onSkip, onStartFresh }) => {
         {mode === "forgot" && <p onClick={()=>{setMode("login");setError(null);}} style={{ color:C.accent, fontSize:13, textAlign:"center", cursor:"pointer", marginBottom:16 }}>← Back to sign in</p>}
         {mode === "login" && onSkip && <p onClick={onSkip} style={{ color:C.muted, fontSize:13, textAlign:"center", cursor:"pointer", marginBottom:16 }}>← Back</p>}
 
-        {onStartFresh && mode === "login" && <>
-          <div style={{ display:"flex", alignItems:"center", gap:12, margin:"16px 0" }}>
-            <div style={{ flex:1, height:1, background:C.border }} />
-            <span style={{ color:C.muted, fontSize:13 }}>or</span>
-            <div style={{ flex:1, height:1, background:C.border }} />
-          </div>
-          <p onClick={onStartFresh} style={{ color:C.muted, fontSize:13, textAlign:"center", cursor:"pointer" }}>
-            Start fresh with a new account
-          </p>
-        </>}
-
         {onSkip && <>
           <div style={{ display:"flex", alignItems:"center", gap:12, margin:"16px 0" }}>
             <div style={{ flex:1, height:1, background:C.border }} />
@@ -4444,12 +4200,6 @@ const AuthScreen = ({ onAuth, onSkip, onStartFresh }) => {
 
 // ── MAIN ──────────────────────────────────────────────────────────────────────
 function AppInner() {
-  const RESET_KEYS = [
-    "leanplan_v4", "leanplan_lifts", "leanplan_pro", "leanplan_device_id",
-    "leanplan_trial_start", "leanplan_gen_count", "leanplan_disliked_meals",
-    "leanplan_liked_meals", "leanplan_meal_plan", "leanplan_todays_meals",
-    "leanplan_pantry",
-  ];
   const [profile, setProfile] = useState(null);
   const [tab, setTab] = useState("Today");
   const [isPro, setIsPro] = useState(false);
@@ -4495,10 +4245,7 @@ function AppInner() {
   const [user, setUser] = useState(null); // Supabase user
   const [authChecked, setAuthChecked] = useState(false); // has auth been checked
   const [showAuth, setShowAuth] = useState(false); // show auth screen
-  const [showCreateAccount, setShowCreateAccount] = useState(false); // show create account after onboarding
-  const [pendingProfile, setPendingProfile] = useState(null); // profile data waiting for account creation
   const [showTipSplash, setShowTipSplash] = useState(true);
-  const [showWeeklyCheckIn, setShowWeeklyCheckIn] = useState(false);
   const [splashTipIdx] = useState(()=>Math.floor(Math.random()*DAILY_TIPS.length)); // show tip on open
   const [showWelcome, setShowWelcome] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -4530,9 +4277,8 @@ function AppInner() {
   }, []);
 
   useEffect(()=>{
-    // Check server-side bypass flag — pass email for admin override
-    const emailParam = user?.email ? `?email=${encodeURIComponent(user.email)}` : "";
-    fetch(`/api/pro-status${emailParam}`)
+    // Check server-side bypass flag
+    fetch("/api/pro-status")
       .then(r => r.json())
       .then(data => {
         if (data.bypass) {
@@ -4566,7 +4312,7 @@ function AppInner() {
         if (pd.isPro) { setIsPro(true); setProData(pd); }
       }
     } catch(e){}
-  }, [user]);
+  }, []);
 
   // Load data from localStorage first (fast), then sync from Supabase if logged in
   const loadFromLocal = () => {
@@ -4606,20 +4352,7 @@ function AppInner() {
       if (data.journal && Object.keys(data.journal).length) setJournal(data.journal);
       if (data.measurements?.length) setMeasurements(data.measurements);
       if (data.dark_override !== null && data.dark_override !== undefined) setDarkOverride(data.dark_override);
-      if (data.is_pro) { setIsPro(true); setProData({ customerId: data.stripe_customer_id, subscriptionId: data.stripe_subscription_id, plan: data.stripe_plan, cancelAt: data.cancel_at || null }); }
-      // Sync trial_start from Supabase — ensures consistent trial across devices
-      if (data.trial_start && !localStorage.getItem("leanplan_trial_start")) {
-        localStorage.setItem("leanplan_trial_start", data.trial_start);
-      }
-      if (data.meal_plan && data.meal_plan.days) {
-        // Only load if plan has future/today dates
-        const today = new Date().toISOString().split("T")[0];
-        const hasFuture = data.meal_plan.days.some(d => d.date >= today);
-        if (hasFuture) {
-          setMealPlan(data.meal_plan);
-          localStorage.setItem("leanplan_meal_plan", JSON.stringify(data.meal_plan));
-        }
-      }
+      if (data.is_pro) { setIsPro(true); setProData({ customerId: data.stripe_customer_id, subscriptionId: data.stripe_subscription_id, plan: data.stripe_plan }); }
     } catch(e){ console.error("Supabase load error:", e); }
   };
 
@@ -4637,8 +4370,6 @@ function AppInner() {
         journal: data.journal || {},
         measurements: data.measurements || [],
         dark_override: data.darkOverride,
-        meal_plan: data.mealPlan || null,
-        trial_start: localStorage.getItem("leanplan_trial_start") || null,
         updated_at: new Date().toISOString(),
       });
     } catch(e){ console.error("Supabase save error:", e); }
@@ -4652,22 +4383,12 @@ function AppInner() {
     loadFromLocal();
     setLoading(false); // Show the app straight away from cache
 
-    // Clear any leftover recovery flags from previous attempts
-    localStorage.removeItem("leanplan_recovery");
-    localStorage.removeItem("leanplan_recovery_token");
-    localStorage.removeItem("leanplan_recovery_refresh");
-
-    // Show weekly check-in on Monday mornings (once per week)
-    const isMonday = new Date().getDay() === 1;
-    const lastCheckIn = localStorage.getItem("leanplan_last_checkin");
-    const thisWeekMonday = (() => { const d = new Date(); d.setDate(d.getDate() - d.getDay() + 1); return d.toISOString().split("T")[0]; })();
-    if (isMonday && lastCheckIn !== thisWeekMonday) {
-      setTimeout(() => setShowWeeklyCheckIn(true), 1500);
-    }
-
     const finishLoading = () => {
       if (!loadingDone) {
         loadingDone = true;
+        if (window.location.hash?.includes("access_token")) {
+          window.history.replaceState({}, "", "/");
+        }
         setAuthChecked(true);
         setAuthLoading(false);
       }
@@ -4704,19 +4425,8 @@ function AppInner() {
         }
       } else if (event === "SIGNED_OUT") {
         setUser(null);
-        clearTimeout(safetyTimer);
-        finishLoading();
       } else if (event === "INITIAL_SESSION") {
-        if (session?.user) {
-          // Valid session exists — set user immediately, don't wait for SIGNED_IN
-          setUser(session.user);
-          loadFromLocal();
-          try {
-            await loadFromSupabase(session.user.id);
-          } catch(e){ console.error("Supabase sync failed:", e); }
-          clearTimeout(safetyTimer);
-          finishLoading();
-        } else {
+        if (!session?.user) {
           loadFromLocal();
           clearTimeout(safetyTimer);
           finishLoading();
@@ -4730,14 +4440,14 @@ function AppInner() {
   // Save to both localStorage and Supabase when data changes
   useEffect(()=>{
     if (loading) return;
-    const data = {profile,entries,favourites,removed,mealLog,workoutLog,water,journal,measurements,darkOverride,mealPlan};
+    const data = {profile,entries,favourites,removed,mealLog,workoutLog,water,journal,measurements,darkOverride};
     try { localStorage.setItem("leanplan_v4", JSON.stringify(data)); } catch(e){}
     if (user) {
       // Debounce Supabase saves to avoid too many writes
       const timer = setTimeout(() => saveToSupabase(user.id, data), 2000);
       return () => clearTimeout(timer);
     }
-  },[profile,entries,favourites,removed,mealLog,workoutLog,water,journal,measurements,darkOverride,mealPlan,loading,user]);
+  },[profile,entries,favourites,removed,mealLog,workoutLog,water,journal,measurements,darkOverride,loading,user]);
 
   const loadBg = systemDark ? "#000" : "#f2f2f7";
   const loadText = systemDark ? "#8e8e93" : "#8e8e93";
@@ -4753,16 +4463,16 @@ function AppInner() {
 
 
 
+  // Show tip splash on every open (after profile is loaded)
+  if (showTipSplash && profile && !showAuth && !showWelcome && !showOnboarding) {
+    return <TipSplashScreen tip={DAILY_TIPS[splashTipIdx]} onDismiss={()=>setShowTipSplash(false)} />;
+  }
+
   // Apply theme first — needed by all render paths
   const isDark = darkOverride !== null ? darkOverride : systemDark;
   C = isDark ? DARK : LIGHT;
 
   // ── Render sequence ──────────────────────────────────────────────────────────
-
-  // Show tip splash on every open (after profile is loaded)
-  if (showTipSplash && profile && !showAuth && !showWelcome && !showOnboarding) {
-    return <TipSplashScreen tip={DAILY_TIPS[splashTipIdx]} onDismiss={()=>setShowTipSplash(false)} />;
-  }
 
   // 1. Auth screen — shown when explicitly requested
   if (showAuth) return <AuthScreen
@@ -4792,77 +4502,37 @@ function AppInner() {
 
   // 3. Welcome screen — first time, no profile, no user
   if (!profile && !user && !showOnboarding) return <WelcomeScreen
-    onNew={()=>{ setShowOnboarding(true); }}
+    onNew={()=>{ setTrialStart(); setShowOnboarding(true); }}
     onSignIn={()=>setShowAuth(true)}
   />;
 
-  // 3b. Signed out but have local data — show sign in screen (only after auth check completes)
-  if (profile && !user && !authLoading) return <AuthScreen
-    onAuth={async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        setUser(session.user);
-        setSyncing(true);
-        try {
-          await loadFromSupabase(session.user.id);
-          const { data } = await supabase.from("profiles").select("profile_data").eq("id", session.user.id).single();
-          if (!data?.profile_data || Object.keys(data.profile_data).length === 0) {
-            const local = JSON.parse(localStorage.getItem("leanplan_v4") || "{}");
-            if (local.profile) await saveToSupabase(session.user.id, local);
-          }
-        } catch(e){}
-        setSyncing(false);
-      }
-    }}
-    onSkip={null}
-    onStartFresh={() => {
-      if (!window.confirm("Start fresh? This will clear all your current data and cannot be undone.")) return;
-      RESET_KEYS.forEach(k => localStorage.removeItem(k));
-      setProfile(null); setEntries([]); setFavourites([]); setRemoved([]);
-      setMealLog({}); setWorkoutLog({}); setWater({}); setJournal({}); setMeasurements([]);
-      setIsPro(false); setProData(null); setMealPlan(null);
-    }}
-  />;
-
   // 4. Onboarding — after Get Started
-  if (!profile && !showCreateAccount) return <Onboarding onDone={p=>{ 
-    setPendingProfile(p);
-    setShowCreateAccount(true);
+  if (!profile) return <Onboarding onDone={p=>{ 
+    setProfile(p);
+    setTrialStart();
     try {
       localStorage.setItem("leanplan_v4", JSON.stringify({profile:p, entries:[], favourites:[], removed:[], mealLog:{}, workoutLog:{}, water:{}, journal:{}, measurements:[], darkOverride:null}));
     } catch(e){}
+    // If logged in, save to Supabase too
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) saveToSupabase(session.user.id, { profile:p, entries:[], favourites:[], removed:[], mealLog:{}, workoutLog:{}, water:{}, journal:{}, measurements:[], darkOverride:null });
+    });
   }} />;
 
-  // 4b. Create account — mandatory after onboarding (skip if already signed in)
-  if (showCreateAccount && pendingProfile) {
-    if (user) {
-      // Already signed in (e.g. after reset) — just save profile and continue
-      setProfile(pendingProfile);
-      setShowCreateAccount(false);
-      setPendingProfile(null);
-      setTrialStart();
-      saveToSupabase(user.id, { profile: pendingProfile, entries:[], favourites:[], removed:[], mealLog:{}, workoutLog:{}, water:{}, journal:{}, measurements:[], darkOverride:null });
-      return null;
-    }
-    return <CreateAccountScreen
-      profileData={pendingProfile}
-      onDone={async (supabaseUser, email) => {
-        setUser(supabaseUser);
-        setProfile(pendingProfile);
-        setShowCreateAccount(false);
-        setPendingProfile(null);
-        setTrialStart();
-      }}
-    />;
-  }
-
   // 5. Trial expired — show subscribe screen
-  if (isTrialExpired() && !isPro) return <TrialExpiredScreen onSubscribe={()=>setShowPaywall(true)} />;
+  if (isTrialExpired() && !isPro && proData?.customerId !== 'bypass') return <TrialExpiredScreen onSubscribe={()=>setShowPaywall(true)} />;
 
   const cur = entries.length>0?entries[entries.length-1].weight:profile.startWeightLbs;
   const lost = Math.max(0,profile.startWeightLbs-cur);
   const pct = Math.min(100,Math.round((lost/profile.targetLbs)*100));
   const TAB_COLORS = {Today:"#007aff",Meals:"#34c759",Train:"#5ac8fa",Track:"#af52de",Coach:"#ff2d55",Profile:"#ff9500"};
+
+  const RESET_KEYS = [
+    "leanplan_v4", "leanplan_lifts", "leanplan_pro", "leanplan_device_id",
+    "leanplan_trial_start", "leanplan_gen_count", "leanplan_disliked_meals",
+    "leanplan_liked_meals", "leanplan_meal_plan", "leanplan_todays_meals",
+    "leanplan_pantry",
+  ];
 
   const handleReset = () => {
     const savedPro = localStorage.getItem("leanplan_pro");
@@ -4877,14 +4547,12 @@ function AppInner() {
       setProfile(null); setEntries([]); setFavourites([]); setRemoved([]);
       setMealLog({}); setWorkoutLog({}); setWater({}); setJournal({}); setMeasurements([]);
       setIsPro(false); setProData(null); setMealPlan(null);
-      setUser(null); supabase.auth.signOut();
     } else {
       if (!window.confirm("Reset all data? This cannot be undone.")) return;
       RESET_KEYS.forEach(k => localStorage.removeItem(k));
       setProfile(null); setEntries([]); setFavourites([]); setRemoved([]);
       setMealLog({}); setWorkoutLog({}); setWater({}); setJournal({}); setMeasurements([]);
       setIsPro(false); setProData(null); setMealPlan(null);
-      setUser(null); supabase.auth.signOut();
     }
   };
 
@@ -4912,37 +4580,24 @@ function AppInner() {
       </div>
 
       <div style={{ padding:"8px 14px 100px" }}>
-        {/* Cancellation notice */}
-        {isPro && proData?.cancelAt && (
-          <div style={{ background:`linear-gradient(135deg, #2d1f00, #3d2a00)`, border:`1px solid rgba(255,159,10,0.4)`, borderRadius:14, padding:"12px 16px", marginBottom:14, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-            <div>
-              <p style={{ color:"#ff9f0a", fontWeight:700, fontSize:13, margin:0 }}>⚠️ Subscription cancelled</p>
-              <p style={{ color:"rgba(255,255,255,0.6)", fontSize:11, margin:"2px 0 0" }}>
-                Access continues until {new Date(proData.cancelAt).toLocaleDateString("en-GB", { day:"numeric", month:"long", year:"numeric" })}
-              </p>
-            </div>
-            <button onClick={()=>setShowPaywall(true)} style={{ background:"#ff9f0a", border:"none", borderRadius:99, padding:"7px 14px", color:"#000", fontSize:12, fontWeight:700, cursor:"pointer", fontFamily:FONT, whiteSpace:"nowrap" }}>Resubscribe</button>
-          </div>
-        )}
-
-        {/* Trial banner */}
+        {/* Trial banner or Pro upgrade banner */}
         {!isPro && isTrialActive() && (
-          <div style={{ background:`linear-gradient(135deg, #0a2a1f, #0d3d2a)`, border:`1px solid rgba(52,199,89,0.5)`, borderRadius:14, padding:"12px 16px", marginBottom:14, display:"flex", justifyContent:"space-between", alignItems:"center", boxShadow:"0 4px 16px rgba(52,199,89,0.15)" }}>
+          <div style={{ background:`linear-gradient(135deg, #1c1c2e, #2d2b55)`, border:`1px solid rgba(88,86,214,0.4)`, borderRadius:14, padding:"12px 16px", marginBottom:14, display:"flex", justifyContent:"space-between", alignItems:"center", boxShadow:"0 4px 16px rgba(88,86,214,0.2)" }}>
             <div>
-              <p style={{ color:"#34c759", fontWeight:700, fontSize:13, margin:0 }}>✦ Free trial — {getTrialDaysLeft()} day{getTrialDaysLeft()!==1?"s":""} left</p>
+              <p style={{ color:"#fff", fontWeight:700, fontSize:13, margin:0 }}>✦ Full access — {getTrialDaysLeft()} day{getTrialDaysLeft()!==1?"s":""} left</p>
               <p style={{ color:"rgba(255,255,255,0.6)", fontSize:11, margin:"2px 0 0" }}>Subscribe before your trial ends to keep everything</p>
             </div>
-            <button onClick={()=>setShowPaywall(true)} style={{ background:"#34c759", border:"none", borderRadius:99, padding:"7px 14px", color:"#000", fontSize:12, fontWeight:700, cursor:"pointer", fontFamily:FONT, whiteSpace:"nowrap" }}>Subscribe →</button>
+            <button onClick={()=>setShowPaywall(true)} style={{ background:"#5856d6", border:"none", borderRadius:99, padding:"7px 14px", color:"#fff", fontSize:12, fontWeight:700, cursor:"pointer", fontFamily:FONT, whiteSpace:"nowrap" }}>Subscribe →</button>
           </div>
         )}
         {!effectiveIsPro && <ProBanner onUpgrade={()=>setShowPaywall(true)} />}
 
-        {tab==="Today"&&<TodayTab profile={profile} entries={entries} mealLog={mealLog} setMealLog={setMealLog} workoutLog={workoutLog} water={water} setWater={setWater} journal={journal} setJournal={setJournal} measurements={measurements} mealPlan={mealPlan} setTab={setTab} />}
+        {tab==="Today"&&<TodayTab profile={profile} entries={entries} mealLog={mealLog} workoutLog={workoutLog} water={water} setWater={setWater} journal={journal} setJournal={setJournal} measurements={measurements} />}
         {tab==="Meals"&&<MealsTab profile={profile} favourites={favourites} setFavourites={setFavourites} removed={removed} setRemoved={setRemoved} mealLog={mealLog} setMealLog={setMealLog} isPro={effectiveIsPro} onUpgrade={()=>setShowPaywall(true)} mealPlan={mealPlan} onSaveMealPlan={saveMealPlan} />}
-        {tab==="Train"&&(effectiveIsPro ? <TrainTab profile={profile} workoutLog={workoutLog} setWorkoutLog={setWorkoutLog} setProfile={setProfile} savedWorkout={todaysWorkout} setSavedWorkout={setTodaysWorkout} /> : <LockedTab feature="Workout tracking, lift tracker and rest day planner" onUpgrade={()=>setShowPaywall(true)} />)}
+        {tab==="Train"&&(effectiveIsPro ? <TrainTab profile={profile} workoutLog={workoutLog} setWorkoutLog={setWorkoutLog} setProfile={setProfile} savedWorkout={todaysWorkout} setSavedWorkout={setTodaysWorkout} entries={entries} /> : <LockedTab feature="Workout tracking, lift tracker and rest day planner" onUpgrade={()=>setShowPaywall(true)} />)}
         {tab==="Track"&&(effectiveIsPro ? <TrackTab profile={profile} entries={entries} setEntries={fn=>setEntries(typeof fn==="function"?fn(entries):fn)} measurements={measurements} setMeasurements={setMeasurements} workoutLog={workoutLog} /> : <LockedTab feature="Progress tracking, measurements and body stats" onUpgrade={()=>setShowPaywall(true)} />)}
         {tab==="Coach"&&(effectiveIsPro ? <CoachTab profile={profile} setProfile={setProfile} mealPlan={mealPlan} mealLog={mealLog} workoutLog={workoutLog} entries={entries} /> : <LockedTab feature="AI personal coach" onUpgrade={()=>setShowPaywall(true)} />)}
-        {tab==="Profile"&&<ProfileTab profile={profile} setProfile={setProfile} onReset={handleReset} isDark={isDark} darkOverride={darkOverride} setDarkOverride={setDarkOverride} isPro={effectiveIsPro} proData={proData} onUpgrade={()=>setShowPaywall(true)} user={user} onShowAuth={()=>setShowAuth(true)} onClearMealPlan={()=>saveMealPlan(null)} />}
+        {tab==="Profile"&&<ProfileTab profile={profile} setProfile={setProfile} onReset={handleReset} isDark={isDark} darkOverride={darkOverride} setDarkOverride={setDarkOverride} isPro={effectiveIsPro} proData={proData} onUpgrade={()=>setShowPaywall(true)} user={user} onShowAuth={()=>setShowAuth(true)} />}
 
       </div>
 
@@ -4960,15 +4615,6 @@ function AppInner() {
           </div>;
         })}
       </div>
-
-      {/* Weekly check-in modal */}
-      {showWeeklyCheckIn && profile && (
-        <WeeklyCheckIn
-          profile={profile}
-          onDone={() => setShowWeeklyCheckIn(false)}
-          onAddEntry={(entry) => setEntries(prev => [...prev, entry])}
-        />
-      )}
     </div>
   );
 }
