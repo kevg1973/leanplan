@@ -3972,7 +3972,7 @@ const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDar
           </div>
         </div>
       ) : (
-        <Btn onClick={onUpgrade} color="#5856d6" style={{ width:"100%", marginBottom:16 }}>✦ Upgrade to Pro from £4.99/mo</Btn>
+        <Btn onClick={onUpgrade} color="#5856d6" style={{ width:"100%", marginBottom:16 }}>✦ Upgrade to Pro from £9.99/mo</Btn>
       )}
 
       <div style={{ marginTop:8 }}>
@@ -4333,7 +4333,7 @@ const ProBanner = ({ onUpgrade }) => (
   <div onClick={onUpgrade} style={{ background:"linear-gradient(135deg, #1c1c2e, #2d2b55)", borderRadius:14, padding:"12px 16px", marginBottom:14, cursor:"pointer", display:"flex", justifyContent:"space-between", alignItems:"center", boxShadow:"0 4px 16px rgba(88,86,214,0.3)", border:"1px solid rgba(88,86,214,0.4)" }}>
     <div style={{ flex:1, marginRight:10 }}>
       <p style={{ color:"#fff", fontWeight:700, fontSize:14, margin:0 }}>✦ Unlock LeanPlan Pro</p>
-      <p style={{ color:"rgba(255,255,255,0.6)", fontSize:12, margin:"2px 0 0" }}>From £4.99/mo — AI coach, workouts & more</p>
+      <p style={{ color:"rgba(255,255,255,0.6)", fontSize:12, margin:"2px 0 0" }}>From £9.99/mo — AI coach, workouts & more</p>
     </div>
     <div style={{ background:"#5856d6", borderRadius:99, padding:"7px 14px", flexShrink:0 }}>
       <span style={{ color:"#fff", fontWeight:700, fontSize:13, whiteSpace:"nowrap" }}>Upgrade →</span>
@@ -4349,7 +4349,7 @@ const LockedTab = ({ feature, onUpgrade }) => (
     </div>
     <h2 style={{ color:C.text, fontSize:22, fontWeight:700, marginBottom:10 }}>Pro Feature</h2>
     <p style={{ color:C.muted, fontSize:15, lineHeight:1.7, marginBottom:28, maxWidth:280, margin:"0 auto 28px" }}>{feature} is available on LeanPlan Pro.</p>
-    <Btn onClick={onUpgrade} color="#5856d6" style={{ width:"100%", maxWidth:280 }}>✦ Unlock Pro from £4.99/mo</Btn>
+    <Btn onClick={onUpgrade} color="#5856d6" style={{ width:"100%", maxWidth:280 }}>✦ Unlock Pro from £9.99/mo</Btn>
     <p style={{ color:C.muted, fontSize:12, marginTop:14 }}>Cancel anytime. No commitment.</p>
   </div>
 );
@@ -4363,17 +4363,17 @@ const PaywallModal = ({ onClose }) => {
     {
       id: "annual",
       label: "Annual",
-      price: "£39.99",
+      price: "£99.00",
       per: "/ year",
-      monthly: "£3.33/mo",
-      badge: "SAVE 33%",
+      monthly: "£8.25/mo",
+      badge: "2 MONTHS FREE",
       badgeColor: C.green,
       desc: "Best value"
     },
     {
       id: "monthly",
       label: "Monthly",
-      price: "£4.99",
+      price: "£9.99",
       per: "/ month",
       monthly: null,
       badge: null,
@@ -4475,7 +4475,7 @@ const PaywallModal = ({ onClose }) => {
 
         {/* CTA */}
         <Btn onClick={checkout} disabled={loading} color={C.accent} style={{ width:"100%", fontSize:17, padding:"16px 0", marginBottom:12 }}>
-          {loading ? "Loading..." : `Start Pro — ${selectedPlan==="annual"?"£39.99/year":"£4.99/month"}`}
+          {loading ? "Loading..." : `Start Pro — ${selectedPlan==="annual"?"£99.00/year":"£9.99/month"}`}
         </Btn>
 
         <p style={{ color:C.muted, fontSize:12, textAlign:"center", lineHeight:1.6 }}>
@@ -4751,7 +4751,7 @@ const TrialExpiredScreen = ({ onSubscribe }) => (
         ].map((f,i)=><p key={i} style={{ color:C.text, fontSize:14, margin:"6px 0" }}>{f}</p>)}
       </div>
       <Btn onClick={onSubscribe} color={C.accent} style={{ width:"100%", fontSize:17, padding:"16px 0", marginBottom:12 }}>
-        Subscribe from £4.99/month
+        Subscribe from £9.99/month
       </Btn>
       <p style={{ color:C.muted, fontSize:12, lineHeight:1.6 }}>
         Cancel anytime · Secure payment by Stripe
