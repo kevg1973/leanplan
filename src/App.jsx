@@ -5002,28 +5002,36 @@ function AppInner() {
   const pct = Math.min(100,Math.round((lost/profile.targetLbs)*100));
   const TAB_COLORS = {Today:"#007aff",Meals:"#34c759",Train:"#5ac8fa",Track:"#af52de",Coach:"#ff2d55",Profile:"#ff9500"};
 
-  const handleReset = () => {
+  const handleReset = async () => {
     const savedPro = localStorage.getItem("leanplan_pro");
     const hasRealSub = savedPro && JSON.parse(savedPro)?.customerId && JSON.parse(savedPro)?.customerId !== "bypass";
 
-    if (hasRealSub) {
-      const choice = window.confirm(
-        "Reset your fitness data and start fresh?\n\n✓ Your Pro subscription will be kept\n✓ All workout, meal and progress data will be cleared\n✓ You can set up a new goal in onboarding\n\nTap OK to reset your data."
-      );
-      if (!choice) return;
-      RESET_KEYS.forEach(k => localStorage.removeItem(k));
-      setProfile(null); setEntries([]); setFavourites([]); setRemoved([]);
-      setMealLog({}); setWorkoutLog({}); setWater({}); setJournal({}); setMeasurements([]);
-      setIsPro(false); setProData(null); setMealPlan(null);
-      setUser(null); supabase.auth.signOut();
-    } else {
-      if (!window.confirm("Reset all data? This cannot be undone.")) return;
-      RESET_KEYS.forEach(k => localStorage.removeItem(k));
-      setProfile(null); setEntries([]); setFavourites([]); setRemoved([]);
-      setMealLog({}); setWorkoutLog({}); setWater({}); setJournal({}); setMeasurements([]);
-      setIsPro(false); setProData(null); setMealPlan(null);
-      setUser(null); supabase.auth.signOut();
+    const confirmMsg = hasRealSub
+      ? "Reset your fitness data and start fresh?\n\n✓ Your Pro subscription will be kept\n✓ All workout, meal and progress data will be cleared\n✓ You can set up a new goal in onboarding\n\nTap OK to reset your data."
+      : "Reset all data? This cannot be undone.";
+
+    if (!window.confirm(confirmMsg)) return;
+
+    // Wipe Supabase row BEFORE signing out so the same email starts clean next time
+    if (user?.id) {
+      try {
+        await supabase.from("profiles").upsert({
+          id: user.id,
+          profile_data: {}, entries: [], favourites: [], removed: [],
+          meal_log: {}, workout_log: {}, water: {}, journal: {},
+          measurements: [], dark_override: null, meal_plan: null,
+          trial_start: null, reminder_sent: false,
+          is_pro: hasRealSub ? true : false,
+          updated_at: new Date().toISOString(),
+        });
+      } catch(e){ console.error("Supabase wipe error:", e); }
     }
+
+    RESET_KEYS.forEach(k => localStorage.removeItem(k));
+    setProfile(null); setEntries([]); setFavourites([]); setRemoved([]);
+    setMealLog({}); setWorkoutLog({}); setWater({}); setJournal({}); setMeasurements([]);
+    setIsPro(false); setProData(null); setMealPlan(null);
+    setUser(null); supabase.auth.signOut();
   };
 
   return (
