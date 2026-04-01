@@ -3557,12 +3557,25 @@ const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDar
   const [pwLoading, setPwLoading] = useState(false);
   const [pwError, setPwError] = useState(null);
   const [pwSuccess, setPwSuccess] = useState(false);
+  const [showMealPlanNudge, setShowMealPlanNudge] = useState(false);
   const toggleArr = (k,v) => setTempData(d=>({...d,[k]:d[k].includes(v)?d[k].filter(x=>x!==v):[...d[k],v]}));
   const startEdit = (s) => { setTempData({...profile}); setEditing(s); };
   const save = () => {
     // If meal plan length changed, clear the existing plan so user regenerates
     if (tempData.mealPlanDays && tempData.mealPlanDays !== profile.mealPlanDays) {
       onClearMealPlan?.();
+    }
+    // If workout frequency, diet, goal or pace changed, nudge user to regenerate meal plan
+    const mealRelevantChanged = (
+      tempData.workoutsPerWeek !== profile.workoutsPerWeek ||
+      tempData.goal !== profile.goal ||
+      tempData.paceId !== profile.paceId ||
+      tempData.dietType !== profile.dietType ||
+      tempData.dairyPref !== profile.dairyPref ||
+      tempData.glutenPref !== profile.glutenPref
+    );
+    if (mealRelevantChanged) {
+      setShowMealPlanNudge(true);
     }
     setProfile({...profile,...tempData});
     setEditing(null);
@@ -3897,6 +3910,20 @@ const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDar
         <p style={{ color:C.muted, fontSize:14, margin:"4px 0 0" }}>Age {profile.age||"—"} · {profile.sex||""}</p>
         {tdee&&<p style={{ color:C.accent, fontSize:14, margin:"4px 0 0", fontWeight:600 }}>TDEE: {tdee} cal · BMI: {bmi}</p>}
       </div>
+
+      {showMealPlanNudge && (
+        <div style={{ background:`${C.orange}12`, border:`1px solid ${C.orange}33`, borderRadius:12, padding:"12px 14px", marginBottom:14, display:"flex", gap:10, alignItems:"flex-start" }}>
+          <span style={{ fontSize:16, flexShrink:0 }}>🍽️</span>
+          <div style={{ flex:1 }}>
+            <p style={{ color:C.text, fontWeight:600, fontSize:13, margin:"0 0 2px" }}>Regenerate your meal plan</p>
+            <p style={{ color:C.muted, fontSize:12, margin:"0 0 8px", lineHeight:1.5 }}>Your changes affect calorie targets and training days. Regenerate for an updated plan.</p>
+            <div style={{ display:"flex", gap:8 }}>
+              <button onClick={()=>{ onClearMealPlan?.(); setShowMealPlanNudge(false); }} style={{ background:C.orange, border:"none", borderRadius:8, padding:"6px 14px", color:"#fff", fontSize:12, fontWeight:600, cursor:"pointer", fontFamily:FONT }}>Regenerate now</button>
+              <button onClick={()=>setShowMealPlanNudge(false)} style={{ background:"none", border:`1px solid ${C.border}`, borderRadius:8, padding:"6px 14px", color:C.muted, fontSize:12, cursor:"pointer", fontFamily:FONT }}>Later</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <Section title="Goals">
         <Row label="Main goal" value={profile.goal?.replace("_"," ")} onClick={()=>startEdit("goal")} />
