@@ -322,12 +322,15 @@ app.post("/api/send-shopping-list", async (req, res) => {
   const { email, name, categories, planDays } = req.body;
   if (!email || !categories) return res.status(400).json({ error: "Missing required fields" });
 
+  // Build list in category order matching the app
   const listHtml = categories.map(cat => `
-    <tr><td colspan="2" style="padding:12px 0 6px; font-size:11px; font-weight:700; letter-spacing:0.08em; color:#8e8e93; text-transform:uppercase;">${cat.name}</td></tr>
+    <tr>
+      <td colspan="2" style="padding:14px 0 4px; font-size:11px; font-weight:700; letter-spacing:0.08em; color:#8e8e93; text-transform:uppercase; border-top:2px solid #f0f0f0;">${cat.name}</td>
+    </tr>
     ${cat.items.map(item => `
       <tr>
-        <td style="padding:6px 0; font-size:14px; color:#000; border-bottom:1px solid #f0f0f0;">${item.display}</td>
-        <td style="padding:6px 0; font-size:12px; color:#8e8e93; text-align:right; border-bottom:1px solid #f0f0f0;">${item.amounts?.[0] || ""}</td>
+        <td style="padding:7px 0; font-size:14px; color:#1c1c1e; border-bottom:1px solid #f5f5f7;">• ${item.display}</td>
+        <td style="padding:7px 0; font-size:13px; color:#8e8e93; text-align:right; border-bottom:1px solid #f5f5f7;">${item.amounts?.[0] || ""}</td>
       </tr>
     `).join("")}
   `).join("");

@@ -2396,9 +2396,10 @@ const MealsTab = ({ profile, favourites, setFavourites, removed, setRemoved, mea
               <button
                 onClick={()=>{
                   const text = shoppingCategories.map((cat, ci) =>
-                    cat.name + "\n" + cat.items.filter((item, ii) => !isInPantry(item.display) && !checked[`${ci}-${ii}`]).map(item => `• ${item.display}${item.amounts?.[0] ? " ("+item.amounts[0]+")" : ""}`).join("\n")
+                    cat.name + "\n" + cat.items.filter((item, ii) => checked[`${ci}-${ii}`]).map(item => `• ${item.display}${item.amounts?.[0] ? " ("+item.amounts[0]+")" : ""}`).join("\n")
                   ).filter(s => s.includes("•")).join("\n\n");
-                  navigator.clipboard.writeText(text).then(()=>{ alert("Shopping list copied to clipboard!"); });
+                  if (!text.trim()) { alert("Tick the items you need first, then copy."); return; }
+                  navigator.clipboard.writeText(text).then(()=>{ alert("Ticked items copied to clipboard!"); });
                 }}
                 style={{ flex:1, background:C.sectionBg, border:`1px solid ${C.border}`, borderRadius:10, padding:"10px 0", color:C.text, fontSize:13, fontWeight:600, cursor:"pointer", fontFamily:FONT }}
               >📋 Copy list</button>
@@ -2408,8 +2409,9 @@ const MealsTab = ({ profile, favourites, setFavourites, removed, setRemoved, mea
                   setListEmailSending(true);
                   const toBuy = shoppingCategories.map((cat, ci) => ({
                     ...cat,
-                    items: cat.items.filter((item, ii) => !isInPantry(item.display) && !checked[`${ci}-${ii}`])
+                    items: cat.items.filter((item, ii) => checked[`${ci}-${ii}`])
                   })).filter(cat => cat.items.length > 0);
+                  if (toBuy.length === 0) { alert("Tick the items you need first, then email."); setListEmailSending(false); return; }
                   try {
                     const res = await fetch("/api/send-shopping-list", {
                       method:"POST", headers:{"Content-Type":"application/json"},
