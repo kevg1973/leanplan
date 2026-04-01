@@ -3116,16 +3116,19 @@ const ProgressPhotos = ({ user, entries, profile }) => {
       const dateKey = todayKey();
       const ext = file.type === "image/png" ? "png" : "jpg";
       const filename = `${user.id}/${dateKey}_${pose}_${Date.now()}.${ext}`;
+      // Upload file
       const { error: upErr } = await supabase.storage.from("progress-photos").upload(filename, file, { contentType: file.type, upsert: false });
       if (upErr) throw upErr;
+      // Get signed URL immediately so photo shows right away
+      const { data: signedData } = await supabase.storage.from("progress-photos").createSignedUrl(filename, 60 * 60 * 24 * 7);
+      const url = signedData?.signedUrl || "";
       const currentWeightKg = entries?.length > 0 ? parseFloat((entries[entries.length-1].weight * 0.453592).toFixed(1)) : parseFloat(profile?.startWeight || 0);
       const updated = [...photos];
       const existingIdx = updated.findIndex(p => p.date === dateKey);
-      // Store path only — URL regenerated on load via batch createSignedUrls
       if (existingIdx >= 0) {
-        updated[existingIdx] = { ...updated[existingIdx], [pose]: { path: filename, url: "" } };
+        updated[existingIdx] = { ...updated[existingIdx], [pose]: { path: filename, url } };
       } else {
-        updated.unshift({ date: dateKey, weightKg: currentWeightKg, [pose]: { path: filename, url: "" } });
+        updated.unshift({ date: dateKey, weightKg: currentWeightKg, [pose]: { path: filename, url } });
       }
       await savePhotos(updated);
     } catch(err) { console.error("Upload error:", err); setUploadError("Upload failed — please try again"); }
