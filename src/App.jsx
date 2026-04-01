@@ -1864,7 +1864,7 @@ const MealCarousel = ({ meals, favourites, likedMeals, mealLog, today, onLike, o
   );
 };
 
-const MealsTab = ({ profile, favourites, setFavourites, removed, setRemoved, mealLog, setMealLog, isPro, onUpgrade, mealPlan, onSaveMealPlan, generating, setGenerating, generateProgress, setGenerateProgress, generateError, setGenerateError }) => {
+const MealsTab = ({ profile, favourites, setFavourites, removed, setRemoved, mealLog, setMealLog, isPro, onUpgrade, mealPlan, onSaveMealPlan, generating, setGenerating, generateProgress, setGenerateProgress, generateError, setGenerateError, user }) => {
   const isGuided = profile?.appMode !== "custom";
   const [section, setSection] = useState("meals");
   const [suppOpen, setSuppOpen] = useState(null);
@@ -2404,7 +2404,7 @@ const MealsTab = ({ profile, favourites, setFavourites, removed, setRemoved, mea
               >📋 Copy list</button>
               <button
                 onClick={async ()=>{
-                  if (!profile?.email) { alert("Sign in to email your shopping list"); return; }
+                  if (!user?.email) { alert("Sign in to email your shopping list"); return; }
                   setListEmailSending(true);
                   const toBuy = shoppingCategories.map(cat => ({
                     ...cat,
@@ -2413,7 +2413,7 @@ const MealsTab = ({ profile, favourites, setFavourites, removed, setRemoved, mea
                   try {
                     const res = await fetch("/api/send-shopping-list", {
                       method:"POST", headers:{"Content-Type":"application/json"},
-                      body: JSON.stringify({ email: profile.email, name: profile.name, categories: toBuy, planDays: mealPlan?.days?.length || planDays })
+                      body: JSON.stringify({ email: user.email, name: profile.name, categories: toBuy, planDays: mealPlan?.days?.length || planDays })
                     });
                     const data = await res.json();
                     if (data.success) setListEmailSent(true);
@@ -5647,7 +5647,7 @@ function AppInner() {
         )}
 
         {tab==="Today"&&<TodayTab profile={profile} entries={entries} mealLog={mealLog} setMealLog={setMealLog} workoutLog={workoutLog} water={water} setWater={setWater} journal={journal} setJournal={setJournal} measurements={measurements} mealPlan={mealPlan} setTab={setTab} />}
-        <div style={{ display: tab==="Meals" ? "block" : "none" }}><MealsTab profile={profile} favourites={favourites} setFavourites={setFavourites} removed={removed} setRemoved={setRemoved} mealLog={mealLog} setMealLog={setMealLog} isPro={effectiveIsPro} onUpgrade={()=>setShowPaywall(true)} mealPlan={mealPlan} onSaveMealPlan={saveMealPlan} generating={generating} setGenerating={setGenerating} generateProgress={generateProgress} setGenerateProgress={setGenerateProgress} generateError={generateError} setGenerateError={setGenerateError} /></div>
+        <div style={{ display: tab==="Meals" ? "block" : "none" }}><MealsTab profile={profile} favourites={favourites} setFavourites={setFavourites} removed={removed} setRemoved={setRemoved} mealLog={mealLog} setMealLog={setMealLog} isPro={effectiveIsPro} onUpgrade={()=>setShowPaywall(true)} mealPlan={mealPlan} onSaveMealPlan={saveMealPlan} generating={generating} setGenerating={setGenerating} generateProgress={generateProgress} setGenerateProgress={setGenerateProgress} generateError={generateError} setGenerateError={setGenerateError} user={user} /></div>
         {tab==="Train"&&(effectiveIsPro ? <TrainTab profile={profile} workoutLog={workoutLog} setWorkoutLog={setWorkoutLog} setProfile={setProfile} savedWorkout={todaysWorkout} setSavedWorkout={setTodaysWorkout} /> : <LockedTab feature="Workout tracking, lift tracker and rest day planner" onUpgrade={()=>setShowPaywall(true)} />)}
         {tab==="Track"&&(effectiveIsPro ? <TrackTab profile={profile} entries={entries} setEntries={fn=>setEntries(typeof fn==="function"?fn(entries):fn)} measurements={measurements} setMeasurements={setMeasurements} workoutLog={workoutLog} user={user} /> : <LockedTab feature="Progress tracking, measurements and body stats" onUpgrade={()=>setShowPaywall(true)} />)}
         {tab==="Coach"&&(effectiveIsPro ? <CoachTab profile={profile} setProfile={setProfile} mealPlan={mealPlan} mealLog={mealLog} workoutLog={workoutLog} entries={entries} isAdmin={proData?.customerId === "bypass"} /> : <LockedTab feature="AI personal coach" onUpgrade={()=>setShowPaywall(true)} />)}
