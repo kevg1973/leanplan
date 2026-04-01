@@ -340,17 +340,11 @@ app.post("/api/send-shopping-list", async (req, res) => {
     <!DOCTYPE html><html><body style="margin:0;padding:0;background:#0a0a0f;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;">
     <div style="max-width:600px;margin:0 auto;">
 
-      <!-- Header with background image -->
-      <div style="position:relative;border-radius:16px 16px 0 0;overflow:hidden;height:200px;">
-        <img src="https://www.leanplan.uk/email-header-shopping.png" alt="" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;display:block;" />
-        <div style="position:absolute;inset:0;background:linear-gradient(160deg,rgba(13,27,42,0.82) 0%,rgba(26,26,46,0.75) 50%,rgba(15,52,96,0.7) 100%);"></div>
-        <div style="position:relative;padding:32px 32px 28px;height:100%;box-sizing:border-box;display:flex;flex-direction:column;justify-content:space-between;">
-          <img src="https://www.leanplan.uk/leanplan-email-logo.png" alt="LeanPlan" style="height:38px;display:block;" />
-          <div>
-            <h1 style="color:#ffffff;font-size:24px;font-weight:700;margin:0 0 6px;letter-spacing:-0.3px;">🛒 Your Shopping List</h1>
-            <p style="color:rgba(255,255,255,0.7);font-size:14px;margin:0;">${planDays}-day meal plan · ${itemCount} item${itemCount===1?"":"s"} to buy</p>
-          </div>
-        </div>
+      <!-- Header -->
+      <div style="background:linear-gradient(160deg,#0d1b2a 0%,#1a1a2e 40%,#16213e 70%,#0f3460 100%);padding:32px 32px 28px;border-radius:16px 16px 0 0;">
+        <img src="https://www.leanplan.uk/transparent-logo.png" alt="LeanPlan" style="height:40px;display:block;margin-bottom:24px;" />
+        <h1 style="color:#ffffff;font-size:24px;font-weight:700;margin:0 0 6px;letter-spacing:-0.3px;">🛒 Your Shopping List</h1>
+        <p style="color:rgba(255,255,255,0.6);font-size:14px;margin:0;">${planDays}-day meal plan · ${itemCount} item${itemCount===1?"":"s"} to buy</p>
       </div>
       <!-- List body -->
       <div style="background:#1c1c1e;padding:24px 32px;">
