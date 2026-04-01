@@ -3032,18 +3032,24 @@ const ProgressPhotos = ({ user, entries, profile }) => {
     try {
       const { data, error } = await supabase.from("profiles").select("progress_photos").eq("id", user.id).single();
       if (!error && data?.progress_photos && data.progress_photos.length > 0) {
-        // Regenerate fresh signed URLs from stored paths
-        const refreshed = await Promise.all(data.progress_photos.map(async (entry) => {
-          const updated = { ...entry };
-          for (const pose of ["front", "side"]) {
-            if (entry[pose]?.path) {
-              try {
-                const { data: sd } = await supabase.storage.from("progress-photos").createSignedUrl(entry[pose].path, 60 * 60 * 24 * 7);
-                updated[pose] = { ...entry[pose], url: sd?.signedUrl || "" };
-              } catch(e) { console.error("URL refresh error:", e); }
-            }
-          }
-          return updated;
+        // Collect all paths needing signed URLs
+        const paths = [];
+        data.progress_photos.forEach(entry => {
+          if (entry.front?.path) paths.push(entry.front.path);
+          if (entry.side?.path) paths.push(entry.side.path);
+        });
+        // Batch sign all URLs in one request
+        const urlMap = {};
+        if (paths.length > 0) {
+          try {
+            const { data: signed } = await supabase.storage.from("progress-photos").createSignedUrls(paths, 60 * 60 * 24 * 7);
+            signed?.forEach(s => { if (s.signedUrl) urlMap[s.path] = s.signedUrl; });
+          } catch(e) { console.error("Signed URLs error:", e); }
+        }
+        const refreshed = data.progress_photos.map(entry => ({
+          ...entry,
+          ...(entry.front?.path ? { front: { ...entry.front, url: urlMap[entry.front.path] || "" } } : {}),
+          ...(entry.side?.path ? { side: { ...entry.side, url: urlMap[entry.side.path] || "" } } : {}),
         }));
         setPhotos(refreshed);
       }
@@ -3321,8 +3327,8 @@ const ProgressPhotos = ({ user, entries, profile }) => {
                     )}
                     {!compareMode && (
                       <button onClick={() => toggleFlip(entry.date, pose)}
-                        style={{ width:"100%", marginTop:4, background:"none", border:`1px solid ${C.border}`, borderRadius:8, padding:"4px 0", color:C.muted, fontSize:11, fontWeight:600, cursor:"pointer", fontFamily:FONT }}>
-                        ⇄ Flip
+                        style={{ width:"100%", marginTop:4, background: flippedPhotos[`${entry.date}_${pose}`] ? `${C.accent}20` : C.sectionBg, border:`1.5px solid ${flippedPhotos[`${entry.date}_${pose}`] ? C.accent : C.border}`, borderRadius:8, padding:"6px 0", color: flippedPhotos[`${entry.date}_${pose}`] ? C.accent : C.text, fontSize:12, fontWeight:600, cursor:"pointer", fontFamily:FONT }}>
+                        ⇄ {flippedPhotos[`${entry.date}_${pose}`] ? "Flipped" : "Flip"}
                       </button>
                     )}
 
