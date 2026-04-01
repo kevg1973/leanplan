@@ -3558,6 +3558,37 @@ const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDar
   const [pwError, setPwError] = useState(null);
   const [pwSuccess, setPwSuccess] = useState(false);
   const [showMealPlanNudge, setShowMealPlanNudge] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState(null);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+
+  // Load avatar on mount
+  useEffect(() => {
+    if (!user?.id) return;
+    const loadAvatar = async () => {
+      try {
+        const { data } = await supabase.storage.from("progress-photos").createSignedUrl(`${user.id}/avatar.jpg`, 60 * 60 * 24 * 7);
+        if (data?.signedUrl) setAvatarUrl(data.signedUrl);
+      } catch(e) {}
+    };
+    loadAvatar();
+  }, [user?.id]);
+
+  const handleAvatarUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file || !user?.id) return;
+    setAvatarUploading(true);
+    try {
+      const { error } = await supabase.storage.from("progress-photos").upload(`${user.id}/avatar.jpg`, file, { contentType: file.type, upsert: true });
+      if (!error) {
+        const { data } = await supabase.storage.from("progress-photos").createSignedUrl(`${user.id}/avatar.jpg`, 60 * 60 * 24 * 7);
+        if (data?.signedUrl) setAvatarUrl(data.signedUrl);
+      }
+    } catch(e) { console.error("Avatar upload error:", e); }
+    setAvatarUploading(false);
+    e.target.value = "";
+  };
+
+  const initials = (profile.name || "?").split(" ").map(w => w[0]).slice(0,2).join("").toUpperCase();
   const toggleArr = (k,v) => setTempData(d=>({...d,[k]:d[k].includes(v)?d[k].filter(x=>x!==v):[...d[k],v]}));
   const startEdit = (s) => { setTempData({...profile}); setEditing(s); };
   const save = () => {
@@ -3902,7 +3933,19 @@ const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDar
   return (
     <div>
       <div style={{ textAlign:"center", padding:"24px 0 20px" }}>
-        <div style={{ width:80, height:80, borderRadius:99, background:`linear-gradient(135deg, ${C.accent}, ${C.green})`, margin:"0 auto 12px", display:"flex", alignItems:"center", justifyContent:"center", overflow:"hidden" }}><img src="/leanplan_app_icon.png" alt="LeanPlan" style={{ width:"100%", height:"100%", objectFit:"cover" }} /></div>
+        <div style={{ position:"relative", width:88, height:88, margin:"0 auto 12px" }}>
+          {avatarUrl ? (
+            <img src={avatarUrl} alt="Profile" style={{ width:88, height:88, borderRadius:99, objectFit:"cover", border:`3px solid ${C.accent}` }} />
+          ) : (
+            <div style={{ width:88, height:88, borderRadius:99, background:`linear-gradient(135deg, ${C.accent}, ${C.purple})`, display:"flex", alignItems:"center", justifyContent:"center", border:`3px solid ${C.accent}` }}>
+              <span style={{ color:"#fff", fontSize:28, fontWeight:700 }}>{initials}</span>
+            </div>
+          )}
+          <label htmlFor="avatar-upload" style={{ position:"absolute", bottom:0, right:0, width:26, height:26, borderRadius:99, background:C.accent, border:`2px solid ${C.bg}`, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer" }}>
+            {avatarUploading ? <span style={{ fontSize:10, color:"#fff" }}>...</span> : <span style={{ fontSize:13 }}>📷</span>}
+          </label>
+          <input id="avatar-upload" type="file" accept="image/*" style={{ display:"none" }} onChange={handleAvatarUpload} />
+        </div>
         <div style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:8 }}>
           <h2 style={{ color:C.text, fontSize:22, fontWeight:700, margin:0 }}>{profile.name||"Your Profile"}</h2>
           <button onClick={()=>startEdit("name")} style={{ background:"none", border:"none", color:C.accent, fontSize:13, cursor:"pointer", fontFamily:FONT, padding:"2px 6px" }}>Edit</button>
@@ -4045,11 +4088,11 @@ const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDar
           </div>
         </div>
       ) : proData?.customerId === "bypass" ? (
-        <div style={{ background:`${C.purple}12`, border:`1px solid ${C.purple}44`, borderRadius:14, padding:"14px 16px", marginBottom:16 }}>
+        <div style={{ background:"linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)", border:"1px solid rgba(245,158,11,0.3)", borderRadius:14, padding:"14px 16px", marginBottom:16 }}>
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
             <div>
-              <p style={{ color:C.purple, fontWeight:700, fontSize:15, margin:0 }}>⭐ Lifetime Pro</p>
-              <p style={{ color:C.muted, fontSize:12, margin:"2px 0 0" }}>Admin access — all features unlocked</p>
+              <p style={{ color:"#f59e0b", fontWeight:700, fontSize:15, margin:0 }}>⭐ Lifetime Pro</p>
+              <p style={{ color:"rgba(255,255,255,0.5)", fontSize:12, margin:"2px 0 0" }}>Admin access — all features unlocked</p>
             </div>
           </div>
         </div>
