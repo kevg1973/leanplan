@@ -3026,7 +3026,22 @@ const ProgressPhotos = ({ user, entries, profile }) => {
   const loadPhotos = async () => {
     try {
       const { data, error } = await supabase.from("profiles").select("progress_photos").eq("id", user.id).single();
-      if (!error && data?.progress_photos) setPhotos(data.progress_photos);
+      if (!error && data?.progress_photos && data.progress_photos.length > 0) {
+        // Regenerate fresh signed URLs from stored paths
+        const refreshed = await Promise.all(data.progress_photos.map(async (entry) => {
+          const updated = { ...entry };
+          for (const pose of ["front", "side"]) {
+            if (entry[pose]?.path) {
+              try {
+                const { data: sd } = await supabase.storage.from("progress-photos").createSignedUrl(entry[pose].path, 60 * 60 * 24 * 7);
+                updated[pose] = { ...entry[pose], url: sd?.signedUrl || "" };
+              } catch(e) { console.error("URL refresh error:", e); }
+            }
+          }
+          return updated;
+        }));
+        setPhotos(refreshed);
+      }
     } catch(e) { console.error("Load photos error:", e); }
     setLoading(false);
   };
@@ -3070,7 +3085,7 @@ const ProgressPhotos = ({ user, entries, profile }) => {
       const filename = `${user.id}/${dateKey}_${pose}_${Date.now()}.jpg`;
       const { error: upErr } = await supabase.storage.from("progress-photos").upload(filename, compressed, { contentType: "image/jpeg", upsert: false });
       if (upErr) throw upErr;
-      const { data: signedData } = await supabase.storage.from("progress-photos").createSignedUrl(filename, 60 * 60 * 24 * 365);
+      const { data: signedData } = await supabase.storage.from("progress-photos").createSignedUrl(filename, 60 * 60 * 24 * 7);
       const currentWeightKg = entries?.length > 0 ? parseFloat((entries[entries.length-1].weight * 0.453592).toFixed(1)) : parseFloat(profile?.startWeight || 0);
       const updated = [...photos];
       const existingIdx = updated.findIndex(p => p.date === dateKey);
