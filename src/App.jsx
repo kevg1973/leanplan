@@ -2428,9 +2428,9 @@ const MealsTab = ({ profile, favourites, setFavourites, removed, setRemoved, mea
             </div>
 
             <div style={{ display:"flex", gap:8, marginTop:4 }}>
-              <button onClick={()=>setChecked({})} style={{ flex:1, background:"none", border:`1px solid ${C.border}`, borderRadius:10, padding:"8px 0", color:C.muted, fontSize:13, cursor:"pointer", fontFamily:FONT }}>Reset ticks</button>
-              <button onClick={()=>savePantry([])} style={{ flex:1, background:"none", border:`1px solid ${C.border}`, borderRadius:10, padding:"8px 0", color:C.muted, fontSize:13, cursor:"pointer", fontFamily:FONT }}>Clear pantry</button>
-              <button onClick={()=>setSection("meals")} style={{ flex:1, background:"none", border:`1px solid ${C.accent}`, borderRadius:10, padding:"8px 0", color:C.accent, fontSize:13, fontWeight:600, cursor:"pointer", fontFamily:FONT }}>↻ New plan</button>
+              <button onClick={()=>setChecked({})} style={{ flex:1, background:`${C.orange}15`, border:`1px solid ${C.orange}44`, borderRadius:10, padding:"8px 0", color:C.orange, fontSize:13, fontWeight:600, cursor:"pointer", fontFamily:FONT }}>Reset ticks</button>
+              <button onClick={()=>savePantry([])} style={{ flex:1, background:`${C.red}12`, border:`1px solid ${C.red}44`, borderRadius:10, padding:"8px 0", color:C.red, fontSize:13, fontWeight:600, cursor:"pointer", fontFamily:FONT }}>Clear pantry</button>
+              <button onClick={()=>setSection("meals")} style={{ flex:1, background:`${C.green}15`, border:`1px solid ${C.green}44`, borderRadius:10, padding:"8px 0", color:C.green, fontSize:13, fontWeight:600, cursor:"pointer", fontFamily:FONT }}>↻ New plan</button>
             </div>
           </>
         )}
