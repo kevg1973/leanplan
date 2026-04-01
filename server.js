@@ -186,7 +186,8 @@ app.post("/api/stripe/webhook", async (req, res) => {
 
       // Send welcome email via Resend
       const planLabel = plan === "annual" ? "Annual" : "Monthly";
-      const planPrice = plan === "annual" ? "£39.99/year" : "£4.99/month";
+      const planPrice = plan === "annual" ? "£99/year" : "£9.99/month";
+      const planSub = plan === "annual" ? "That's just £8.25/month — 2 months free." : "Cancel any time from your account settings.";
 
       await resend.emails.send({
         from: "LeanPlan <hello@leanplan.uk>",
@@ -199,31 +200,54 @@ app.post("/api/stripe/webhook", async (req, res) => {
   <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#0a0a0a;padding:40px 20px;">
     <tr><td align="center">
       <table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;">
-        <tr><td align="center" style="padding-bottom:32px;">
-          <span style="font-size:26px;font-weight:700;color:#ffffff;">Lean<span style="color:#3b82f6;">Plan</span></span>
+
+        <!-- Logo -->
+        <tr><td align="center" style="padding-bottom:28px;">
+          <img src="https://www.leanplan.uk/transparent-logo.png" alt="LeanPlan" style="height:44px;display:block;" />
         </td></tr>
+
+        <!-- Main card -->
         <tr><td style="background:#1a1a1a;border-radius:20px;padding:36px 32px;border:1px solid #2a2a2a;">
-          <p style="margin:0 0 8px;font-size:13px;font-weight:600;color:#3b82f6;text-transform:uppercase;letter-spacing:1px;">You're in 🎉</p>
-          <h1 style="margin:0 0 16px;font-size:24px;font-weight:700;color:#ffffff;">Welcome to LeanPlan Pro</h1>
-          <p style="margin:0 0 24px;font-size:15px;color:#9ca3af;line-height:1.6;">Your <strong style="color:#ffffff;">${planLabel} plan (${planPrice})</strong> is now active. Open the app to continue your journey.</p>
-          <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+
+          <p style="margin:0 0 8px;font-size:12px;font-weight:700;color:#3b82f6;text-transform:uppercase;letter-spacing:1.5px;">You're in 🎉</p>
+          <h1 style="margin:0 0 12px;font-size:26px;font-weight:700;color:#ffffff;letter-spacing:-0.3px;">Welcome to LeanPlan Pro</h1>
+          <p style="margin:0 0 4px;font-size:15px;color:#9ca3af;line-height:1.6;">Your <strong style="color:#ffffff;">${planLabel} plan (${planPrice})</strong> is now active.</p>
+          <p style="margin:0 0 28px;font-size:13px;color:#6b7280;">${planSub}</p>
+
+          <!-- CTA -->
+          <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
             <tr><td align="center">
-              <a href="${APP_URL}" style="display:inline-block;background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:#ffffff;text-decoration:none;font-size:16px;font-weight:600;padding:16px 36px;border-radius:12px;">Open LeanPlan →</a>
+              <a href="${APP_URL}" style="display:inline-block;background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:#ffffff;text-decoration:none;font-size:16px;font-weight:700;padding:16px 40px;border-radius:12px;letter-spacing:-0.2px;">Open LeanPlan →</a>
             </td></tr>
           </table>
+
           <div style="border-top:1px solid #2a2a2a;margin-bottom:24px;"></div>
+
+          <!-- What's included -->
+          <p style="margin:0 0 14px;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:1.5px;">What's included</p>
           <table width="100%" cellpadding="0" cellspacing="0">
-            <tr><td style="padding:6px 0;font-size:14px;color:#d1d5db;">✅ &nbsp;AI-powered personalised meal plans</td></tr>
-            <tr><td style="padding:6px 0;font-size:14px;color:#d1d5db;">✅ &nbsp;Guided workout programme (16 weeks)</td></tr>
-            <tr><td style="padding:6px 0;font-size:14px;color:#d1d5db;">✅ &nbsp;AI nutrition & fitness coach</td></tr>
-            <tr><td style="padding:6px 0;font-size:14px;color:#d1d5db;">✅ &nbsp;Progress tracking & measurements</td></tr>
-            <tr><td style="padding:6px 0;font-size:14px;color:#d1d5db;">✅ &nbsp;Smart shopping list with pantry</td></tr>
+            <tr><td style="padding:7px 0;font-size:14px;color:#d1d5db;border-bottom:1px solid #222;">🍽️ &nbsp;AI-generated personalised meal plans</td></tr>
+            <tr><td style="padding:7px 0;font-size:14px;color:#d1d5db;border-bottom:1px solid #222;">🏋️ &nbsp;Structured workout programme, goal-based</td></tr>
+            <tr><td style="padding:7px 0;font-size:14px;color:#d1d5db;border-bottom:1px solid #222;">🤖 &nbsp;AI nutrition & fitness coach</td></tr>
+            <tr><td style="padding:7px 0;font-size:14px;color:#d1d5db;border-bottom:1px solid #222;">📊 &nbsp;Progress photos, weight & measurements</td></tr>
+            <tr><td style="padding:7px 0;font-size:14px;color:#d1d5db;border-bottom:1px solid #222;">🛒 &nbsp;Smart shopping list — copy or email to yourself</td></tr>
+            <tr><td style="padding:7px 0;font-size:14px;color:#d1d5db;">💊 &nbsp;Personalised supplement guide</td></tr>
           </table>
+
+          <div style="border-top:1px solid #2a2a2a;margin-top:24px;margin-bottom:20px;"></div>
+
+          <!-- Getting started tip -->
+          <p style="margin:0 0 6px;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:1.5px;">Getting started</p>
+          <p style="margin:0;font-size:13px;color:#9ca3af;line-height:1.7;">Head to <strong style="color:#fff;">Meals</strong> to generate your first meal plan, then <strong style="color:#fff;">Train</strong> to see your workout programme. Your AI coach is on the <strong style="color:#fff;">Coach</strong> tab — ask it anything.</p>
+
         </td></tr>
+
+        <!-- Footer -->
         <tr><td align="center" style="padding-top:24px;">
-          <p style="margin:0;font-size:12px;color:#4b5563;line-height:1.6;">LeanPlan · Manchester, UK<br>
+          <p style="margin:0;font-size:12px;color:#4b5563;line-height:1.8;">LeanPlan · Manchester, UK<br>
           Questions? Reply to this email or visit <a href="https://www.leanplan.uk" style="color:#3b82f6;text-decoration:none;">leanplan.uk</a></p>
         </td></tr>
+
       </table>
     </td></tr>
   </table>
