@@ -3633,16 +3633,17 @@ const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDar
   const handleCropSave = async () => {
     if (!showCropModal || !croppieRef.current) return;
     setAvatarUploading(true);
-    setShowCropModal(null);
     try {
+      // Get blob BEFORE closing modal (closing destroys croppie instance)
       const blob = await croppieRef.current.result({ type: "blob", size: { width: 400, height: 400 }, format: "jpeg", quality: 0.9 });
-      croppieRef.current.destroy();
-      croppieRef.current = null;
+      setShowCropModal(null); // close modal after getting result
       const path = `${user.id}/avatar.jpg`;
       const { error } = await supabase.storage.from("progress-photos").upload(path, blob, { contentType: "image/jpeg", upsert: true });
       if (!error) {
         const { data } = await supabase.storage.from("progress-photos").createSignedUrl(path, 60 * 60 * 24 * 7);
         if (data?.signedUrl) setAvatarUrl(data.signedUrl);
+      } else {
+        console.error("Avatar upload error:", error);
       }
     } catch(e) { console.error("Avatar crop/upload error:", e); }
     setAvatarUploading(false);
