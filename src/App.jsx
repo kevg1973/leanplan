@@ -3577,10 +3577,8 @@ const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDar
     if (!file || !user?.id) return;
     setAvatarUploading(true);
     try {
-      // Try upsert — if file exists update it, otherwise insert
       const path = `${user.id}/avatar.jpg`;
-      await supabase.storage.from("progress-photos").remove([path]); // delete first to avoid update policy issue
-      const { error } = await supabase.storage.from("progress-photos").upload(path, file, { contentType: file.type });
+      const { error } = await supabase.storage.from("progress-photos").upload(path, file, { contentType: file.type, upsert: true });
       if (!error) {
         const { data } = await supabase.storage.from("progress-photos").createSignedUrl(path, 60 * 60 * 24 * 7);
         if (data?.signedUrl) setAvatarUrl(data.signedUrl);
