@@ -3070,26 +3070,29 @@ const ProgressPhotos = ({ user, entries, profile }) => {
     try {
       const { data, error } = await supabase.from("profiles").select("progress_photos").eq("id", user.id).single();
       if (!error && data?.progress_photos && data.progress_photos.length > 0) {
-        // Collect all paths needing signed URLs
+        // Collect all paths — only paths are stored, never stale URLs
         const paths = [];
         data.progress_photos.forEach(entry => {
           if (entry.front?.path) paths.push(entry.front.path);
           if (entry.side?.path) paths.push(entry.side.path);
         });
-        // Batch sign all URLs in one request
+        // Batch generate fresh signed URLs — 30 day expiry
         const urlMap = {};
         if (paths.length > 0) {
-          try {
-            const { data: signed } = await supabase.storage.from("progress-photos").createSignedUrls(paths, 60 * 60 * 24 * 7);
-            signed?.forEach(s => { if (s.signedUrl) urlMap[s.path] = s.signedUrl; });
-          } catch(e) { console.error("Signed URLs error:", e); }
+          const { data: signed, error: signErr } = await supabase.storage
+            .from("progress-photos")
+            .createSignedUrls(paths, 60 * 60 * 24 * 30);
+          if (signErr) console.error("Signed URLs error:", signErr);
+          signed?.forEach(s => { if (s.signedUrl) urlMap[s.path] = s.signedUrl; });
         }
         const refreshed = data.progress_photos.map(entry => ({
           ...entry,
-          ...(entry.front?.path ? { front: { ...entry.front, url: urlMap[entry.front.path] || "" } } : {}),
-          ...(entry.side?.path ? { side: { ...entry.side, url: urlMap[entry.side.path] || "" } } : {}),
+          ...(entry.front?.path ? { front: { path: entry.front.path, url: urlMap[entry.front.path] || "" } } : {}),
+          ...(entry.side?.path  ? { side:  { path: entry.side.path,  url: urlMap[entry.side.path]  || "" } } : {}),
         }));
         setPhotos(refreshed);
+      } else if (!error) {
+        setPhotos([]); // no photos yet, that's fine
       }
     } catch(e) { console.error("Load photos error:", e); }
     setLoading(false);
@@ -3098,7 +3101,13 @@ const ProgressPhotos = ({ user, entries, profile }) => {
   const savePhotos = async (updated) => {
     setPhotos(updated);
     if (!user?.id) return;
-    try { await supabase.from("profiles").upsert({ id: user.id, progress_photos: updated }); }
+    // Strip signed URLs before saving — they expire, only paths are persistent
+    const toSave = updated.map(entry => ({
+      ...entry,
+      ...(entry.front ? { front: { path: entry.front.path } } : {}),
+      ...(entry.side  ? { side:  { path: entry.side.path  } } : {}),
+    }));
+    try { await supabase.from("profiles").upsert({ id: user.id, progress_photos: toSave }); }
     catch(e) { console.error("Save photos error:", e); }
   };
 
@@ -3157,8 +3166,8 @@ const ProgressPhotos = ({ user, entries, profile }) => {
       // Upload file
       const { error: upErr } = await supabase.storage.from("progress-photos").upload(filename, file, { contentType: file.type, upsert: false });
       if (upErr) throw upErr;
-      // Get signed URL immediately so photo shows right away
-      const { data: signedData } = await supabase.storage.from("progress-photos").createSignedUrl(filename, 60 * 60 * 24 * 7);
+      // Get signed URL immediately so photo shows right away (30 day expiry)
+      const { data: signedData } = await supabase.storage.from("progress-photos").createSignedUrl(filename, 60 * 60 * 24 * 30);
       const url = signedData?.signedUrl || "";
       const currentWeightKg = entries?.length > 0 ? parseFloat((entries[entries.length-1].weight * 0.453592).toFixed(1)) : parseFloat(profile?.startWeight || 0);
       const updated = [...photos];
@@ -3640,8 +3649,9 @@ const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDar
   useEffect(() => {
     if (!user?.id) return;
     const loadAvatar = async () => {
-      const { data, error } = await supabase.storage.from("progress-photos").createSignedUrl(`${user.id}/avatar.jpg`, 60 * 60 * 24 * 7);
+      const { data, error } = await supabase.storage.from("progress-photos").createSignedUrl(`${user.id}/avatar.jpg`, 60 * 60 * 24 * 30);
       if (!error && data?.signedUrl) setAvatarUrl(data.signedUrl);
+      // If error, file doesn't exist yet — initials fallback shows automatically
     };
     loadAvatar();
   }, [user?.id]);
@@ -3678,7 +3688,7 @@ const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDar
       const path = `${user.id}/avatar.jpg`;
       const { error } = await supabase.storage.from("progress-photos").upload(path, blob, { contentType: "image/jpeg", upsert: true });
       if (!error) {
-        const { data } = await supabase.storage.from("progress-photos").createSignedUrl(path, 60 * 60 * 24 * 7);
+        const { data } = await supabase.storage.from("progress-photos").createSignedUrl(path, 60 * 60 * 24 * 30);
         if (data?.signedUrl) setAvatarUrl(data.signedUrl);
       } else {
         console.error("Avatar upload error:", error);
@@ -5651,9 +5661,9 @@ function AppInner() {
         {tab==="Today"&&<TodayTab profile={profile} entries={entries} mealLog={mealLog} setMealLog={setMealLog} workoutLog={workoutLog} water={water} setWater={setWater} journal={journal} setJournal={setJournal} measurements={measurements} mealPlan={mealPlan} setTab={setTab} />}
         <div style={{ display: tab==="Meals" ? "block" : "none" }}><MealsTab profile={profile} favourites={favourites} setFavourites={setFavourites} removed={removed} setRemoved={setRemoved} mealLog={mealLog} setMealLog={setMealLog} isPro={effectiveIsPro} onUpgrade={()=>setShowPaywall(true)} mealPlan={mealPlan} onSaveMealPlan={saveMealPlan} generating={generating} setGenerating={setGenerating} generateProgress={generateProgress} setGenerateProgress={setGenerateProgress} generateError={generateError} setGenerateError={setGenerateError} user={user} /></div>
         {tab==="Train"&&(effectiveIsPro ? <TrainTab profile={profile} workoutLog={workoutLog} setWorkoutLog={setWorkoutLog} setProfile={setProfile} savedWorkout={todaysWorkout} setSavedWorkout={setTodaysWorkout} /> : <LockedTab feature="Workout tracking, lift tracker and rest day planner" onUpgrade={()=>setShowPaywall(true)} />)}
-        {tab==="Track"&&(effectiveIsPro ? <TrackTab profile={profile} entries={entries} setEntries={fn=>setEntries(typeof fn==="function"?fn(entries):fn)} measurements={measurements} setMeasurements={setMeasurements} workoutLog={workoutLog} user={user} /> : <LockedTab feature="Progress tracking, measurements and body stats" onUpgrade={()=>setShowPaywall(true)} />)}
+        <div style={{ display: tab==="Track" ? "block" : "none" }}>{effectiveIsPro ? <TrackTab profile={profile} entries={entries} setEntries={fn=>setEntries(typeof fn==="function"?fn(entries):fn)} measurements={measurements} setMeasurements={setMeasurements} workoutLog={workoutLog} user={user} /> : <LockedTab feature="Progress tracking, measurements and body stats" onUpgrade={()=>setShowPaywall(true)} />}</div>
         {tab==="Coach"&&(effectiveIsPro ? <CoachTab profile={profile} setProfile={setProfile} mealPlan={mealPlan} mealLog={mealLog} workoutLog={workoutLog} entries={entries} isAdmin={proData?.customerId === "bypass"} /> : <LockedTab feature="AI personal coach" onUpgrade={()=>setShowPaywall(true)} />)}
-        {tab==="Profile"&&<ProfileTab profile={profile} setProfile={setProfile} onReset={handleReset} isDark={isDark} darkOverride={darkOverride} setDarkOverride={setDarkOverride} isPro={effectiveIsPro} proData={proData} onUpgrade={()=>setShowPaywall(true)} user={user} onShowAuth={()=>setShowAuth(true)} onClearMealPlan={()=>saveMealPlan(null)} avatarUrl={avatarUrl} setAvatarUrl={setAvatarUrl} />}
+        <div style={{ display: tab==="Profile" ? "block" : "none" }}><ProfileTab profile={profile} setProfile={setProfile} onReset={handleReset} isDark={isDark} darkOverride={darkOverride} setDarkOverride={setDarkOverride} isPro={effectiveIsPro} proData={proData} onUpgrade={()=>setShowPaywall(true)} user={user} onShowAuth={()=>setShowAuth(true)} onClearMealPlan={()=>saveMealPlan(null)} avatarUrl={avatarUrl} setAvatarUrl={setAvatarUrl} /></div>
 
       </div>
 
