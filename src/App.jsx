@@ -3596,7 +3596,7 @@ const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDar
   const [avatarUrl, setAvatarUrl] = useState(null);
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [showCropModal, setShowCropModal] = useState(null);
-  const croppieRef = { current: null };
+  const croppieRef = React.useRef(null);
 
   // Load avatar on mount
   useEffect(() => {
