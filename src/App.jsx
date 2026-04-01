@@ -3563,6 +3563,8 @@ const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDar
   const [showMealPlanNudge, setShowMealPlanNudge] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState(null);
   const [avatarUploading, setAvatarUploading] = useState(false);
+  const [showCropModal, setShowCropModal] = useState(null);
+  const croppieRef = { current: null };
 
   // Load avatar on mount
   useEffect(() => {
@@ -3570,27 +3572,53 @@ const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDar
     const loadAvatar = async () => {
       const { data, error } = await supabase.storage.from("progress-photos").createSignedUrl(`${user.id}/avatar.jpg`, 60 * 60 * 24 * 7);
       if (!error && data?.signedUrl) setAvatarUrl(data.signedUrl);
-      // If error, file doesn't exist yet — show initials fallback (no action needed)
     };
     loadAvatar();
   }, [user?.id]);
 
+  // Load croppie dynamically
+  const loadCroppie = () => new Promise((resolve) => {
+    if (window.Croppie) return resolve();
+    const css = document.createElement("link");
+    css.rel = "stylesheet";
+    css.href = "https://cdnjs.cloudflare.com/ajax/libs/croppie/2.6.5/croppie.min.css";
+    document.head.appendChild(css);
+    const script = document.createElement("script");
+    script.src = "https://cdnjs.cloudflare.com/ajax/libs/croppie/2.6.5/croppie.min.js";
+    script.onload = resolve;
+    document.head.appendChild(script);
+  });
+
   const handleAvatarUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file || !user?.id) return;
+    e.target.value = "";
+    await loadCroppie();
+    const objectUrl = URL.createObjectURL(file);
+    setShowCropModal({ url: objectUrl });
+  };
+
+  const handleCropSave = async () => {
+    if (!showCropModal || !croppieRef.current) return;
     setAvatarUploading(true);
+    setShowCropModal(null);
     try {
+      const blob = await croppieRef.current.result({ type: "blob", size: { width: 400, height: 400 }, format: "jpeg", quality: 0.9 });
+      croppieRef.current.destroy();
+      croppieRef.current = null;
       const path = `${user.id}/avatar.jpg`;
-      const { error } = await supabase.storage.from("progress-photos").upload(path, file, { contentType: file.type, upsert: true });
+      const { error } = await supabase.storage.from("progress-photos").upload(path, blob, { contentType: "image/jpeg", upsert: true });
       if (!error) {
         const { data } = await supabase.storage.from("progress-photos").createSignedUrl(path, 60 * 60 * 24 * 7);
         if (data?.signedUrl) setAvatarUrl(data.signedUrl);
-      } else {
-        console.error("Avatar upload error:", error);
       }
-    } catch(e) { console.error("Avatar upload error:", e); }
+    } catch(e) { console.error("Avatar crop/upload error:", e); }
     setAvatarUploading(false);
-    e.target.value = "";
+  };
+
+  const handleCropCancel = () => {
+    if (croppieRef.current) { croppieRef.current.destroy(); croppieRef.current = null; }
+    setShowCropModal(null);
   };
 
   const initials = (profile.name || "?").split(" ").map(w => w[0]).slice(0,2).join("").toUpperCase();
@@ -3939,13 +3967,15 @@ const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDar
     <div>
       <div style={{ textAlign:"center", padding:"24px 0 20px" }}>
         <div style={{ position:"relative", width:88, height:88, margin:"0 auto 12px" }}>
-          {avatarUrl ? (
-            <img src={avatarUrl} alt="Profile" style={{ width:88, height:88, borderRadius:99, objectFit:"cover", border:`3px solid ${C.accent}` }} />
-          ) : (
-            <div style={{ width:88, height:88, borderRadius:99, background:`linear-gradient(135deg, ${C.accent}, ${C.purple})`, display:"flex", alignItems:"center", justifyContent:"center", border:`3px solid ${C.accent}` }}>
-              <span style={{ color:"#fff", fontSize:28, fontWeight:700 }}>{initials}</span>
-            </div>
-          )}
+          <label htmlFor="avatar-upload" style={{ cursor:"pointer", display:"block" }}>
+            {avatarUrl ? (
+              <img src={avatarUrl} alt="Profile" style={{ width:88, height:88, borderRadius:99, objectFit:"cover", border:`3px solid ${C.accent}`, display:"block" }} />
+            ) : (
+              <div style={{ width:88, height:88, borderRadius:99, background:`linear-gradient(135deg, ${C.accent}, ${C.purple})`, display:"flex", alignItems:"center", justifyContent:"center", border:`3px solid ${C.accent}` }}>
+                <span style={{ color:"#fff", fontSize:28, fontWeight:700 }}>{initials}</span>
+              </div>
+            )}
+          </label>
           <label htmlFor="avatar-upload" style={{ position:"absolute", bottom:0, right:0, width:26, height:26, borderRadius:99, background:C.accent, border:`2px solid ${C.bg}`, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer" }}>
             {avatarUploading ? <span style={{ fontSize:10, color:"#fff" }}>...</span> : <span style={{ fontSize:13 }}>📷</span>}
           </label>
@@ -4109,6 +4139,33 @@ const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDar
         <Btn onClick={onReset} outline color={C.red} style={{ width:"100%" }}>Reset All Data</Btn>
       </div>
       <p style={{ color:C.muted, fontSize:12, textAlign:"center", marginTop:16, lineHeight:1.6 }}>General guidance only. Consult your GP before making significant diet or exercise changes.</p>
+
+      {/* Avatar crop modal */}
+      {showCropModal && (
+        <div style={{ position:"fixed", inset:0, zIndex:2000, background:"rgba(0,0,0,0.92)", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:20 }}>
+          <p style={{ color:"#fff", fontSize:16, fontWeight:700, marginBottom:16 }}>Drag & pinch to adjust</p>
+          <div
+            id="croppie-container"
+            ref={el => {
+              if (el && !croppieRef.current && window.Croppie) {
+                croppieRef.current = new window.Croppie(el, {
+                  viewport: { width: 250, height: 250, type: "circle" },
+                  boundary: { width: 300, height: 300 },
+                  showZoomer: true,
+                  enableOrientation: true,
+                });
+                croppieRef.current.bind({ url: showCropModal.url });
+              }
+            }}
+          />
+          <div style={{ display:"flex", gap:12, marginTop:24 }}>
+            <button onClick={handleCropCancel} style={{ background:"none", border:"1.5px solid rgba(255,255,255,0.3)", borderRadius:12, padding:"12px 28px", color:"#fff", fontSize:15, cursor:"pointer", fontFamily:FONT }}>Cancel</button>
+            <button onClick={handleCropSave} disabled={avatarUploading} style={{ background:C.accent, border:"none", borderRadius:12, padding:"12px 28px", color:"#fff", fontSize:15, fontWeight:700, cursor:"pointer", fontFamily:FONT }}>
+              {avatarUploading ? "Saving..." : "Save Photo"}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
