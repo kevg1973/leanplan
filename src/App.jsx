@@ -3102,10 +3102,10 @@ const ProgressPhotos = ({ user, entries, profile }) => {
     if (file.size > 10 * 1024 * 1024) { setUploadError("File too large — max 10MB"); return; }
     setUploading(true); setUploadError(null);
     try {
-      const compressed = await compressImage(file);
       const dateKey = todayKey();
-      const filename = `${user.id}/${dateKey}_${pose}_${Date.now()}.jpg`;
-      const { error: upErr } = await supabase.storage.from("progress-photos").upload(filename, compressed, { contentType: "image/jpeg", upsert: false });
+      const ext = file.type === "image/png" ? "png" : "jpg";
+      const filename = `${user.id}/${dateKey}_${pose}_${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("progress-photos").upload(filename, file, { contentType: file.type, upsert: false });
       if (upErr) throw upErr;
       const { data: signedData } = await supabase.storage.from("progress-photos").createSignedUrl(filename, 60 * 60 * 24 * 7);
       const currentWeightKg = entries?.length > 0 ? parseFloat((entries[entries.length-1].weight * 0.453592).toFixed(1)) : parseFloat(profile?.startWeight || 0);
@@ -3253,7 +3253,7 @@ const ProgressPhotos = ({ user, entries, profile }) => {
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginBottom:10 }}>
             {selectedForCompare.map((s, i) => (
               <div key={i}>
-                <img src={s.photo[s.pose]?.url} alt="" style={{ width:"100%", aspectRatio:"3/4", objectFit:"cover", borderRadius:10, border:`2px solid ${C.accent}` }} />
+                <img src={s.photo[s.pose]?.url} alt="" style={{ width:"100%", aspectRatio:"3/4", objectFit:"cover", borderRadius:10, border:`2px solid ${C.accent}`, imageOrientation:"from-image" }} />
                 <p style={{ color:C.muted, fontSize:11, textAlign:"center", margin:"4px 0 0" }}>{fmtPhotoDate(s.photo.date)}</p>
                 <p style={{ color:C.accent, fontSize:12, textAlign:"center", fontWeight:700, margin:"2px 0 0" }}>{s.photo.weightKg}kg · {s.pose}</p>
               </div>
@@ -3299,7 +3299,7 @@ const ProgressPhotos = ({ user, entries, profile }) => {
                     <div style={{ position:"relative" }}>
                       <img src={entry[pose].url} alt={pose}
                         onClick={() => !compareMode && setViewPhoto({ url:entry[pose].url, date:entry.date, weightKg:entry.weightKg, pose })}
-                        style={{ width:"100%", aspectRatio:"3/4", objectFit:"cover", borderRadius:10, display:"block", cursor:compareMode?"default":"pointer",
+                        style={{ width:"100%", aspectRatio:"3/4", objectFit:"cover", borderRadius:10, display:"block", cursor:compareMode?"default":"pointer", imageOrientation:"from-image",
                           border: compareMode && selectedForCompare.find(s=>s.key===`${entry.date}_${pose}`) ? `3px solid ${C.accent}` : `1px solid ${C.border}` }}
                       />
                       {compareMode && (
@@ -3331,7 +3331,7 @@ const ProgressPhotos = ({ user, entries, profile }) => {
       {viewPhoto && (
         <div onClick={() => setViewPhoto(null)}
           style={{ position:"fixed", top:0, left:0, right:0, bottom:0, background:"rgba(0,0,0,0.92)", zIndex:9999, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:20 }}>
-          <img src={viewPhoto.url} alt="" style={{ maxWidth:"100%", maxHeight:"80vh", objectFit:"contain", borderRadius:12 }} />
+          <img src={viewPhoto.url} alt="" style={{ maxWidth:"100%", maxHeight:"80vh", objectFit:"contain", borderRadius:12, imageOrientation:"from-image" }} />
           <p style={{ color:"rgba(255,255,255,0.7)", fontSize:13, marginTop:12 }}>{fmtPhotoDate(viewPhoto.date)} · {viewPhoto.weightKg}kg · {viewPhoto.pose}</p>
           <p style={{ color:"rgba(255,255,255,0.4)", fontSize:12, marginTop:4 }}>Tap anywhere to close</p>
         </div>
