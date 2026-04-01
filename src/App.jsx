@@ -2401,7 +2401,7 @@ const MealsTab = ({ profile, favourites, setFavourites, removed, setRemoved, mea
                   if (!text.trim()) { alert("Tick the items you need first, then copy."); return; }
                   navigator.clipboard.writeText(text).then(()=>{ alert("Ticked items copied to clipboard!"); });
                 }}
-                style={{ flex:1, background:C.sectionBg, border:`1px solid ${C.border}`, borderRadius:10, padding:"10px 0", color:C.text, fontSize:13, fontWeight:600, cursor:"pointer", fontFamily:FONT }}
+                style={{ flex:1, background:C.accent, border:`1px solid ${C.accent}`, borderRadius:10, padding:"10px 0", color:"#fff", fontSize:13, fontWeight:600, cursor:"pointer", fontFamily:FONT }}
               >📋 Copy list</button>
               <button
                 onClick={async ()=>{
@@ -2423,7 +2423,7 @@ const MealsTab = ({ profile, favourites, setFavourites, removed, setRemoved, mea
                   } catch(e) { alert("Could not send email. Please try again."); }
                   setListEmailSending(false);
                 }}
-                style={{ flex:1, background: listEmailSent ? `${C.green}15` : C.sectionBg, border:`1px solid ${listEmailSent ? C.green : C.border}`, borderRadius:10, padding:"10px 0", color: listEmailSent ? C.green : C.text, fontSize:13, fontWeight:600, cursor:"pointer", fontFamily:FONT }}
+                style={{ flex:1, background: listEmailSent ? C.green : C.purple, border:`1px solid ${listEmailSent ? C.green : C.purple}`, borderRadius:10, padding:"10px 0", color:"#fff", fontSize:13, fontWeight:600, cursor:"pointer", fontFamily:FONT }}
               >{listEmailSending ? "Sending..." : listEmailSent ? "✓ Sent!" : "📧 Email list"}</button>
             </div>
 
