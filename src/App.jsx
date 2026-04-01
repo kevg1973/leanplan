@@ -2395,8 +2395,8 @@ const MealsTab = ({ profile, favourites, setFavourites, removed, setRemoved, mea
             <div style={{ display:"flex", gap:8, marginTop:12, marginBottom:8 }}>
               <button
                 onClick={()=>{
-                  const text = shoppingCategories.map(cat =>
-                    cat.name + "\n" + cat.items.filter(item=>!isInPantry(item.display)).map(item => `• ${item.display}${item.amounts?.[0] ? " ("+item.amounts[0]+")" : ""}`).join("\n")
+                  const text = shoppingCategories.map((cat, ci) =>
+                    cat.name + "\n" + cat.items.filter((item, ii) => !isInPantry(item.display) && !checked[`${ci}-${ii}`]).map(item => `• ${item.display}${item.amounts?.[0] ? " ("+item.amounts[0]+")" : ""}`).join("\n")
                   ).filter(s => s.includes("•")).join("\n\n");
                   navigator.clipboard.writeText(text).then(()=>{ alert("Shopping list copied to clipboard!"); });
                 }}
@@ -2406,9 +2406,9 @@ const MealsTab = ({ profile, favourites, setFavourites, removed, setRemoved, mea
                 onClick={async ()=>{
                   if (!user?.email) { alert("Sign in to email your shopping list"); return; }
                   setListEmailSending(true);
-                  const toBuy = shoppingCategories.map(cat => ({
+                  const toBuy = shoppingCategories.map((cat, ci) => ({
                     ...cat,
-                    items: cat.items.filter(item => !isInPantry(item.display))
+                    items: cat.items.filter((item, ii) => !isInPantry(item.display) && !checked[`${ci}-${ii}`])
                   })).filter(cat => cat.items.length > 0);
                   try {
                     const res = await fetch("/api/send-shopping-list", {
