@@ -3053,25 +3053,47 @@ const ProgressPhotos = ({ user, entries, profile }) => {
     catch(e) { console.error("Save photos error:", e); }
   };
 
-  const compressImage = (file) => new Promise((resolve, reject) => {
-    const img = new Image();
-    const url = URL.createObjectURL(file);
-    img.onload = () => {
+  const compressImage = async (file) => {
+    // Use createImageBitmap with imageOrientation — correctly handles EXIF on iOS Safari 16+
+    // Falls back to basic canvas if not supported
+    try {
+      const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
       const maxDim = 1200;
-      let w = img.width, h = img.height;
+      let w = bitmap.width, h = bitmap.height;
       if (w > maxDim || h > maxDim) {
         if (w > h) { h = Math.round(h * maxDim / w); w = maxDim; }
         else { w = Math.round(w * maxDim / h); h = maxDim; }
       }
       const canvas = document.createElement("canvas");
       canvas.width = w; canvas.height = h;
-      canvas.getContext("2d").drawImage(img, 0, 0, w, h);
-      URL.revokeObjectURL(url);
-      canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error("Compression failed")), "image/jpeg", 0.82);
-    };
-    img.onerror = reject;
-    img.src = url;
-  });
+      canvas.getContext("2d").drawImage(bitmap, 0, 0, w, h);
+      bitmap.close();
+      return new Promise((resolve, reject) => {
+        canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error("Compression failed")), "image/jpeg", 0.82);
+      });
+    } catch(e) {
+      // Fallback for older browsers
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        const url = URL.createObjectURL(file);
+        img.onload = () => {
+          const maxDim = 1200;
+          let w = img.width, h = img.height;
+          if (w > maxDim || h > maxDim) {
+            if (w > h) { h = Math.round(h * maxDim / w); w = maxDim; }
+            else { w = Math.round(w * maxDim / h); h = maxDim; }
+          }
+          const canvas = document.createElement("canvas");
+          canvas.width = w; canvas.height = h;
+          canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+          URL.revokeObjectURL(url);
+          canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error("Compression failed")), "image/jpeg", 0.82);
+        };
+        img.onerror = reject;
+        img.src = url;
+      });
+    }
+  };
 
   const handleFileSelect = async (e, pose) => {
     const file = e.target.files?.[0];
