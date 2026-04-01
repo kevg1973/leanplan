@@ -3118,14 +3118,14 @@ const ProgressPhotos = ({ user, entries, profile }) => {
       const filename = `${user.id}/${dateKey}_${pose}_${Date.now()}.${ext}`;
       const { error: upErr } = await supabase.storage.from("progress-photos").upload(filename, file, { contentType: file.type, upsert: false });
       if (upErr) throw upErr;
-      const { data: signedData } = await supabase.storage.from("progress-photos").createSignedUrl(filename, 60 * 60 * 24 * 7);
       const currentWeightKg = entries?.length > 0 ? parseFloat((entries[entries.length-1].weight * 0.453592).toFixed(1)) : parseFloat(profile?.startWeight || 0);
       const updated = [...photos];
       const existingIdx = updated.findIndex(p => p.date === dateKey);
+      // Store path only — URL regenerated on load via batch createSignedUrls
       if (existingIdx >= 0) {
-        updated[existingIdx] = { ...updated[existingIdx], [pose]: { path: filename, url: signedData?.signedUrl || "" } };
+        updated[existingIdx] = { ...updated[existingIdx], [pose]: { path: filename, url: "" } };
       } else {
-        updated.unshift({ date: dateKey, weightKg: currentWeightKg, [pose]: { path: filename, url: signedData?.signedUrl || "" } });
+        updated.unshift({ date: dateKey, weightKg: currentWeightKg, [pose]: { path: filename, url: "" } });
       }
       await savePhotos(updated);
     } catch(err) { console.error("Upload error:", err); setUploadError("Upload failed — please try again"); }
@@ -3565,10 +3565,9 @@ const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDar
   useEffect(() => {
     if (!user?.id) return;
     const loadAvatar = async () => {
-      try {
-        const { data } = await supabase.storage.from("progress-photos").createSignedUrl(`${user.id}/avatar.jpg`, 60 * 60 * 24 * 7);
-        if (data?.signedUrl) setAvatarUrl(data.signedUrl);
-      } catch(e) {}
+      const { data, error } = await supabase.storage.from("progress-photos").createSignedUrl(`${user.id}/avatar.jpg`, 60 * 60 * 24 * 7);
+      if (!error && data?.signedUrl) setAvatarUrl(data.signedUrl);
+      // If error, file doesn't exist yet — show initials fallback (no action needed)
     };
     loadAvatar();
   }, [user?.id]);
@@ -3578,10 +3577,15 @@ const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDar
     if (!file || !user?.id) return;
     setAvatarUploading(true);
     try {
-      const { error } = await supabase.storage.from("progress-photos").upload(`${user.id}/avatar.jpg`, file, { contentType: file.type, upsert: true });
+      // Try upsert — if file exists update it, otherwise insert
+      const path = `${user.id}/avatar.jpg`;
+      await supabase.storage.from("progress-photos").remove([path]); // delete first to avoid update policy issue
+      const { error } = await supabase.storage.from("progress-photos").upload(path, file, { contentType: file.type });
       if (!error) {
-        const { data } = await supabase.storage.from("progress-photos").createSignedUrl(`${user.id}/avatar.jpg`, 60 * 60 * 24 * 7);
+        const { data } = await supabase.storage.from("progress-photos").createSignedUrl(path, 60 * 60 * 24 * 7);
         if (data?.signedUrl) setAvatarUrl(data.signedUrl);
+      } else {
+        console.error("Avatar upload error:", error);
       }
     } catch(e) { console.error("Avatar upload error:", e); }
     setAvatarUploading(false);
