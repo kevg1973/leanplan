@@ -3056,69 +3056,16 @@ const ProgressPhotos = ({ user, entries, profile }) => {
   const compressImage = (file) => new Promise((resolve, reject) => {
     const img = new Image();
     const url = URL.createObjectURL(file);
-    img.onload = async () => {
-      // Read EXIF orientation
-      let orientation = 1;
-      try {
-        const buf = await file.slice(0, 65536).arrayBuffer();
-        const view = new DataView(buf);
-        if (view.getUint16(0, false) === 0xFFD8) {
-          let offset = 2;
-          while (offset < view.byteLength - 2) {
-            const marker = view.getUint16(offset, false);
-            offset += 2;
-            if (marker === 0xFFE1) {
-              offset += 2;
-              if (view.getUint32(offset, false) === 0x45786966) {
-                offset += 6;
-                const little = view.getUint16(offset, false) === 0x4949;
-                const ifdOffset = offset + view.getUint32(offset + 4, little);
-                const entries = view.getUint16(ifdOffset, little);
-                for (let i = 0; i < entries; i++) {
-                  const tag = view.getUint16(ifdOffset + 2 + i * 12, little);
-                  if (tag === 0x0112) {
-                    orientation = view.getUint16(ifdOffset + 2 + i * 12 + 8, little);
-                    break;
-                  }
-                }
-              }
-              break;
-            } else if ((marker & 0xFF00) !== 0xFF00) break;
-            else offset += view.getUint16(offset, false);
-          }
-        }
-      } catch(e) {}
-
+    img.onload = () => {
       const maxDim = 1200;
-      let sw = img.naturalWidth, sh = img.naturalHeight;
-      let scale = 1;
-      if (sw > maxDim || sh > maxDim) {
-        scale = sw > sh ? maxDim / sw : maxDim / sh;
+      let w = img.width, h = img.height;
+      if (w > maxDim || h > maxDim) {
+        if (w > h) { h = Math.round(h * maxDim / w); w = maxDim; }
+        else { w = Math.round(w * maxDim / h); h = maxDim; }
       }
-      const w = Math.round(sw * scale);
-      const h = Math.round(sh * scale);
-
       const canvas = document.createElement("canvas");
-      const ctx = canvas.getContext("2d");
-
-      // For orientations 5-8 the image is rotated 90/270 so swap canvas dims
-      const rotated = orientation >= 5 && orientation <= 8;
-      canvas.width  = rotated ? h : w;
-      canvas.height = rotated ? w : h;
-
-      ctx.save();
-      switch (orientation) {
-        case 2: ctx.translate(canvas.width, 0); ctx.scale(-1, 1); break;
-        case 3: ctx.translate(canvas.width, canvas.height); ctx.rotate(Math.PI); break;
-        case 4: ctx.translate(0, canvas.height); ctx.scale(1, -1); break;
-        case 5: ctx.rotate(0.5*Math.PI); ctx.scale(1, -1); break;
-        case 6: ctx.translate(canvas.width, 0); ctx.rotate(0.5*Math.PI); break;
-        case 7: ctx.translate(canvas.width, canvas.height); ctx.rotate(0.5*Math.PI); ctx.scale(1, -1); break;
-        case 8: ctx.translate(0, canvas.height); ctx.rotate(-0.5*Math.PI); break;
-      }
-      ctx.drawImage(img, 0, 0, w, h);
-      ctx.restore();
-
+      canvas.width = w; canvas.height = h;
+      canvas.getContext("2d").drawImage(img, 0, 0, w, h);
       URL.revokeObjectURL(url);
       canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error("Compression failed")), "image/jpeg", 0.82);
     };
