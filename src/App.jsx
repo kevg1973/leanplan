@@ -3054,9 +3054,39 @@ const ProgressPhotos = ({ user, entries, profile }) => {
   };
 
   const compressImage = (file) => new Promise((resolve, reject) => {
+    // Read EXIF orientation to fix iOS front camera mirroring
+    const getOrientation = (file) => new Promise(res => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const view = new DataView(e.target.result);
+        if (view.getUint16(0, false) !== 0xFFD8) return res(1);
+        let offset = 2;
+        while (offset < view.byteLength) {
+          const marker = view.getUint16(offset, false);
+          offset += 2;
+          if (marker === 0xFFE1) {
+            if (view.getUint32(offset += 2, false) !== 0x45786966) return res(1);
+            const little = view.getUint16(offset += 6, false) === 0x4949;
+            offset += view.getUint32(offset + 4, little);
+            const tags = view.getUint16(offset, little);
+            offset += 2;
+            for (let i = 0; i < tags; i++) {
+              if (view.getUint16(offset + (i * 12), little) === 0x0112) {
+                return res(view.getUint16(offset + (i * 12) + 8, little));
+              }
+            }
+          } else if ((marker & 0xFF00) !== 0xFF00) break;
+          else offset += view.getUint16(offset, false);
+        }
+        res(1);
+      };
+      reader.readAsArrayBuffer(file.slice(0, 65536));
+    });
+
     const img = new Image();
     const url = URL.createObjectURL(file);
-    img.onload = () => {
+    img.onload = async () => {
+      const orientation = await getOrientation(file);
       const maxDim = 1200;
       let w = img.width, h = img.height;
       if (w > maxDim || h > maxDim) {
@@ -3064,8 +3094,21 @@ const ProgressPhotos = ({ user, entries, profile }) => {
         else { w = Math.round(w * maxDim / h); h = maxDim; }
       }
       const canvas = document.createElement("canvas");
-      canvas.width = w; canvas.height = h;
-      canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+      const ctx = canvas.getContext("2d");
+      // Swap canvas dimensions for rotated orientations
+      if ([5,6,7,8].includes(orientation)) { canvas.width = h; canvas.height = w; }
+      else { canvas.width = w; canvas.height = h; }
+      // Apply EXIF transform
+      switch(orientation) {
+        case 2: ctx.transform(-1,0,0,1,w,0); break;
+        case 3: ctx.transform(-1,0,0,-1,w,h); break;
+        case 4: ctx.transform(1,0,0,-1,0,h); break;
+        case 5: ctx.transform(0,1,1,0,0,0); break;
+        case 6: ctx.transform(0,1,-1,0,h,0); break;
+        case 7: ctx.transform(0,-1,-1,0,h,w); break;
+        case 8: ctx.transform(0,-1,1,0,0,w); break;
+      }
+      ctx.drawImage(img, 0, 0, w, h);
       URL.revokeObjectURL(url);
       canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error("Compression failed")), "image/jpeg", 0.82);
     };
