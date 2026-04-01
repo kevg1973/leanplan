@@ -342,9 +342,8 @@ app.post("/api/send-shopping-list", async (req, res) => {
 
       <!-- Header -->
       <div style="background:linear-gradient(160deg,#0d1b2a 0%,#1a1a2e 40%,#16213e 70%,#0f3460 100%);padding:40px 32px 32px;border-radius:16px 16px 0 0;">
-        <div style="display:flex;align-items:center;gap:14px;margin-bottom:28px;">
-          <img src="https://www.leanplan.uk/leanplan_app_icon.png" alt="LeanPlan" style="width:52px;height:52px;border-radius:12px;display:block;" />
-          <img src="https://www.leanplan.uk/leanplan_splash_logo.png" alt="LeanPlan" style="height:28px;display:block;" />
+        <div style="margin-bottom:28px;">
+          <img src="https://www.leanplan.uk/leanplan-email-logo.png" alt="LeanPlan" style="height:44px;display:block;" />
         </div>
         <h1 style="color:#ffffff;font-size:26px;font-weight:700;margin:0 0 8px;letter-spacing:-0.3px;">🛒 Your Shopping List</h1>
         <p style="color:rgba(255,255,255,0.6);font-size:14px;margin:0;">${planDays}-day meal plan · ${itemCount} item${itemCount===1?"":"s"} to buy</p>
