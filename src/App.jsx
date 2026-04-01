@@ -3458,7 +3458,7 @@ const TrackTab = ({ profile, entries, setEntries, measurements, setMeasurements,
         </Section>}
       </>}
 
-      {activeSection==="photos"&&<ProgressPhotos user={user} entries={entries} profile={profile} />}
+      <div style={{ display: activeSection==="photos" ? "block" : "none" }}><ProgressPhotos user={user} entries={entries} profile={profile} /></div>
 
       {activeSection==="stats"&&<>
         {/* Measurements section merged into Stats */}
@@ -3583,7 +3583,7 @@ const AvatarCropModal = ({ url, onSave, onCancel, saving, croppieRef }) => {
 };
 
 // ── PROFILE TAB ───────────────────────────────────────────────────────────────
-const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDarkOverride, isPro, proData, onUpgrade, user, onShowAuth, onClearMealPlan }) => {
+const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDarkOverride, isPro, proData, onUpgrade, user, onShowAuth, onClearMealPlan, avatarUrl, setAvatarUrl }) => {
   const [editing, setEditing] = useState(null);
   const [tempData, setTempData] = useState({});
   const [showChangePw, setShowChangePw] = useState(false);
@@ -3593,7 +3593,7 @@ const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDar
   const [pwError, setPwError] = useState(null);
   const [pwSuccess, setPwSuccess] = useState(false);
   const [showMealPlanNudge, setShowMealPlanNudge] = useState(false);
-  const [avatarUrl, setAvatarUrl] = useState(null);
+  // avatarUrl/setAvatarUrl lifted to App level (persists across tab switches)
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [showCropModal, setShowCropModal] = useState(null);
   const croppieRef = React.useRef(null);
@@ -5129,6 +5129,7 @@ function AppInner() {
   };
   // Meal generation state — lives at App level so it survives tab switches
   const [generating, setGenerating] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState(null);
   const [generateProgress, setGenerateProgress] = useState(null);
   const [generateError, setGenerateError] = useState(null);
 
@@ -5614,7 +5615,7 @@ function AppInner() {
         {tab==="Train"&&(effectiveIsPro ? <TrainTab profile={profile} workoutLog={workoutLog} setWorkoutLog={setWorkoutLog} setProfile={setProfile} savedWorkout={todaysWorkout} setSavedWorkout={setTodaysWorkout} /> : <LockedTab feature="Workout tracking, lift tracker and rest day planner" onUpgrade={()=>setShowPaywall(true)} />)}
         {tab==="Track"&&(effectiveIsPro ? <TrackTab profile={profile} entries={entries} setEntries={fn=>setEntries(typeof fn==="function"?fn(entries):fn)} measurements={measurements} setMeasurements={setMeasurements} workoutLog={workoutLog} user={user} /> : <LockedTab feature="Progress tracking, measurements and body stats" onUpgrade={()=>setShowPaywall(true)} />)}
         {tab==="Coach"&&(effectiveIsPro ? <CoachTab profile={profile} setProfile={setProfile} mealPlan={mealPlan} mealLog={mealLog} workoutLog={workoutLog} entries={entries} isAdmin={proData?.customerId === "bypass"} /> : <LockedTab feature="AI personal coach" onUpgrade={()=>setShowPaywall(true)} />)}
-        {tab==="Profile"&&<ProfileTab profile={profile} setProfile={setProfile} onReset={handleReset} isDark={isDark} darkOverride={darkOverride} setDarkOverride={setDarkOverride} isPro={effectiveIsPro} proData={proData} onUpgrade={()=>setShowPaywall(true)} user={user} onShowAuth={()=>setShowAuth(true)} onClearMealPlan={()=>saveMealPlan(null)} />}
+        {tab==="Profile"&&<ProfileTab profile={profile} setProfile={setProfile} onReset={handleReset} isDark={isDark} darkOverride={darkOverride} setDarkOverride={setDarkOverride} isPro={effectiveIsPro} proData={proData} onUpgrade={()=>setShowPaywall(true)} user={user} onShowAuth={()=>setShowAuth(true)} onClearMealPlan={()=>saveMealPlan(null)} avatarUrl={avatarUrl} setAvatarUrl={setAvatarUrl} />}
 
       </div>
 
