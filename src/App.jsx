@@ -1870,6 +1870,8 @@ const MealsTab = ({ profile, favourites, setFavourites, removed, setRemoved, mea
   const [suppOpen, setSuppOpen] = useState(null);
   // generating/generateProgress/generateError lifted to App level (survives tab switches)
   const [swapConfirm, setSwapConfirm] = useState(null); // { meal, slotIndex }
+  const [listEmailSent, setListEmailSent] = useState(false);
+  const [listEmailSending, setListEmailSending] = useState(false);
   const [swappingId, setSwappingId] = useState(null);
   const [style, setStyle] = useState("all"); // kept for non-guided
   const [checked, setChecked] = useState({});
@@ -2389,7 +2391,41 @@ const MealsTab = ({ profile, favourites, setFavourites, removed, setRemoved, mea
               );
             })}
 
-            <div style={{ display:"flex", gap:8, marginTop:12 }}>
+            {/* Share shopping list */}
+            <div style={{ display:"flex", gap:8, marginTop:12, marginBottom:8 }}>
+              <button
+                onClick={()=>{
+                  const text = shoppingCategories.map(cat =>
+                    cat.name + "\n" + cat.items.filter(item=>!isInPantry(item.display)).map(item => `• ${item.display}${item.amounts?.[0] ? " ("+item.amounts[0]+")" : ""}`).join("\n")
+                  ).filter(s => s.includes("•")).join("\n\n");
+                  navigator.clipboard.writeText(text).then(()=>{ alert("Shopping list copied to clipboard!"); });
+                }}
+                style={{ flex:1, background:C.sectionBg, border:`1px solid ${C.border}`, borderRadius:10, padding:"10px 0", color:C.text, fontSize:13, fontWeight:600, cursor:"pointer", fontFamily:FONT }}
+              >📋 Copy list</button>
+              <button
+                onClick={async ()=>{
+                  if (!profile?.email) { alert("Sign in to email your shopping list"); return; }
+                  setListEmailSending(true);
+                  const toBuy = shoppingCategories.map(cat => ({
+                    ...cat,
+                    items: cat.items.filter(item => !isInPantry(item.display))
+                  })).filter(cat => cat.items.length > 0);
+                  try {
+                    const res = await fetch("/api/send-shopping-list", {
+                      method:"POST", headers:{"Content-Type":"application/json"},
+                      body: JSON.stringify({ email: profile.email, name: profile.name, categories: toBuy, planDays: mealPlan?.days?.length || planDays })
+                    });
+                    const data = await res.json();
+                    if (data.success) setListEmailSent(true);
+                    else alert("Could not send email. Please try again.");
+                  } catch(e) { alert("Could not send email. Please try again."); }
+                  setListEmailSending(false);
+                }}
+                style={{ flex:1, background: listEmailSent ? `${C.green}15` : C.sectionBg, border:`1px solid ${listEmailSent ? C.green : C.border}`, borderRadius:10, padding:"10px 0", color: listEmailSent ? C.green : C.text, fontSize:13, fontWeight:600, cursor:"pointer", fontFamily:FONT }}
+              >{listEmailSending ? "Sending..." : listEmailSent ? "✓ Sent!" : "📧 Email list"}</button>
+            </div>
+
+            <div style={{ display:"flex", gap:8, marginTop:4 }}>
               <button onClick={()=>setChecked({})} style={{ flex:1, background:"none", border:`1px solid ${C.border}`, borderRadius:10, padding:"8px 0", color:C.muted, fontSize:13, cursor:"pointer", fontFamily:FONT }}>Reset ticks</button>
               <button onClick={()=>savePantry([])} style={{ flex:1, background:"none", border:`1px solid ${C.border}`, borderRadius:10, padding:"8px 0", color:C.muted, fontSize:13, cursor:"pointer", fontFamily:FONT }}>Clear pantry</button>
               <button onClick={()=>setSection("meals")} style={{ flex:1, background:"none", border:`1px solid ${C.accent}`, borderRadius:10, padding:"8px 0", color:C.accent, fontSize:13, fontWeight:600, cursor:"pointer", fontFamily:FONT }}>↻ New plan</button>
