@@ -3066,33 +3066,24 @@ const ProgressPhotos = ({ user, entries, profile }) => {
     loadPhotos();
   }, [user?.id]);
 
+  const getPublicUrl = (path) => {
+    const { data } = supabase.storage.from("progress-photos").getPublicUrl(path);
+    return data?.publicUrl || "";
+  };
+
   const loadPhotos = async () => {
     try {
       const { data, error } = await supabase.from("profiles").select("progress_photos").eq("id", user.id).single();
       if (!error && data?.progress_photos && data.progress_photos.length > 0) {
-        // Collect all paths — only paths are stored, never stale URLs
-        const paths = [];
-        data.progress_photos.forEach(entry => {
-          if (entry.front?.path) paths.push(entry.front.path);
-          if (entry.side?.path) paths.push(entry.side.path);
-        });
-        // Batch generate fresh signed URLs — 30 day expiry
-        const urlMap = {};
-        if (paths.length > 0) {
-          const { data: signed, error: signErr } = await supabase.storage
-            .from("progress-photos")
-            .createSignedUrls(paths, 60 * 60 * 24 * 30);
-          if (signErr) console.error("Signed URLs error:", signErr);
-          signed?.forEach(s => { if (s.signedUrl) urlMap[s.path] = s.signedUrl; });
-        }
+        // Public bucket — no signing needed, URLs never expire
         const refreshed = data.progress_photos.map(entry => ({
           ...entry,
-          ...(entry.front?.path ? { front: { path: entry.front.path, url: urlMap[entry.front.path] || "" } } : {}),
-          ...(entry.side?.path  ? { side:  { path: entry.side.path,  url: urlMap[entry.side.path]  || "" } } : {}),
+          ...(entry.front?.path ? { front: { path: entry.front.path, url: getPublicUrl(entry.front.path) } } : {}),
+          ...(entry.side?.path  ? { side:  { path: entry.side.path,  url: getPublicUrl(entry.side.path)  } } : {}),
         }));
         setPhotos(refreshed);
       } else if (!error) {
-        setPhotos([]); // no photos yet, that's fine
+        setPhotos([]);
       }
     } catch(e) { console.error("Load photos error:", e); }
     setLoading(false);
@@ -3166,9 +3157,9 @@ const ProgressPhotos = ({ user, entries, profile }) => {
       // Upload file
       const { error: upErr } = await supabase.storage.from("progress-photos").upload(filename, file, { contentType: file.type, upsert: false });
       if (upErr) throw upErr;
-      // Get signed URL immediately so photo shows right away (30 day expiry)
-      const { data: signedData } = await supabase.storage.from("progress-photos").createSignedUrl(filename, 60 * 60 * 24 * 30);
-      const url = signedData?.signedUrl || "";
+      // Public bucket — get permanent public URL immediately
+      const { data: pubData } = supabase.storage.from("progress-photos").getPublicUrl(filename);
+      const url = pubData?.publicUrl || "";
       const currentWeightKg = entries?.length > 0 ? parseFloat((entries[entries.length-1].weight * 0.453592).toFixed(1)) : parseFloat(profile?.startWeight || 0);
       const updated = [...photos];
       const existingIdx = updated.findIndex(p => p.date === dateKey);
@@ -3649,9 +3640,15 @@ const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDar
   useEffect(() => {
     if (!user?.id) return;
     const loadAvatar = async () => {
-      const { data, error } = await supabase.storage.from("progress-photos").createSignedUrl(`${user.id}/avatar.jpg`, 60 * 60 * 24 * 30);
-      if (!error && data?.signedUrl) setAvatarUrl(data.signedUrl);
-      // If error, file doesn't exist yet — initials fallback shows automatically
+      // Public bucket — just check if file exists by trying to fetch the public URL
+      const { data } = supabase.storage.from("progress-photos").getPublicUrl(`${user.id}/avatar.jpg`);
+      if (data?.publicUrl) {
+        // Verify file actually exists with a HEAD request
+        try {
+          const res = await fetch(data.publicUrl, { method: "HEAD" });
+          if (res.ok) setAvatarUrl(data.publicUrl);
+        } catch(e) {}
+      }
     };
     loadAvatar();
   }, [user?.id]);
@@ -3688,8 +3685,8 @@ const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDar
       const path = `${user.id}/avatar.jpg`;
       const { error } = await supabase.storage.from("progress-photos").upload(path, blob, { contentType: "image/jpeg", upsert: true });
       if (!error) {
-        const { data } = await supabase.storage.from("progress-photos").createSignedUrl(path, 60 * 60 * 24 * 30);
-        if (data?.signedUrl) setAvatarUrl(data.signedUrl);
+        const { data } = supabase.storage.from("progress-photos").getPublicUrl(path);
+        if (data?.publicUrl) setAvatarUrl(data.publicUrl);
       } else {
         console.error("Avatar upload error:", error);
       }
