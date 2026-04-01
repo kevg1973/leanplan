@@ -2418,7 +2418,7 @@ const MealsTab = ({ profile, favourites, setFavourites, removed, setRemoved, mea
                       body: JSON.stringify({ email: user.email, name: profile.name, categories: toBuy, planDays: mealPlan?.days?.length || planDays })
                     });
                     const data = await res.json();
-                    if (data.success) setListEmailSent(true);
+                    if (data.success) { setListEmailSent(true); setTimeout(() => setListEmailSent(false), 3000); }
                     else alert("Could not send email. Please try again.");
                   } catch(e) { alert("Could not send email. Please try again."); }
                   setListEmailSending(false);
