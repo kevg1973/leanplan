@@ -3017,6 +3017,11 @@ const ProgressPhotos = ({ user, entries, profile }) => {
   const [compareMode, setCompareMode] = useState(false);
   const [selectedForCompare, setSelectedForCompare] = useState([]);
   const [viewPhoto, setViewPhoto] = useState(null);
+  const [flippedPhotos, setFlippedPhotos] = useState({}); // key: "date_pose"
+  const toggleFlip = (date, pose) => {
+    const key = `${date}_${pose}`;
+    setFlippedPhotos(f => ({ ...f, [key]: !f[key] }));
+  };
 
   useEffect(() => {
     if (!user?.id) { setLoading(false); return; }
@@ -3298,8 +3303,9 @@ const ProgressPhotos = ({ user, entries, profile }) => {
                   <>
                     <div style={{ position:"relative" }}>
                       <img src={entry[pose].url} alt={pose}
-                        onClick={() => !compareMode && setViewPhoto({ url:entry[pose].url, date:entry.date, weightKg:entry.weightKg, pose })}
-                        style={{ width:"100%", aspectRatio:"3/4", objectFit:"cover", borderRadius:10, display:"block", cursor:compareMode?"default":"pointer", imageOrientation:"from-image",
+                        onClick={() => !compareMode && setViewPhoto({ url:entry[pose].url, date:entry.date, weightKg:entry.weightKg, pose, flipped: !!flippedPhotos[`${entry.date}_${pose}`] })}
+                        style={{ width:"100%", aspectRatio:"3/4", objectFit:"cover", borderRadius:10, display:"block", cursor:compareMode?"default":"pointer",
+                          transform: flippedPhotos[`${entry.date}_${pose}`] ? "scaleX(-1)" : "none",
                           border: compareMode && selectedForCompare.find(s=>s.key===`${entry.date}_${pose}`) ? `3px solid ${C.accent}` : `1px solid ${C.border}` }}
                       />
                       {compareMode && (
@@ -3312,6 +3318,12 @@ const ProgressPhotos = ({ user, entries, profile }) => {
                     {!compareMode && (
                       <button onClick={() => deletePhoto(entry.date, pose)}
                         style={{ position:"absolute", top:6, right:6, background:"rgba(0,0,0,0.55)", border:"none", borderRadius:99, width:22, height:22, color:"#fff", fontSize:14, cursor:"pointer", lineHeight:"22px", textAlign:"center", padding:0 }}>×</button>
+                    )}
+                    {!compareMode && (
+                      <button onClick={() => toggleFlip(entry.date, pose)}
+                        style={{ width:"100%", marginTop:4, background:"none", border:`1px solid ${C.border}`, borderRadius:8, padding:"4px 0", color:C.muted, fontSize:11, fontWeight:600, cursor:"pointer", fontFamily:FONT }}>
+                        ⇄ Flip
+                      </button>
                     )}
 
                   </>
@@ -3331,7 +3343,7 @@ const ProgressPhotos = ({ user, entries, profile }) => {
       {viewPhoto && (
         <div onClick={() => setViewPhoto(null)}
           style={{ position:"fixed", top:0, left:0, right:0, bottom:0, background:"rgba(0,0,0,0.92)", zIndex:9999, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:20 }}>
-          <img src={viewPhoto.url} alt="" style={{ maxWidth:"100%", maxHeight:"80vh", objectFit:"contain", borderRadius:12, imageOrientation:"from-image" }} />
+          <img src={viewPhoto.url} alt="" style={{ maxWidth:"100%", maxHeight:"80vh", objectFit:"contain", borderRadius:12, transform: viewPhoto.flipped ? "scaleX(-1)" : "none" }} />
           <p style={{ color:"rgba(255,255,255,0.7)", fontSize:13, marginTop:12 }}>{fmtPhotoDate(viewPhoto.date)} · {viewPhoto.weightKg}kg · {viewPhoto.pose}</p>
           <p style={{ color:"rgba(255,255,255,0.4)", fontSize:12, marginTop:4 }}>Tap anywhere to close</p>
         </div>
