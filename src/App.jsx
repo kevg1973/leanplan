@@ -13,6 +13,7 @@ import { AvatarCropModal } from "./components/AvatarCropModal.jsx";
 import { Card, Section, Row, Btn, Chip, BigChip, Toggle, TInput, StatBox, ProgressBar } from "./components/ui.jsx";
 import { Chart } from "./components/Chart.jsx";
 import { MealCarousel } from "./components/MealCarousel.jsx";
+import { JournalCard } from "./components/JournalCard.jsx";
 
 const LIGHT = {
   bg:"#f2f2f7", surface:"#ffffff", card:"#ffffff",
@@ -601,20 +602,6 @@ const filterMeals = (profile, removed=[]) => ALL_MEALS.filter(m => {
 });
 
 // ── TODAY TAB ─────────────────────────────────────────────────────────────────
-
-const JournalCard = ({ journal, setJournal, today }) => {
-  const [showJournal, setShowJournal] = useState(false);
-  return (
-    <Card>
-      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:showJournal?12:0 }}>
-        <div style={{ display:"flex", alignItems:"center", gap:6 }}><Icon name="note" size={14} color={C.muted} /><p style={{ color:C.muted, fontSize:12, fontWeight:600, letterSpacing:"0.06em", margin:0 }}>DAILY JOURNAL</p></div>
-        <button onClick={()=>setShowJournal(s=>!s)} style={{ background:"none", border:"none", color:C.accent, fontSize:13, cursor:"pointer", fontFamily:FONT, fontWeight:600 }}>{showJournal?"Done":"Write"}</button>
-      </div>
-      {showJournal&&<textarea value={journal[today]||""} onChange={e=>setJournal(j=>({...j,[today]:e.target.value}))} placeholder="How are you feeling today? Energy levels, sleep, anything notable..." style={{ width:"100%", minHeight:80, background:C.sectionBg, border:`1px solid ${C.border}`, borderRadius:10, padding:"10px 12px", fontSize:14, fontFamily:FONT, color:C.text, outline:"none", resize:"vertical" }} />}
-      {!showJournal&&journal[today]&&<p style={{ color:C.textSec, fontSize:14, margin:0, marginTop:8, lineHeight:1.6 }}>{journal[today]}</p>}
-    </Card>
-  );
-};
 
 const TodayTab = ({ profile, entries, mealLog, setMealLog, workoutLog, water, setWater, journal, setJournal, measurements, mealPlan, setTab }) => {
   const today = todayKey();
