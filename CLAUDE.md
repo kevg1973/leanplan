@@ -3,14 +3,14 @@
 ## Project Overview
 LeanPlan is a React PWA fitness and nutrition app. Live at https://www.leanplan.uk. Built by Kevin Grey (solo developer, Manchester UK), with Claude as primary development partner.
 
-**Current update number: 200**
+**Current update number: 235**
 
 ---
 
 ## Tech Stack
 | Service | Role |
 |---|---|
-| React + Vite | Frontend (`src/App.jsx` — ~5,000 lines) |
+| React + Vite | Frontend (component-split — see file structure below) |
 | Express | Backend (`server.js`) |
 | Railway | Hosting + auto-deploy from GitHub |
 | Supabase | Auth + database (RLS enabled, email confirmation OFF) |
@@ -64,6 +64,51 @@ Columns: `id`, `email`, `profile_data` (jsonb), `entries`, `favourites`, `remove
 ---
 
 ## App Architecture
+
+### Frontend File Structure
+```
+src/
+  App.jsx              (597 lines — state management, auth, Supabase sync, routing shell)
+  main.jsx             (React root)
+  supabase.js          (Supabase client)
+  constants.js         (FONT, TABS, TAB_ICON_MAP, DAY_NAMES, ALLERGENS, DISLIKES_LIST, TRIAL_DAYS)
+  helpers.js           (toKg, fromKg, todayKey, fmtDate, calcTDEE, calcBMI, bmiCategory, PACE_OPTIONS, getPace, trial helpers)
+  ThemeContext.jsx      (LIGHT/DARK themes, ThemeProvider, useTheme hook)
+  components/
+    ui.jsx             (Card, Section, Row, Btn, Chip, BigChip, Toggle, TInput, StatBox, ProgressBar)
+    Icon.jsx           (SVG icon system)
+    ErrorBoundary.jsx  (React error boundary)
+    Onboarding.jsx     (17-step onboarding + BuildingPlanScreen, ScrollPicker, OOption, OChip, OBtn)
+    TodayTab.jsx       (Today dashboard — calorie ring, macros, workout/meal summaries)
+    MealsTab.jsx       (Meal plans, shopping list, supplements)
+    TrainTab.jsx       (Workout programme, exercise tracker, weekly calendar)
+    TrackTab.jsx       (Weight tracking, measurements, stats, workout history)
+    CoachTab.jsx       (AI coach chat interface)
+    ProfileTab.jsx     (Profile editing, settings, account management)
+    MealCarousel.jsx   (Swipeable meal card carousel)
+    MealPlanLoader.jsx (Animated meal plan generation screen)
+    Chart.jsx          (SVG weight progress chart)
+    JournalCard.jsx    (Daily journal entry card)
+    LiftTracker.jsx    (Exercise weight progress tracker)
+    ProgressPhotos.jsx (Progress photo upload, timeline, comparison)
+    PacePicker.jsx     (Weight loss pace selector)
+    PaywallModal.jsx   (Subscription paywall with Stripe checkout)
+    CreateAccountScreen.jsx (Post-onboarding account creation)
+    AuthScreen.jsx     (Sign in / forgot password)
+    WelcomeScreen.jsx  (First-time landing screen)
+    TrialExpiredScreen.jsx (Trial ended — subscribe prompt)
+    WeeklyCheckIn.jsx  (Monday morning check-in modal)
+    ProBanner.jsx      (Pro upgrade banner)
+    LockedTab.jsx      (Locked feature placeholder)
+    TipSplashScreen.jsx (Daily tip splash on app open)
+    AvatarCropModal.jsx (Profile photo crop modal)
+  data/
+    exercises.js       (EXERCISE_DB — full exercise database with steps, tips, muscles)
+    workouts.js        (PERIODISATION_BLOCKS, buildWorkout, getCurrentBlock, getWeeklyPlan, WORKOUTS, SUPPS, DAILY_TIPS)
+    meals.js           (ALL_MEALS, filterMeals)
+```
+
+Theme is managed via `ThemeContext.jsx` — extracted components use `useTheme()` hook. `App.jsx` still uses a mutable `let C` for the main shell; all other components are fully context-driven.
 
 ### Guided Mode (default)
 LeanPlan prescribes everything — meal plans, workout schedule, shopping list.
@@ -141,7 +186,7 @@ Deferred — UI stub exists, shows "coming soon".
 ---
 
 ## Known Patterns & Gotchas
-- `App.jsx` is ~5,000 lines — be careful with large edits, use targeted string replacements
+- `App.jsx` is 597 lines (split complete) — components are in `src/components/`, data in `src/data/`
 - `proData.customerId === "bypass"` means admin/bypass Pro user
 - `proData.customerId === null` means trial user
 - Trial is stored in `leanplan_trial_start` localStorage AND Supabase `trial_start` column
@@ -173,7 +218,7 @@ Deferred — UI stub exists, shows "coming soon".
 11. Marketing promo pack (Instagram, TikTok, YouTube)
 
 ### Technical Debt
-12. App.jsx split into component files
+12. ~~App.jsx split into component files~~ ✅ Done (5,692 → 597 lines, 27 extracted files)
 13. Error monitoring (Sentry)
 14. API cost monitoring
 
