@@ -1,20 +1,13 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import { supabase } from "./supabase.js";
-import { ThemeProvider } from "./ThemeContext.jsx";
-import { FONT, TABS, TAB_ICON_MAP, DAY_NAMES, ALLERGENS, DISLIKES_LIST, TRIAL_DAYS } from "./constants.js";
-import { toKg, fromKg, pick, todayKey, fmtDate, getTrialStart, setTrialStart, getTrialDaysLeft, isTrialActive, isTrialExpired, calcTDEE, calcBMI, PACE_OPTIONS, getPace } from "./helpers.js";
+import { ThemeProvider, LIGHT, DARK } from "./ThemeContext.jsx";
+import { FONT, TABS, TAB_ICON_MAP } from "./constants.js";
+import { toKg, todayKey, setTrialStart, getTrialDaysLeft, isTrialActive, isTrialExpired } from "./helpers.js";
 import { Icon } from "./components/Icon.jsx";
 import { ErrorBoundary } from "./components/ErrorBoundary.jsx";
 import { Onboarding } from "./components/Onboarding.jsx";
 import { TipSplashScreen } from "./components/TipSplashScreen.jsx";
-import { MealPlanLoader } from "./components/MealPlanLoader.jsx";
 import { ProBanner } from "./components/ProBanner.jsx";
-import { AvatarCropModal } from "./components/AvatarCropModal.jsx";
-import { Card, Section, Row, Btn, Chip, BigChip, Toggle, TInput, StatBox, ProgressBar } from "./components/ui.jsx";
-import { Chart } from "./components/Chart.jsx";
-import { MealCarousel } from "./components/MealCarousel.jsx";
-import { JournalCard } from "./components/JournalCard.jsx";
-import { LiftTracker } from "./components/LiftTracker.jsx";
 import { LockedTab } from "./components/LockedTab.jsx";
 import { WelcomeScreen } from "./components/WelcomeScreen.jsx";
 import { TrialExpiredScreen } from "./components/TrialExpiredScreen.jsx";
@@ -22,39 +15,15 @@ import { WeeklyCheckIn } from "./components/WeeklyCheckIn.jsx";
 import { PaywallModal } from "./components/PaywallModal.jsx";
 import { CreateAccountScreen } from "./components/CreateAccountScreen.jsx";
 import { AuthScreen } from "./components/AuthScreen.jsx";
-import { PacePicker } from "./components/PacePicker.jsx";
 import { CoachTab } from "./components/CoachTab.jsx";
-import { ProgressPhotos } from "./components/ProgressPhotos.jsx";
 import { TodayTab } from "./components/TodayTab.jsx";
 import { TrackTab } from "./components/TrackTab.jsx";
 import { MealsTab } from "./components/MealsTab.jsx";
 import { TrainTab } from "./components/TrainTab.jsx";
 import { ProfileTab } from "./components/ProfileTab.jsx";
-import { EXERCISE_DB } from "./data/exercises.js";
-import { PERIODISATION_BLOCKS, getProgrammeLengthWeeks, getCurrentBlock, buildWorkout, WORKOUTS, SHOPPING, SUPPS, DAILY_TIPS, getWeeklyPlan } from "./data/workouts.js";
-import { ALL_MEALS, filterMeals } from "./data/meals.js";
+import { DAILY_TIPS } from "./data/workouts.js";
 
-const LIGHT = {
-  bg:"#f2f2f7", surface:"#ffffff", card:"#ffffff",
-  accent:"#007aff", green:"#34c759", red:"#ff3b30",
-  orange:"#ff9500", purple:"#af52de", teal:"#5ac8fa",
-  pink:"#ff2d55", yellow:"#ffcc00", indigo:"#5856d6",
-  text:"#000000", textSec:"#3c3c43", muted:"#8e8e93",
-  border:"#e5e5ea", divider:"#c6c6c8", sectionBg:"#f2f2f7",
-};
-
-const DARK = {
-  bg:"#000000", surface:"#1c1c1e", card:"#2c2c2e",
-  accent:"#0a84ff", green:"#30d158", red:"#ff453a",
-  orange:"#ff9f0a", purple:"#bf5af2", teal:"#5ac8fa",
-  pink:"#ff375f", yellow:"#ffd60a", indigo:"#5e5ce6",
-  text:"#ffffff", textSec:"#ebebf5", muted:"#8e8e93",
-  border:"#3a3a3c", divider:"#48484a", sectionBg:"#1c1c1e",
-};
-
-// C is set dynamically in the App — components read it via the global
 let C = LIGHT;
-
 
 // ── MAIN ──────────────────────────────────────────────────────────────────────
 function AppInner() {
@@ -370,10 +339,6 @@ function AppInner() {
         </span>
       </div>
       <p style={{ color:loadText }}>Loading...</p></div></div>;
-
-
-
-
 
   // Apply theme first — needed by all render paths
   const isDark = darkOverride !== null ? darkOverride : systemDark;
