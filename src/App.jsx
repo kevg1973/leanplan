@@ -4163,10 +4163,10 @@ const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDar
             <Row label="Data sync" value="✓ Synced to cloud" color={C.green} />
             <Row label="Change password" value="••••••••" onClick={()=>setShowChangePw(true)} last />
             <div style={{ padding:"8px 16px 4px" }}>
-              <p onClick={async()=>{ await supabase.auth.signOut(); localStorage.removeItem("leanplan_v4"); window.location.reload(); }}
-                style={{ color:C.red, fontSize:14, fontWeight:500, textAlign:"center", cursor:"pointer", padding:"8px 0" }}>
+              <button onClick={async()=>{ await supabase.auth.signOut(); localStorage.removeItem("leanplan_v4"); window.location.reload(); }}
+                style={{ width:"100%", background:"none", border:`1px solid ${C.red}44`, borderRadius:10, color:C.red, fontSize:14, fontWeight:600, textAlign:"center", cursor:"pointer", padding:"10px 0", fontFamily:FONT }}>
                 Sign Out
-              </p>
+              </button>
             </div>
           </div>
         ) : (
