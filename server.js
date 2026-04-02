@@ -270,57 +270,19 @@ app.post("/api/stripe/webhook", async (req, res) => {
     try {
       if (subscription.cancel_at_period_end) {
         const cancelAt = new Date(subscription.cancel_at * 1000).toISOString();
+        const cancelDate = new Date(subscription.cancel_at * 1000).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
         const { error } = await supabaseAdmin
           .from("profiles")
           .update({ stripe_plan: subscription.items?.data?.[0]?.price?.recurring?.interval === "year" ? "annual" : "monthly", cancel_at: cancelAt })
           .eq("stripe_customer_id", customerId);
         if (error) console.error("Webhook: failed to store cancel_at:", error.message);
         else console.log(`Webhook: subscription cancellation scheduled for ${cancelAt}`);
-      } else {
-        // Reactivated — clear cancel_at
-        const { error } = await supabaseAdmin
-          .from("profiles")
-          .update({ cancel_at: null })
-          .eq("stripe_customer_id", customerId);
-        if (error) console.error("Webhook: failed to clear cancel_at:", error.message);
-        else console.log(`Webhook: subscription reactivated for customer ${customerId}`);
-      }
-    } catch (err) {
-      console.error("Webhook subscription.updated error:", err.message);
-    }
-  }
 
-  // ── Subscription cancelled or expired ────────────────────────────────────────
-  if (event.type === "customer.subscription.deleted" ||
-      event.type === "customer.subscription.paused") {
-    const subscription = event.data.object;
-    const customerId = subscription.customer;
-
-    try {
-      const { error } = await supabaseAdmin
-        .from("profiles")
-        .update({ is_pro: false, cancel_at: null })
-        .eq("stripe_customer_id", customerId);
-
-      if (error) {
-        console.error("Webhook: failed to revoke pro for customer", customerId, error.message);
-      } else {
-        console.log(`Webhook: pro revoked for customer ${customerId}`);
-      }
-
-      // Send cancellation email
-      if (event.type === "customer.subscription.deleted") {
+        // Send cancellation email
         try {
           const customer = await stripe.customers.retrieve(customerId);
           const email = customer.email;
           if (email) {
-            const periodEnd = subscription.current_period_end
-              ? new Date(subscription.current_period_end * 1000).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })
-              : null;
-            const accessLine = periodEnd
-              ? `Your plan remains active until <strong style="color:#ffffff;">${periodEnd}</strong>. After that date, your meal plans, workout programme, progress data and photos will no longer be accessible.`
-              : `Your access to LeanPlan Pro features has now ended.`;
-
             await resend.emails.send({
               from: "LeanPlan <hello@leanplan.uk>",
               to: email,
@@ -346,7 +308,7 @@ app.post("/api/stripe/webhook", async (req, res) => {
 
           <p style="margin:0 0 16px;font-size:15px;color:#9ca3af;line-height:1.7;">Your LeanPlan Pro subscription has been cancelled.</p>
 
-          <p style="margin:0 0 16px;font-size:15px;color:#9ca3af;line-height:1.7;">${accessLine}</p>
+          <p style="margin:0 0 16px;font-size:15px;color:#9ca3af;line-height:1.7;">Your plan remains active until <strong style="color:#ffffff;">${cancelDate}</strong>. After that date, your meal plans, workout programme, progress data and photos will no longer be accessible.</p>
 
           <p style="margin:0 0 28px;font-size:15px;color:#9ca3af;line-height:1.7;">If you change your mind, you can resubscribe at any time — all your data, progress and photos will still be there waiting for you.</p>
 
@@ -381,6 +343,36 @@ app.post("/api/stripe/webhook", async (req, res) => {
         } catch (emailErr) {
           console.error("Webhook: failed to send cancellation email:", emailErr.message);
         }
+      } else {
+        // Reactivated — clear cancel_at
+        const { error } = await supabaseAdmin
+          .from("profiles")
+          .update({ cancel_at: null })
+          .eq("stripe_customer_id", customerId);
+        if (error) console.error("Webhook: failed to clear cancel_at:", error.message);
+        else console.log(`Webhook: subscription reactivated for customer ${customerId}`);
+      }
+    } catch (err) {
+      console.error("Webhook subscription.updated error:", err.message);
+    }
+  }
+
+  // ── Subscription cancelled or expired ────────────────────────────────────────
+  if (event.type === "customer.subscription.deleted" ||
+      event.type === "customer.subscription.paused") {
+    const subscription = event.data.object;
+    const customerId = subscription.customer;
+
+    try {
+      const { error } = await supabaseAdmin
+        .from("profiles")
+        .update({ is_pro: false, cancel_at: null })
+        .eq("stripe_customer_id", customerId);
+
+      if (error) {
+        console.error("Webhook: failed to revoke pro for customer", customerId, error.message);
+      } else {
+        console.log(`Webhook: pro revoked for customer ${customerId}`);
       }
     } catch (err) {
       console.error("Webhook subscription.deleted error:", err.message);
