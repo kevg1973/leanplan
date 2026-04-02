@@ -420,7 +420,7 @@ export const TrackTab = ({ profile, entries, setEntries, measurements, setMeasur
   const pct = profile.targetLbs>0?Math.min(100,Math.round((lost/profile.targetLbs)*100)):0;
   const tdee = calcTDEE(profile);
   const bmi = calcBMI(profile);
-  const bmiCat = bmi?bmiCategory(parseFloat(bmi)):null;
+  const bmiCat = bmi?bmiCategory(parseFloat(bmi), C):null;
 
   const addWeightEntry = () => {
     if (!newW||isNaN(newW)) return;

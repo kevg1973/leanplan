@@ -1,3 +1,5 @@
+import { getPace } from "../utils/index.js";
+
 // ── All Meals ─────────────────────────────────────────────────────────────────
 export const ALL_MEALS = [
   { id:"m1", tags:["balanced","breakfast","gf","df"], name:"Scrambled Eggs & Roasted Veg", time:"7:30 AM", cals:370, protein:30, carbs:28, fat:14, allergens:[], items:["3 large eggs","Cherry tomatoes (100g)","Spinach (60g)","2 corn tortillas (GF)","Soya milk splash for coffee"], method:"1. Preheat oven to 200°C. Halve tomatoes, toss with olive oil and roast 15 min.\n2. Whisk eggs with a pinch of salt. Heat a non-stick pan on medium-low.\n3. Add eggs, stir slowly — take off heat while slightly wet.\n4. Wilt spinach in the same pan for 30 sec.\n5. Warm tortillas in a dry pan 30 sec each side.\n6. Serve eggs on tortillas with roasted tomatoes and spinach." },
