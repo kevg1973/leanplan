@@ -34,6 +34,6 @@ export const ThemeProvider = ({ children }) => {
 
 export const useTheme = () => {
   const ctx = useContext(ThemeContext);
-  if (!ctx) throw new Error("useTheme must be used within ThemeProvider");
+  if (!ctx) return { C: LIGHT, isDark: false, darkOverride: null, setDarkOverride: () => {} };
   return ctx;
 };

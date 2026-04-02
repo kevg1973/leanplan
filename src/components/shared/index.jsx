@@ -187,8 +187,9 @@ export const PacePicker = ({ value, onChange, targetLbs }) => {
 
 
 // ── Chart ─────────────────────────────────────────────────────────────────────
-export const Chart = ({ entries, startWeight, targetWeight, color=C.accent }) => {
+export const Chart = ({ entries, startWeight, targetWeight, color }) => {
   const { C } = useTheme();
+  const chartColor = color || C.accent;
   const pts=[{label:"Start",weight:startWeight},...entries];
   if (pts.length<2) return null;
   const ws=pts.map(p=>p.weight).concat(targetWeight);
