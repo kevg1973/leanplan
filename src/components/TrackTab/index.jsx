@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useTheme } from "../../context/ThemeContext.jsx";
 import { FONT } from "../../constants/theme.js";
-import { todayKey, fmtDate, toKg, fromKg, calcTDEE, calcBMI, bmiCategory } from "../../utils/index.js";
+import { todayKey, fmtDate, toKg, fromKg, calcTDEE, calcBMI, bmiCategory, getPace } from "../../utils/index.js";
 import { Card, Icon, Btn, Chip, ProgressBar, Section, Row, StatBox, Chart } from "../shared/index.jsx";
 import { supabase } from "../../supabase.js";
 

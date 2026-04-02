@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useTheme } from "../../context/ThemeContext.jsx";
 import { FONT } from "../../constants/theme.js";
-import { todayKey, toKg } from "../../utils/index.js";
+import { todayKey, toKg, fmtDate } from "../../utils/index.js";
 import { Card, Icon, Btn } from "../shared/index.jsx";
 
 // ── COACH TAB ─────────────────────────────────────────────────────────────────

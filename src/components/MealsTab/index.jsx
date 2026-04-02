@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useTheme } from "../../context/ThemeContext.jsx";
 import { FONT } from "../../constants/theme.js";
 import { ALL_MEALS, SHOPPING, SUPPS } from "../../constants/data.js";
-import { todayKey, fmtDate, toKg } from "../../utils/index.js";
+import { todayKey, fmtDate, toKg, calcTDEE, getPace } from "../../utils/index.js";
 import { Card, Icon, Btn, Chip, ProgressBar, Section, Row } from "../shared/index.jsx";
 import { supabase } from "../../supabase.js";
 

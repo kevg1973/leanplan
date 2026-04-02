@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from "react";
 import { useTheme } from "../../context/ThemeContext.jsx";
 import { FONT } from "../../constants/theme.js";
 import { ALLERGENS, DISLIKES_LIST, PACE_OPTIONS } from "../../constants/config.js";
-import { toKg, fromKg, getPace } from "../../utils/index.js";
+import { toKg, fromKg, getPace, calcTDEE } from "../../utils/index.js";
+import { WORKOUTS } from "../../constants/data.js";
 import { Btn, BigChip, Chip, TInput } from "../shared/index.jsx";
 
 // ── Onboarding ────────────────────────────────────────────────────────────────

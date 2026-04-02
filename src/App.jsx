@@ -4,6 +4,7 @@ import { supabase } from "./supabase.js";
 import { FONT } from "./constants/theme.js";
 import { TABS, RESET_KEYS, TRIAL_DAYS } from "./constants/config.js";
 import { todayKey, fmtDate, toKg, fromKg, getTrialStart, setTrialStart, getTrialDaysLeft, isTrialActive, isTrialExpired, getPace, calcTDEE, calcBMI } from "./utils/index.js";
+import { DAILY_TIPS } from "./constants/data.js";
 import { Icon, Btn, Card, TAB_ICON_MAP } from "./components/shared/index.jsx";
 import { Onboarding } from "./components/Onboarding/index.jsx";
 import { TodayTab, TipSplashScreen } from "./components/TodayTab/index.jsx";

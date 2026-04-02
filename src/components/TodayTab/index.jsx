@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useTheme } from "../../context/ThemeContext.jsx";
 import { FONT } from "../../constants/theme.js";
-import { DAILY_TIPS, ALL_MEALS } from "../../constants/data.js";
-import { todayKey, fmtDate, calcTDEE, toKg } from "../../utils/index.js";
+import { DAILY_TIPS, ALL_MEALS, WORKOUTS, getCurrentBlock, getProgrammeLengthWeeks, getWeeklyPlan } from "../../constants/data.js";
+import { todayKey, fmtDate, calcTDEE, toKg, getPace, pick, getTrialDaysLeft } from "../../utils/index.js";
 import { Card, Icon, Btn, ProgressBar, StatBox } from "../shared/index.jsx";
 
 // ── Meal filter ───────────────────────────────────────────────────────────────
