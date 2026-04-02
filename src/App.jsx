@@ -4163,7 +4163,7 @@ const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride, setDar
             <Row label="Data sync" value="✓ Synced to cloud" color={C.green} />
             <Row label="Change password" value="••••••••" onClick={()=>setShowChangePw(true)} last />
             <div style={{ padding:"8px 16px 4px" }}>
-              <p onClick={async()=>{ await supabase.auth.signOut(); setUser(null); }}
+              <p onClick={async()=>{ await supabase.auth.signOut(); localStorage.removeItem("leanplan_v4"); window.location.reload(); }}
                 style={{ color:C.red, fontSize:14, fontWeight:500, textAlign:"center", cursor:"pointer", padding:"8px 0" }}>
                 Sign Out
               </p>
@@ -5593,10 +5593,8 @@ function AppInner() {
     }
 
     RESET_KEYS.forEach(k => localStorage.removeItem(k));
-    setProfile(null); setEntries([]); setFavourites([]); setRemoved([]);
-    setMealLog({}); setWorkoutLog({}); setWater({}); setJournal({}); setMeasurements([]);
-    setIsPro(false); setProData(null); setMealPlan(null);
-    setUser(null); supabase.auth.signOut();
+    await supabase.auth.signOut();
+    window.location.reload();
   };
 
   return (
