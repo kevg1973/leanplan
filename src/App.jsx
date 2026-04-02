@@ -275,21 +275,54 @@ function AppInner() {
         if (session?.user) {
           setUser(session.user);
           loadFromLocal();
-          try {
-            // Check if Supabase has profile data
-            const { data } = await supabase.from("profiles").select("profile_data").eq("id", session.user.id).single();
-            if (!data?.profile_data || Object.keys(data.profile_data).length === 0) {
-              // Profile is empty — push local data up immediately
-              const local = JSON.parse(localStorage.getItem("leanplan_v4") || "{}");
-              if (local.profile) {
-                console.log("Pushing local profile to Supabase...");
-                await saveToSupabase(session.user.id, local);
-                setProfile(local.profile);
+
+          // Google OAuth return from CreateAccountScreen — recover pending profile
+          const pendingGoogleProfile = localStorage.getItem("leanplan_pending_google_profile");
+          if (pendingGoogleProfile && event === "SIGNED_IN") {
+            try {
+              const googleProfile = JSON.parse(pendingGoogleProfile);
+              localStorage.removeItem("leanplan_pending_google_profile");
+              setProfile(googleProfile);
+              setShowCreateAccount(false);
+              setPendingProfile(null);
+              setTrialStart();
+              const trialStart = localStorage.getItem("leanplan_trial_start");
+              await supabase.from("profiles").upsert({
+                id: session.user.id,
+                email: session.user.email,
+                profile_data: googleProfile,
+                trial_start: trialStart,
+                reminder_sent: false,
+                entries: [], favourites: [], removed: [],
+                meal_log: {}, workout_log: {}, water: {}, journal: {},
+                measurements: [],
+              });
+              try { localStorage.setItem("leanplan_v4", JSON.stringify({ profile: googleProfile, entries:[], favourites:[], removed:[], mealLog:{}, workoutLog:{}, water:{}, journal:{}, measurements:[], darkOverride:null })); } catch(e){}
+              console.log("Google OAuth: saved pending profile for", session.user.email);
+            } catch(e) { console.error("Google OAuth profile save failed:", e); }
+          } else {
+            try {
+              // Check if Supabase has profile data
+              const { data } = await supabase.from("profiles").select("profile_data").eq("id", session.user.id).single();
+              if (!data?.profile_data || Object.keys(data.profile_data).length === 0) {
+                // Profile is empty — push local data up immediately
+                const local = JSON.parse(localStorage.getItem("leanplan_v4") || "{}");
+                if (local.profile) {
+                  console.log("Pushing local profile to Supabase...");
+                  await saveToSupabase(session.user.id, local);
+                  setProfile(local.profile);
+                }
+              } else {
+                await loadFromSupabase(session.user.id);
               }
-            } else {
-              await loadFromSupabase(session.user.id);
-            }
-          } catch(e){ console.error("Supabase sync failed:", e); }
+            } catch(e){ console.error("Supabase sync failed:", e); }
+          }
+
+          // Set Google avatar if user has one and no custom avatar exists
+          const googleAvatar = session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture;
+          if (googleAvatar && !avatarUrl) {
+            setAvatarUrl(googleAvatar);
+          }
           clearTimeout(safetyTimer);
           finishLoading();
         }
@@ -305,6 +338,9 @@ function AppInner() {
           try {
             await loadFromSupabase(session.user.id);
           } catch(e){ console.error("Supabase sync failed:", e); }
+          // Set Google avatar on session restore if no custom avatar
+          const gAvatar = session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture;
+          if (gAvatar && !avatarUrl) setAvatarUrl(gAvatar);
           clearTimeout(safetyTimer);
           finishLoading();
         } else {
