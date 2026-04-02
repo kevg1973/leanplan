@@ -117,8 +117,9 @@ For example:
   const bottomRef = useState(null);
   const messagesEndRef = { current: null };
 
-  const showNotification = (msg, color=C.green) => {
-    setNotification({ msg, color });
+  const showNotification = (msg, color) => {
+    const notifColor = color || C.green;
+    setNotification({ msg, color: notifColor });
     setTimeout(() => setNotification(null), 3000);
   };
 
