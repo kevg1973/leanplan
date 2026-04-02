@@ -4946,6 +4946,7 @@ function AppInner() {
   };
 
   return (
+    <ThemeProvider isDark={isDark}>
     <div style={{ background:C.bg, minHeight:"100vh", fontFamily:FONT, color:C.text, width:"100%", overflowX:"hidden" }}>
       <style>{`* { box-sizing:border-box; margin:0; padding:0; } input,select,textarea { outline:none; } html,body { width:100%; overflow-x:hidden; background:${C.bg}; font-family:${FONT}; color-scheme:${isDark?"dark":"light"}; } #root { width:100%; } ::-webkit-scrollbar { width:4px; } ::-webkit-scrollbar-thumb { background:${C.divider}; border-radius:4px; } ::placeholder { color:${C.muted}; }`}</style>
 
@@ -5052,9 +5053,10 @@ function AppInner() {
         />
       )}
     </div>
+    </ThemeProvider>
   );
 }
 
 export default function App() {
-  return <ErrorBoundary><ThemeProvider isDark={true}><AppInner /></ThemeProvider></ErrorBoundary>;
+  return <ErrorBoundary><AppInner /></ErrorBoundary>;
 }
