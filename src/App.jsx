@@ -4992,7 +4992,7 @@ const TrialExpiredScreen = ({ onSubscribe }) => (
         ].map((f,i)=><p key={i} style={{ color:C.text, fontSize:14, margin:"6px 0" }}>{f}</p>)}
       </div>
       <Btn onClick={onSubscribe} color={C.accent} style={{ width:"100%", fontSize:17, padding:"16px 0", marginBottom:12 }}>
-        Subscribe from £9.99/month
+        Continue my fitness journey →
       </Btn>
       <p style={{ color:C.muted, fontSize:12, lineHeight:1.6 }}>
         Cancel anytime · Secure payment by Stripe
@@ -5638,9 +5638,9 @@ function AppInner() {
         {!isPro && isTrialActive() && (()=>{
           const daysLeft = getTrialDaysLeft();
           const trialMsg = daysLeft >= 7
-            ? { icon:"🎯", text:"Your personalised plan is ready", sub:"Everything is set up — just follow today's plan", color:"#34c759", bg:"linear-gradient(135deg,#0a2a1f,#0d3d2a)", border:"rgba(52,199,89,0.5)" }
+            ? { icon:"🎯", text:"Your personalised plan is ready", sub:"Everything is set up, just follow today's plan", color:"#34c759", bg:"linear-gradient(135deg,#0a2a1f,#0d3d2a)", border:"rgba(52,199,89,0.5)" }
             : daysLeft === 6
-            ? { icon:"💪", text:`Day ${TRIAL_DAYS - daysLeft + 1} — let's keep this going`, sub:"Small wins today = big results later", color:"#34c759", bg:"linear-gradient(135deg,#0a2a1f,#0d3d2a)", border:"rgba(52,199,89,0.5)" }
+            ? { icon:"💪", text:"Day 2 — let's keep this going", sub:"Small wins today = big results later", color:"#34c759", bg:"linear-gradient(135deg,#0a2a1f,#0d3d2a)", border:"rgba(52,199,89,0.5)" }
             : daysLeft === 5
             ? { icon:"📈", text:"You're on track", sub:"Keep building the momentum", color:"#34c759", bg:"linear-gradient(135deg,#0a2a1f,#0d3d2a)", border:"rgba(52,199,89,0.5)" }
             : daysLeft === 4
@@ -5648,7 +5648,7 @@ function AppInner() {
             : daysLeft === 3
             ? { icon:"⏳", text:"Your trial is ending soon", sub:"Keep your plan going without interruption", color:"#ff9f0a", bg:"linear-gradient(135deg,#1a1200,#2a1e00)", border:"rgba(255,159,10,0.5)" }
             : daysLeft === 2
-            ? { icon:"⚠️", text:"Nearly there — choose a plan", sub:"Keep your progress going", color:"#ff9f0a", bg:"linear-gradient(135deg,#1a1200,#2a1e00)", border:"rgba(255,159,10,0.6)" }
+            ? { icon:"⚠️", text:"Nearly there — choose a plan to keep your progress going", sub:"", color:"#ff9f0a", bg:"linear-gradient(135deg,#1a1200,#2a1e00)", border:"rgba(255,159,10,0.6)" }
             : daysLeft === 1
             ? { icon:"🚨", text:"Last day of your trial", sub:"Continue your plan and keep your progress", color:"#ff453a", bg:"linear-gradient(135deg,#1a0a0a,#2a0d0d)", border:"rgba(255,69,58,0.6)" }
             : { icon:"🔒", text:"Your plan is paused", sub:"Unlock it to continue where you left off", color:"#ff453a", bg:"linear-gradient(135deg,#1a0a0a,#2a0d0d)", border:"rgba(255,69,58,0.6)" };
