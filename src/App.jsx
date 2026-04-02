@@ -5635,15 +5635,33 @@ function AppInner() {
         )}
 
         {/* Trial banner */}
-        {!isPro && isTrialActive() && (
-          <div style={{ background:`linear-gradient(135deg, #0a2a1f, #0d3d2a)`, border:`1px solid rgba(52,199,89,0.5)`, borderRadius:14, padding:"12px 16px", marginBottom:14, display:"flex", justifyContent:"space-between", alignItems:"center", boxShadow:"0 4px 16px rgba(52,199,89,0.15)" }}>
-            <div>
-              <p style={{ color:"#34c759", fontWeight:700, fontSize:13, margin:0 }}>✦ Free trial — {getTrialDaysLeft()} day{getTrialDaysLeft()!==1?"s":""} left</p>
-              <p style={{ color:"rgba(255,255,255,0.6)", fontSize:11, margin:"2px 0 0" }}>Subscribe before your trial ends to keep everything</p>
+        {!isPro && isTrialActive() && (()=>{
+          const daysLeft = getTrialDaysLeft();
+          const trialMsg = daysLeft >= 7
+            ? { icon:"🎯", text:"Your personalised plan is ready", sub:"Everything is set up — just follow today's plan", color:"#34c759", bg:"linear-gradient(135deg,#0a2a1f,#0d3d2a)", border:"rgba(52,199,89,0.5)" }
+            : daysLeft === 6
+            ? { icon:"💪", text:`Day ${TRIAL_DAYS - daysLeft + 1} — let's keep this going`, sub:"Small wins today = big results later", color:"#34c759", bg:"linear-gradient(135deg,#0a2a1f,#0d3d2a)", border:"rgba(52,199,89,0.5)" }
+            : daysLeft === 5
+            ? { icon:"📈", text:"You're on track", sub:"Keep building the momentum", color:"#34c759", bg:"linear-gradient(135deg,#0a2a1f,#0d3d2a)", border:"rgba(52,199,89,0.5)" }
+            : daysLeft === 4
+            ? { icon:"🔒", text:"Your plan is working well", sub:"Keep everything moving in the right direction", color:"#0a84ff", bg:"linear-gradient(135deg,#0a1a2a,#0d2a3d)", border:"rgba(10,132,255,0.5)" }
+            : daysLeft === 3
+            ? { icon:"⏳", text:"Your trial is ending soon", sub:"Keep your plan going without interruption", color:"#ff9f0a", bg:"linear-gradient(135deg,#1a1200,#2a1e00)", border:"rgba(255,159,10,0.5)" }
+            : daysLeft === 2
+            ? { icon:"⚠️", text:"Nearly there — choose a plan", sub:"Keep your progress going", color:"#ff9f0a", bg:"linear-gradient(135deg,#1a1200,#2a1e00)", border:"rgba(255,159,10,0.6)" }
+            : daysLeft === 1
+            ? { icon:"🚨", text:"Last day of your trial", sub:"Continue your plan and keep your progress", color:"#ff453a", bg:"linear-gradient(135deg,#1a0a0a,#2a0d0d)", border:"rgba(255,69,58,0.6)" }
+            : { icon:"🔒", text:"Your plan is paused", sub:"Unlock it to continue where you left off", color:"#ff453a", bg:"linear-gradient(135deg,#1a0a0a,#2a0d0d)", border:"rgba(255,69,58,0.6)" };
+          return (
+            <div style={{ background:trialMsg.bg, border:`1px solid ${trialMsg.border}`, borderRadius:14, padding:"12px 16px", marginBottom:14, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+              <div style={{ flex:1, marginRight:12 }}>
+                <p style={{ color:trialMsg.color, fontWeight:700, fontSize:13, margin:0 }}>{trialMsg.icon} {trialMsg.text}</p>
+                <p style={{ color:"rgba(255,255,255,0.6)", fontSize:11, margin:"2px 0 0" }}>{trialMsg.sub}</p>
+              </div>
+              <button onClick={()=>setShowPaywall(true)} style={{ background:trialMsg.color, border:"none", borderRadius:99, padding:"7px 14px", color: daysLeft <= 3 ? "#fff" : "#000", fontSize:12, fontWeight:700, cursor:"pointer", fontFamily:FONT, whiteSpace:"nowrap", flexShrink:0 }}>Subscribe →</button>
             </div>
-            <button onClick={()=>setShowPaywall(true)} style={{ background:"#34c759", border:"none", borderRadius:99, padding:"7px 14px", color:"#000", fontSize:12, fontWeight:700, cursor:"pointer", fontFamily:FONT, whiteSpace:"nowrap" }}>Subscribe →</button>
-          </div>
-        )}
+          );
+        })()}
         {!effectiveIsPro && <ProBanner onUpgrade={()=>setShowPaywall(true)} />}
         {generating && tab !== "Meals" && (
           <div onClick={()=>setTab("Meals")} style={{ background:`${C.accent}15`, border:`1px solid ${C.accent}33`, borderRadius:10, padding:"10px 14px", marginBottom:10, display:"flex", alignItems:"center", gap:10, cursor:"pointer" }}>
