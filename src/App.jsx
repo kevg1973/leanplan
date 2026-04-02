@@ -22,6 +22,7 @@ import { WeeklyCheckIn } from "./components/WeeklyCheckIn.jsx";
 import { PaywallModal } from "./components/PaywallModal.jsx";
 import { CreateAccountScreen } from "./components/CreateAccountScreen.jsx";
 import { AuthScreen } from "./components/AuthScreen.jsx";
+import { PacePicker } from "./components/PacePicker.jsx";
 import { EXERCISE_DB } from "./data/exercises.js";
 import { PERIODISATION_BLOCKS, getProgrammeLengthWeeks, getCurrentBlock, buildWorkout, WORKOUTS, SHOPPING, SUPPS, DAILY_TIPS, getWeeklyPlan } from "./data/workouts.js";
 import { ALL_MEALS, filterMeals } from "./data/meals.js";
