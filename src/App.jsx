@@ -1,22 +1,8 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { supabase } from "./supabase.js";
-
-const FONT = "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif";
-const toKg = lbs => (lbs * 0.453592).toFixed(1);
-const fromKg = kg => parseFloat((kg * 2.20462).toFixed(1));
-
-// ── Trial system ──────────────────────────────────────────────────────────────
-const TRIAL_DAYS = 7;
-const getTrialStart = () => localStorage.getItem("leanplan_trial_start");
-const setTrialStart = () => { if (!getTrialStart()) localStorage.setItem("leanplan_trial_start", new Date().toISOString()); };
-const getTrialDaysLeft = () => {
-  const start = getTrialStart();
-  if (!start) return TRIAL_DAYS;
-  const days = Math.floor((Date.now() - new Date(start)) / (1000 * 60 * 60 * 24));
-  return Math.max(0, TRIAL_DAYS - days);
-};
-const isTrialActive = () => getTrialDaysLeft() > 0;
-const isTrialExpired = () => getTrialStart() && getTrialDaysLeft() === 0;
+import { ThemeProvider } from "./ThemeContext.jsx";
+import { FONT, TABS, TAB_ICON_MAP, DAY_NAMES, ALLERGENS, DISLIKES_LIST, TRIAL_DAYS } from "./constants.js";
+import { toKg, fromKg, pick, todayKey, fmtDate, getTrialStart, setTrialStart, getTrialDaysLeft, isTrialActive, isTrialExpired, calcTDEE, calcBMI } from "./helpers.js";
 
 const LIGHT = {
   bg:"#f2f2f7", surface:"#ffffff", card:"#ffffff",
@@ -38,8 +24,6 @@ const DARK = {
 
 // C is set dynamically in the App — components read it via the global
 let C = LIGHT;
-
-const TABS = ["Today","Meals","Train","Track","Coach","Profile"];
 
 // ── SVG Icon system ───────────────────────────────────────────────────────────
 const Icon = ({ name, size=22, color="currentColor", style={} }) => {
@@ -89,12 +73,6 @@ const Icon = ({ name, size=22, color="currentColor", style={} }) => {
   );
 };
 
-const TAB_ICON_MAP = { Today:"home", Meals:"meals", Train:"train", Track:"track", Coach:"tip", Profile:"profile" };
-const pick = arr => arr[Math.floor(Math.random() * arr.length)];
-const todayKey = () => new Date().toISOString().split("T")[0];
-const fmtDate = d => new Date(d).toLocaleDateString("en-GB",{day:"numeric",month:"short"});
-const DAY_NAMES = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
-
 const PACE_OPTIONS = [
   { id:"slow",   label:"Steady",     lbs:0.5512, kgPerWk:0.25, color:C.green,  desc:"0.25 kg/week — very sustainable, minimal hunger.", warning:null },
   { id:"normal", label:"Moderate",   lbs:1.1023, kgPerWk:0.5,  color:C.accent, desc:"0.5 kg/week — the gold standard for sustainable fat loss.", warning:null },
@@ -102,30 +80,6 @@ const PACE_OPTIONS = [
   { id:"vfast",  label:"Aggressive", lbs:2.2046, kgPerWk:1.0,  color:C.red,    desc:"1 kg/week — maximum recommended rate.", warning:"🚨 Upper safe limit. Risks muscle loss and fatigue. Requires 500 cal/day deficit. Consult your GP if you have health concerns." },
 ];
 const getPace = id => PACE_OPTIONS.find(p=>p.id===id)||PACE_OPTIONS[1];
-
-const ALLERGENS = ["Eggs","Nuts","Peanuts","Soya","Shellfish","Fish","Sesame","Celery","Mustard","Sulphites"];
-const DISLIKES_LIST = ["Fish","Oily fish","Shellfish","Lamb","Pork","Red meat","Mushrooms","Aubergine","Courgette","Brussels sprouts","Cauliflower","Broccoli","Olives","Avocado","Spicy food","Garlic","Onion","Cottage cheese","Tofu"];
-
-// ── TDEE Calculator ──────────────────────────────────────────────────────────
-const calcTDEE = (profile) => {
-  if (!profile.heightCm || !profile.startWeightLbs || !profile.age) return null;
-  const weightKg = profile.startWeightLbs * 0.453592;
-  const heightCm = parseFloat(profile.heightCm);
-  const age = parseFloat(profile.age);
-  // Mifflin-St Jeor BMR (male default, adjust if profile has sex)
-  const bmr = profile.sex === "female"
-    ? (10 * weightKg) + (6.25 * heightCm) - (5 * age) - 161
-    : (10 * weightKg) + (6.25 * heightCm) - (5 * age) + 5;
-  const activityMult = { 2:1.375, 3:1.55, 4:1.725, 5:1.9 }[profile.workoutsPerWeek] || 1.55;
-  return Math.round(bmr * activityMult);
-};
-
-const calcBMI = (profile) => {
-  if (!profile.heightCm || !profile.startWeightLbs) return null;
-  const weightKg = profile.startWeightLbs * 0.453592;
-  const heightM = parseFloat(profile.heightCm) / 100;
-  return (weightKg / (heightM * heightM)).toFixed(1);
-};
 
 const bmiCategory = bmi => {
   if (bmi < 18.5) return { label:"Underweight", color:C.teal };
@@ -5689,5 +5643,5 @@ function AppInner() {
 }
 
 export default function App() {
-  return <ErrorBoundary><AppInner /></ErrorBoundary>;
+  return <ErrorBoundary><ThemeProvider isDark={true}><AppInner /></ThemeProvider></ErrorBoundary>;
 }
