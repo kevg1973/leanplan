@@ -307,6 +307,81 @@ app.post("/api/stripe/webhook", async (req, res) => {
       } else {
         console.log(`Webhook: pro revoked for customer ${customerId}`);
       }
+
+      // Send cancellation email
+      if (event.type === "customer.subscription.deleted") {
+        try {
+          const customer = await stripe.customers.retrieve(customerId);
+          const email = customer.email;
+          if (email) {
+            const periodEnd = subscription.current_period_end
+              ? new Date(subscription.current_period_end * 1000).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })
+              : null;
+            const accessLine = periodEnd
+              ? `Your plan remains active until <strong style="color:#ffffff;">${periodEnd}</strong>. After that date, your meal plans, workout programme, progress data and photos will no longer be accessible.`
+              : `Your access to LeanPlan Pro features has now ended.`;
+
+            await resend.emails.send({
+              from: "LeanPlan <hello@leanplan.uk>",
+              to: email,
+              subject: "Your LeanPlan subscription has been cancelled",
+              html: `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"></head>
+<body style="margin:0;padding:0;background-color:#0a0a0a;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#0a0a0a;padding:40px 20px;">
+    <tr><td align="center">
+      <table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;">
+
+        <!-- Logo -->
+        <tr><td align="center" style="padding-bottom:28px;">
+          <img src="https://www.leanplan.uk/transparent-logo.png" alt="LeanPlan" style="height:44px;display:block;" />
+        </td></tr>
+
+        <!-- Main card -->
+        <tr><td style="background:#1a1a1a;border-radius:20px;padding:36px 32px;border:1px solid #2a2a2a;">
+
+          <p style="margin:0 0 8px;font-size:12px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:1.5px;">Subscription update</p>
+          <h1 style="margin:0 0 16px;font-size:26px;font-weight:700;color:#ffffff;letter-spacing:-0.3px;">We're sorry to see you go</h1>
+
+          <p style="margin:0 0 16px;font-size:15px;color:#9ca3af;line-height:1.7;">Your LeanPlan Pro subscription has been cancelled.</p>
+
+          <p style="margin:0 0 16px;font-size:15px;color:#9ca3af;line-height:1.7;">${accessLine}</p>
+
+          <p style="margin:0 0 28px;font-size:15px;color:#9ca3af;line-height:1.7;">If you change your mind, you can resubscribe at any time — all your data, progress and photos will still be there waiting for you.</p>
+
+          <!-- CTA -->
+          <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
+            <tr><td align="center">
+              <a href="https://www.leanplan.uk" style="display:inline-block;background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:#ffffff;text-decoration:none;font-size:16px;font-weight:700;padding:16px 40px;border-radius:12px;letter-spacing:-0.2px;">Resubscribe →</a>
+            </td></tr>
+          </table>
+
+          <div style="border-top:1px solid #2a2a2a;margin-bottom:20px;"></div>
+
+          <p style="margin:0;font-size:13px;color:#6b7280;line-height:1.7;">Thank you for being part of LeanPlan. We hope the work you've put in stays with you — the habits, the strength, the progress. That's yours to keep.</p>
+
+        </td></tr>
+
+        <!-- Footer -->
+        <tr><td align="center" style="padding-top:24px;">
+          <p style="margin:0;font-size:12px;color:#4b5563;line-height:1.8;">LeanPlan · Manchester, UK<br>
+          Questions? Reply to this email or visit <a href="https://www.leanplan.uk" style="color:#3b82f6;text-decoration:none;">leanplan.uk</a></p>
+        </td></tr>
+
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`,
+            });
+
+            console.log(`Webhook: cancellation email sent to ${email}`);
+          }
+        } catch (emailErr) {
+          console.error("Webhook: failed to send cancellation email:", emailErr.message);
+        }
+      }
     } catch (err) {
       console.error("Webhook subscription.deleted error:", err.message);
     }
