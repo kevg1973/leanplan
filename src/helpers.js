@@ -48,3 +48,10 @@ export const calcBMI = (profile) => {
   const heightM = parseFloat(profile.heightCm) / 100;
   return (weightKg / (heightM * heightM)).toFixed(1);
 };
+
+export const bmiCategory = (bmi, C) => {
+  if (bmi < 18.5) return { label:"Underweight", color:C.teal };
+  if (bmi < 25)   return { label:"Healthy weight", color:C.green };
+  if (bmi < 30)   return { label:"Overweight", color:C.orange };
+  return { label:"Obese", color:C.red };
+};
