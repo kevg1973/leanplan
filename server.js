@@ -58,9 +58,13 @@ app.get("/sw.js", (req, res) => {
   });
 });
 
-// Serve landing page at root — React app is accessed via /app or direct deep links
+// Root route: app.leanplan.uk → React app, www/bare domain → landing page
 app.get("/", (req, res) => {
-  res.sendFile(join(__dirname, "dist", "landing.html"));
+  if (req.hostname === "app.leanplan.uk") {
+    res.sendFile(join(__dirname, "dist", "index.html"));
+  } else {
+    res.sendFile(join(__dirname, "dist", "landing.html"));
+  }
 });
 
 app.use(express.static(join(__dirname, "dist")));
