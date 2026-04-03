@@ -21,7 +21,7 @@ export const AuthScreen = ({ onAuth, onSkip, onStartFresh }) => {
         const { error } = await supabase.auth.signUp({
           email,
           password,
-          options: { emailRedirectTo: "https://www.leanplan.uk" }
+          options: { emailRedirectTo: "https://app.leanplan.uk" }
         });
         if (error) throw error;
         setMessage("Account created! Please check your email to verify, then log in.");
@@ -84,7 +84,7 @@ export const AuthScreen = ({ onAuth, onSkip, onStartFresh }) => {
             onClick={async () => {
               const { error: oauthError } = await supabase.auth.signInWithOAuth({
                 provider: "google",
-                options: { redirectTo: "https://www.leanplan.uk" },
+                options: { redirectTo: "https://app.leanplan.uk" },
               });
               if (oauthError) setError(oauthError.message);
             }}

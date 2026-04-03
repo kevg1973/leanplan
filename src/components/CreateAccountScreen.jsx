@@ -91,7 +91,7 @@ export const CreateAccountScreen = ({ profileData, onDone }) => {
             try { localStorage.setItem("leanplan_pending_google_profile", JSON.stringify(profileData)); } catch(e){}
             const { error: oauthError } = await supabase.auth.signInWithOAuth({
               provider: "google",
-              options: { redirectTo: "https://www.leanplan.uk" },
+              options: { redirectTo: "https://app.leanplan.uk" },
             });
             if (oauthError) setError(oauthError.message);
           }}
