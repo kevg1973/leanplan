@@ -133,15 +133,18 @@
       letter-spacing: -1.5px; line-height: 1.1; margin-bottom: 60px;
     }
     .showcase {
-      display: grid; grid-template-columns: 1fr 1fr;
+      display: grid; grid-template-columns: 2fr 3fr;
       gap: 60px; align-items: center; margin-bottom: 80px;
+    }
+    .showcase.flip {
+      grid-template-columns: 3fr 2fr;
     }
     .showcase.flip .showcase-img { order: 2; }
     .showcase.flip .showcase-content { order: 1; }
     .showcase-img {
       border-radius: 22px; overflow: hidden;
       box-shadow: 0 30px 70px rgba(0,0,0,0.6);
-      max-width: 260px; margin: 0 auto;
+      max-width: 220px; margin: 0 auto;
     }
     .showcase-img img { width: 100%; display: block; }
     .showcase-tag {
