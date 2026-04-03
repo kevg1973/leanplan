@@ -48,7 +48,6 @@
       position: absolute; inset: 0;
       width: 100%; height: 100%;
       object-fit: cover; object-position: center 20%;
-      transform: scaleX(-1);
     }
     .hero-overlay {
       position: absolute; inset: 0;
@@ -104,23 +103,24 @@
     .stat-strip {
       background: #0d1424;
       border-bottom: 0.5px solid rgba(255,255,255,0.07);
-      padding: 32px 60px;
+      padding: 28px 60px;
       display: flex;
       justify-content: center;
-    }
-    .stat-strip-inner {
-      display: flex; align-items: center;
-      max-width: 1100px; width: 100%;
-      justify-content: center;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0;
     }
     .stat-item {
-      display: flex; align-items: center; gap: 14px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
       padding: 0 36px;
+      border-right: 0.5px solid rgba(255,255,255,0.08);
+      white-space: nowrap;
     }
-    .stat-emoji { font-size: 26px; flex-shrink: 0; }
-    .stat-text-title { font-size: 15px; font-weight: 700; color: #fff; margin-bottom: 2px; }
-    .stat-text-sub { font-size: 13px; font-weight: 400; color: rgba(255,255,255,0.4); }
-    .stat-divider { width: 1px; height: 40px; background: rgba(255,255,255,0.1); flex-shrink: 0; }
+    .stat-item:last-child { border-right: none; }
+    .stat-dot { width: 8px; height: 8px; border-radius: 50%; background: #4A9EF8; flex-shrink: 0; }
+    .stat-title { font-size: 15px; font-weight: 600; color: rgba(255,255,255,0.85); letter-spacing: -0.2px; }
 
     /* FEATURES */
     .features { padding: 90px 60px; max-width: 1100px; margin: 0 auto; }
@@ -257,10 +257,8 @@
       .hero-content { padding: 0 20px 60px; }
       .hero h1 { font-size: 38px; letter-spacing: -1.5px; }
       .hero-sub { font-size: 16px; }
-      .stat-strip { padding: 24px 20px; }
-      .stat-strip-inner { flex-direction: column; align-items: stretch; }
-      .stat-item { padding: 14px 0; }
-      .stat-divider { width: 100%; height: 1px; }
+      .stat-strip { padding: 16px 20px; gap: 16px; flex-wrap: wrap; justify-content: flex-start; }
+      .stat-item { border-right: none; padding: 0; white-space: normal; }
       .features { padding: 60px 20px; }
       .section-title { font-size: 28px; letter-spacing: -1px; margin-bottom: 40px; }
       .showcase { grid-template-columns: 1fr; gap: 28px; margin-bottom: 60px; }
@@ -303,27 +301,10 @@
   </section>
 
   <div class="stat-strip">
-    <div class="stat-strip-inner">
-      <div class="stat-item">
-        <div class="stat-emoji">🎯</div>
-        <div><div class="stat-text-title">Built around your body</div><div class="stat-text-sub">Every plan is unique to you</div></div>
-      </div>
-      <div class="stat-divider"></div>
-      <div class="stat-item">
-        <div class="stat-emoji">🍽️</div>
-        <div><div class="stat-text-title">Meal plans, every day</div><div class="stat-text-sub">Calories, macros, dietary needs</div></div>
-      </div>
-      <div class="stat-divider"></div>
-      <div class="stat-item">
-        <div class="stat-emoji">🤖</div>
-        <div><div class="stat-text-title">AI coach, always on</div><div class="stat-text-sub">Ask anything, anytime</div></div>
-      </div>
-      <div class="stat-divider"></div>
-      <div class="stat-item">
-        <div class="stat-emoji">💪</div>
-        <div><div class="stat-text-title">Injury &amp; equipment aware</div><div class="stat-text-sub">Works around your limits</div></div>
-      </div>
-    </div>
+    <div class="stat-item"><div class="stat-dot"></div><div class="stat-title">Built around your body</div></div>
+    <div class="stat-item"><div class="stat-dot" style="background:#34d399;"></div><div class="stat-title">Meal plans, every day</div></div>
+    <div class="stat-item"><div class="stat-dot" style="background:#a78bfa;"></div><div class="stat-title">AI coach, always on</div></div>
+    <div class="stat-item"><div class="stat-dot" style="background:#fb923c;"></div><div class="stat-title">Injury &amp; equipment aware</div></div>
   </div>
 
   <section class="features" id="features">
@@ -439,10 +420,6 @@
     <div class="footer-links">
       <a href="/privacy">Privacy</a>
       <a href="/terms">Terms</a>
-      <a href="mailto:hello@leanplan.uk">Support</a>
+      <a href="/cdn-cgi/l/email-protection#c7afa2ababa887aba2a6a9b7aba6a9e9b2ac">Support</a>
     </div>
-    <p class="footer-copy">© 2026 LeanPlan</p>
-  </footer>
-
-</body>
-</html>
+    <p class="footer-copy">© 2026 Le
