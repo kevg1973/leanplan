@@ -652,34 +652,11 @@
       .hero { padding: 44px 0 36px; }
     }
     /* ── HOW IT WORKS ── */
-    .hiw-bg {
-      position: relative;
-      border-radius: 24px;
-      overflow: hidden;
-      background: url('/website-section-2.png') center right / cover no-repeat;
-      min-height: 540px;
-      display: flex;
+    .hiw-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 48px;
       align-items: center;
-    }
-
-    .hiw-bg::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(90deg,
-        rgba(5,9,20,0.97) 0%,
-        rgba(5,9,20,0.88) 45%,
-        rgba(5,9,20,0.3) 70%,
-        rgba(5,9,20,0.0) 100%
-      );
-      pointer-events: none;
-    }
-
-    .hiw-content {
-      position: relative;
-      z-index: 2;
-      padding: 48px 48px;
-      max-width: 520px;
     }
 
     .hiw-h2 {
@@ -703,10 +680,8 @@
       gap: 12px;
       padding: 14px 16px;
       border-radius: 14px;
-      background: rgba(5,9,20,0.6);
-      border: 1px solid rgba(255,255,255,0.08);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--line);
     }
 
     .hiw-icon {
@@ -747,10 +722,15 @@
       line-height: 1.4;
     }
 
-    @media (max-width: 680px) {
-      .hiw-bg { background-position: center center; min-height: auto; }
-      .hiw-content { padding: 32px 24px; max-width: 100%; }
-      .hiw-bg::before { background: rgba(5,9,20,0.92); }
+    .hiw-right {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    @media (max-width: 780px) {
+      .hiw-grid { grid-template-columns: 1fr; }
+      .hiw-right { margin-top: 8px; }
     }
 
   </style>
@@ -839,10 +819,10 @@
     </div>
 
     <!-- HOW IT WORKS -->
-    <section id="how" style="padding:52px 0;">
+    <section id="how">
       <div class="wrap">
-        <div class="hiw-bg">
-          <div class="hiw-content">
+        <div class="hiw-grid">
+          <div class="hiw-left">
             <div class="section-tag">How it works</div>
             <h2 class="hiw-h2">A system that does the work <span style="color:var(--blue);">for you</span></h2>
             <p class="hiw-sub">Set your goal, get your plan, follow it <span style="color:var(--blue);">day by day.</span></p>
@@ -878,6 +858,9 @@
                 </div>
               </div>
             </div>
+          </div>
+          <div class="hiw-right">
+            <img src="/plan-builder.png" alt="LeanPlan building your plan" style="width:100%;max-width:420px;display:block;margin:0 auto;" />
           </div>
         </div>
       </div>
