@@ -49,15 +49,46 @@
       margin: 0 auto;
     }
 
+    /* ── HERO WRAPPER (image + nav + text as one unit) ── */
+    .hero-wrap {
+      position: relative;
+      min-height: 620px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .hero-bg {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+    }
+
+    .hero-bg img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center 30%;
+      display: block;
+    }
+
+    .hero-bg::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg,
+        rgba(5,9,20,0.45) 0%,
+        rgba(5,9,20,0.55) 40%,
+        rgba(5,9,20,0.92) 80%,
+        rgba(5,9,20,1.0) 100%
+      );
+    }
+
     /* ── NAV ── */
     nav {
-      position: sticky;
-      top: 0;
-      z-index: 99;
-      background: rgba(5,9,20,0.85);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border-bottom: 1px solid var(--line);
+      position: relative;
+      z-index: 10;
+      background: transparent;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
     }
 
     .nav-inner {
@@ -100,14 +131,18 @@
 
     .nav-mobile-cta { display: none; }
 
-    /* ── HERO ── */
-    .hero { padding: 64px 0 52px; }
+    /* ── HERO TEXT ── */
+    .hero {
+      position: relative;
+      z-index: 10;
+      padding: 64px 0 80px;
+      flex: 1;
+    }
 
     .hero-grid {
       display: grid;
-      grid-template-columns: 1.05fr 0.95fr;
-      gap: 40px;
-      align-items: center;
+      grid-template-columns: 1fr;
+      max-width: 680px;
     }
 
     .eyebrow {
@@ -620,29 +655,28 @@
 </head>
 <body>
 
-  <!-- HERO IMAGE -->
-  <div style="width:100%;height:480px;overflow:hidden;position:relative;">
-    <img src="/deadlift-hero.png" alt="Training with LeanPlan" style="width:100%;height:100%;object-fit:cover;object-position:center 30%;display:block;" />
-    <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(5,9,20,0.15) 0%,rgba(5,9,20,0.85) 100%);pointer-events:none;"></div>
-  </div>
+  <div class="hero-wrap">
 
-  <!-- NAV -->
-  <nav>
-    <div class="wrap nav-inner">
-      <a href="/" class="logo">Lean<span>Plan</span></a>
-      <div class="nav-links">
-        <a href="#how">How it works</a>
-        <a href="#features">Features</a>
-        <a href="#faq">FAQ</a>
-        <a href="https://app.leanplan.uk" class="btn-nav">Try free — no card needed</a>
-      </div>
-      <a href="https://app.leanplan.uk" class="btn-nav nav-mobile-cta">Try free</a>
+    <!-- BACKGROUND IMAGE -->
+    <div class="hero-bg">
+      <img src="/deadlift-hero.png" alt="" aria-hidden="true" />
     </div>
-  </nav>
 
-  <main>
+    <!-- NAV -->
+    <nav>
+      <div class="wrap nav-inner">
+        <a href="/" class="logo">Lean<span>Plan</span></a>
+        <div class="nav-links">
+          <a href="#how">How it works</a>
+          <a href="#features">Features</a>
+          <a href="#faq">FAQ</a>
+          <a href="https://app.leanplan.uk" class="btn-nav">Try free — no card needed</a>
+        </div>
+        <a href="https://app.leanplan.uk" class="btn-nav nav-mobile-cta">Try free</a>
+      </div>
+    </nav>
 
-    <!-- HERO -->
+    <!-- HERO TEXT -->
     <section class="hero">
       <div class="wrap">
         <div class="hero-grid">
@@ -659,24 +693,27 @@
             </div>
             <div class="trial-note">Full access for 7 days. No credit card. No commitment.</div>
           </div>
-
-          <div class="hero-card">
-            <div class="hero-img-wrap">
-              <img src="/today-screen.png" alt="LeanPlan app — Today dashboard" />
-              <div class="hero-img-gradient"></div>
-            </div>
-            <div class="hero-chips">
-              <div class="chip">Personalised meal plans</div>
-              <div class="chip">Smart shopping lists</div>
-              <div class="chip">Structured training</div>
-              <div class="chip">AI coach</div>
-            </div>
-          </div>
         </div>
       </div>
     </section>
 
-    <!-- SOCIAL PROOF -->
+  </div><!-- /hero-wrap -->
+
+  <!-- STICKY NAV (appears on scroll) -->
+  <nav id="sticky-nav" style="position:sticky;top:0;z-index:99;background:rgba(5,9,20,0.92);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-bottom:1px solid var(--line);display:none;">
+    <div class="wrap nav-inner">
+      <a href="/" class="logo">Lean<span>Plan</span></a>
+      <div class="nav-links">
+        <a href="#how">How it works</a>
+        <a href="#features">Features</a>
+        <a href="#faq">FAQ</a>
+        <a href="https://app.leanplan.uk" class="btn-nav">Try free — no card needed</a>
+      </div>
+      <a href="https://app.leanplan.uk" class="btn-nav nav-mobile-cta">Try free</a>
+    </div>
+  </nav>
+
+  <main>
     <div class="wrap">
       <div class="proof-strip">
         <div class="proof-grid">
@@ -952,3 +989,17 @@
         <a href="/cdn-cgi/l/email-protection#7e161b1212113e121b1f100e121f10500b15">Support</a>
       </div>
       <div>© 2026 LeanPlan</div>
+    </div>
+  </footer>
+
+  <script>
+    const stickyNav = document.getElementById('sticky-nav');
+    const heroWrap = document.querySelector('.hero-wrap');
+    const observer = new IntersectionObserver(([entry]) => {
+      stickyNav.style.display = entry.isIntersecting ? 'none' : 'block';
+    }, { threshold: 0 });
+    observer.observe(heroWrap);
+  </script>
+
+</body>
+</html>
