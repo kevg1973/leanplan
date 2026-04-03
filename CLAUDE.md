@@ -1,9 +1,12 @@
 # LeanPlan — Claude Development Context
 
 ## Project Overview
-LeanPlan is a React PWA fitness and nutrition app. Live at https://www.leanplan.uk. Built by Kevin Grey (solo developer, Manchester UK), with Claude as primary development partner.
+LeanPlan is a React PWA fitness and nutrition app. Built by Kevin Grey (solo developer, Manchester UK), with Claude as primary development partner.
 
-**Current update number: 235**
+- **App:** https://app.leanplan.uk (React PWA)
+- **Landing page:** https://www.leanplan.uk (standalone HTML)
+
+**Current update number: 238**
 
 ---
 
@@ -30,7 +33,7 @@ LeanPlan is a React PWA fitness and nutrition app. Live at https://www.leanplan.
 - `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`
 - `STRIPE_PRICE_MONTHLY_LIVE`, `STRIPE_PRICE_ANNUAL_LIVE`
 - `STRIPE_PRICE_MONTHLY_TEST`, `STRIPE_PRICE_ANNUAL_TEST`
-- `APP_URL=https://www.leanplan.uk`
+- `APP_URL=https://app.leanplan.uk`
 - `BYPASS_PRO` — set to `true` to bypass Pro for all users
 - `ADMIN_EMAILS` — comma-separated emails with permanent Pro access (e.g. `kevg1973@gmail.com`)
 - `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`
@@ -42,19 +45,19 @@ LeanPlan is a React PWA fitness and nutrition app. Live at https://www.leanplan.
 ## Stripe Details
 - **Live:** monthly `price_1TDtInPfNxGIwDvC72uuu6ZE`, annual `price_1TDtJPPfNxGIwDvCffCwzs3j`
 - **Test:** monthly `price_1TDuIWBlEueyqAyRLgOGydQV`, annual `price_1TDuItBlEueyqAyRcwY269HK`
-- **Webhook:** `https://www.leanplan.uk/api/stripe/webhook`
+- **Webhook:** `https://app.leanplan.uk/api/stripe/webhook`
 - Webhook listens to: `checkout.session.completed`, `customer.subscription.deleted`, `customer.subscription.paused`, `customer.subscription.updated`
 
 ---
 
 ## Supabase Schema — `profiles` table
-Columns: `id`, `email`, `profile_data` (jsonb), `entries`, `favourites`, `removed`, `meal_log`, `workout_log`, `water`, `journal`, `measurements`, `dark_override`, `is_pro`, `stripe_customer_id`, `stripe_subscription_id`, `stripe_plan`, `liked_meals`, `disliked_meals`, `meal_plan` (jsonb), `trial_start`, `reminder_sent`, `cancel_at`
+Columns: `id`, `email`, `profile_data` (jsonb), `entries`, `favourites`, `removed`, `meal_log`, `workout_log`, `water`, `journal`, `measurements`, `dark_override`, `is_pro`, `stripe_customer_id`, `stripe_subscription_id`, `stripe_plan`, `liked_meals`, `disliked_meals`, `meal_plan` (jsonb), `trial_start`, `reminder_sent`, `cancel_at`, `progress_photos` (jsonb)
 
 ---
 
 ## Business Model
 - 7-day free trial → paid only (no free tier)
-- **£9.99/month or £39.99/year** (pricing under review)
+- **£9.99/month or £99/year**
 - `effectiveIsPro = isPro || isTrialActive()`
 - Account creation is **mandatory** after onboarding — no skip option
 - Stripe webhook marks existing accounts as `is_pro: true` on payment
@@ -110,6 +113,26 @@ src/
 
 Theme is managed via `ThemeContext.jsx` — extracted components use `useTheme()` hook. `App.jsx` still uses a mutable `let C` for the main shell; all other components are fully context-driven.
 
+### Landing Page & Static Pages
+```
+public/
+  landing.html         (Marketing landing page — standalone HTML, Inter font, dark navy design)
+  privacy.html         (Privacy policy)
+  terms.html           (Terms of service)
+```
+
+### Domain Routing (`server.js`)
+| Hostname | Route | Serves |
+|----------|-------|--------|
+| `www.leanplan.uk` / `leanplan.uk` | `/` | `landing.html` |
+| `app.leanplan.uk` | `/` | `index.html` (React app) |
+| Any | `/privacy` | `privacy.html` |
+| Any | `/terms` | `terms.html` |
+| Any | `/api/*` | Express API endpoints |
+| Any | `*` (catch-all) | `index.html` (React SPA) |
+
+Routing uses `req.hostname` to distinguish app vs marketing domains. All static files served from `dist/` (Vite copies `public/` into `dist/` at build time).
+
 ### Guided Mode (default)
 LeanPlan prescribes everything — meal plans, workout schedule, shopping list.
 
@@ -119,6 +142,10 @@ Deferred — UI stub exists, shows "coming soon".
 ### User Flow
 1. Onboarding (17 steps)
 2. **Mandatory account creation** — "Your personal plan is ready — create your account to save it"
+   - Email/password signup OR Google OAuth (`signInWithOAuth`)
+   - Google OAuth persists pending profile to `leanplan_pending_google_profile` in localStorage before redirect (state is lost on page reload)
+   - On OAuth return, `onAuthStateChange` `SIGNED_IN` handler recovers the pending profile and saves it to Supabase
+   - Google profile picture is used as avatar if no custom avatar exists
 3. Trial starts at account creation
 4. 7-day trial → subscribe or lose access
 5. Stripe webhook → `is_pro: true` on existing account + welcome email via Resend
@@ -151,6 +178,10 @@ Deferred — UI stub exists, shows "coming soon".
 | `POST /api/swap-meal` | Calorie-neutral meal swap |
 | `POST /api/chat` | AI coach with live context |
 | `POST /api/send-trial-reminders` | Daily cron — sends day 5 trial reminder emails |
+| `POST /api/send-shopping-list` | Email shopping list to user |
+| `GET /` | Landing page (www) or React app (app subdomain) |
+| `GET /privacy` | Privacy policy page |
+| `GET /terms` | Terms of service page |
 
 ---
 
@@ -182,6 +213,14 @@ Deferred — UI stub exists, shows "coming soon".
 - ✅ Dark/light mode
 - ✅ Meal plan expiry nudge
 - ✅ Profile editing (all settings)
+- ✅ Google Sign In (OAuth via Supabase, both CreateAccount and Auth screens)
+- ✅ Google avatar auto-set on sign in
+- ✅ Cancellation email via Resend (triggered on `subscription.updated` with `cancel_at_period_end`)
+- ✅ AI coach rate limiting (20 messages/day)
+- ✅ Progress photos (upload, timeline, compare, flip)
+- ✅ Marketing landing page (`public/landing.html`)
+- ✅ Privacy and Terms pages
+- ✅ Domain split — `app.leanplan.uk` (PWA) / `www.leanplan.uk` (landing)
 
 ---
 
@@ -196,40 +235,49 @@ Deferred — UI stub exists, shows "coming soon".
 - Supabase RLS is enabled — server-side operations use `SUPABASE_SERVICE_ROLE_KEY`
 - Resend sends from `hello@leanplan.uk` — domain verified
 - cron-job.org hits `/api/send-trial-reminders` daily at 9am Europe/London with `x-cron-secret` header
+- Google OAuth redirect uses `https://app.leanplan.uk` — hardcoded in `CreateAccountScreen.jsx` and `AuthScreen.jsx`
+- `leanplan_pending_google_profile` localStorage key bridges OAuth redirect for post-onboarding Google signup
+- Cancellation email fires on `customer.subscription.updated` (when `cancel_at_period_end === true`), NOT on `customer.subscription.deleted`
+- `landing.html` is standalone HTML (no React, no build step) — uses Inter font from Google Fonts
+- `server.js` routes by `req.hostname` — `app.leanplan.uk` gets React app, everything else gets landing page
 
 ---
 
 ## Roadmap (priority order)
 ### Immediate
-1. Rate limiting on AI coach (20 messages/day)
-2. End of programme handling (16-week celebration screen)
-3. `.gitignore` — add `.DS_Store`
+1. End of programme handling (celebration screen)
+2. `.gitignore` — add `.DS_Store`
 
 ### Product
-4. Progress photos
-5. Body composition estimator
-6. Sleep + energy correlation tracking
-7. Meal variety scoring
-8. Google Sign In
+3. Body composition estimator
+4. Sleep + energy correlation tracking
+5. Meal variety scoring
 
 ### Business
-9. Influencer affiliate programme (Rewardful integration)
-10. Marketing website
-11. Marketing promo pack (Instagram, TikTok, YouTube)
+6. Influencer affiliate programme (Rewardful integration)
+7. Marketing promo pack (Instagram, TikTok, YouTube)
 
 ### Technical Debt
-12. ~~App.jsx split into component files~~ ✅ Done (5,692 → 597 lines, 27 extracted files)
-13. Error monitoring (Sentry)
-14. API cost monitoring
+8. Error monitoring (Sentry)
+9. API cost monitoring
 
 ### Future
-15. Push notifications
-16. Custom mode
-17. CGM integration (Dexcom)
-18. Apple Watch / Apple Health
-19. Native iOS app (App Store)
-20. PT dashboard
-21. White label
+10. Push notifications
+11. Custom mode
+12. CGM integration (Dexcom)
+13. Apple Watch / Apple Health
+14. Native iOS app (App Store)
+15. PT dashboard
+16. White label
+
+### Done
+- ~~App.jsx split into component files~~ ✅ (5,692 → 597 lines, 27 extracted files)
+- ~~AI coach rate limiting~~ ✅ (20 messages/day)
+- ~~Progress photos~~ ✅ (upload, timeline, compare, flip)
+- ~~Google Sign In~~ ✅ (OAuth via Supabase)
+- ~~Marketing website~~ ✅ (`landing.html`)
+- ~~Cancellation email~~ ✅ (Resend, triggered on subscription update)
+- ~~Domain split~~ ✅ (`app.leanplan.uk` / `www.leanplan.uk`)
 
 ---
 
