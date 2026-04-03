@@ -67,6 +67,9 @@ app.get("/", (req, res) => {
   }
 });
 
+app.get("/privacy", (req, res) => { res.sendFile(join(__dirname, "dist", "privacy.html")); });
+app.get("/terms", (req, res) => { res.sendFile(join(__dirname, "dist", "terms.html")); });
+
 app.use(express.static(join(__dirname, "dist")));
 
 // ── Create Stripe checkout session ───────────────────────────────────────────
