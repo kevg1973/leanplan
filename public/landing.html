@@ -206,16 +206,18 @@
 
     .hero-img-wrap img {
       width: 100%;
-      height: 380px;
-      object-fit: cover;
-      object-position: center top;
+      height: auto;
+      max-height: 520px;
+      object-fit: contain;
+      object-position: center bottom;
       display: block;
+      padding: 24px 24px 0;
     }
 
     .hero-img-gradient {
       position: absolute;
       inset: 0;
-      background: linear-gradient(180deg, rgba(5,9,20,0.1) 0%, rgba(5,9,20,0.55) 100%);
+      background: linear-gradient(180deg, rgba(5,9,20,0.0) 60%, rgba(5,9,20,0.85) 100%);
       pointer-events: none;
     }
 
@@ -656,7 +658,7 @@
 
           <div class="hero-card">
             <div class="hero-img-wrap">
-              <img src="/deadlift-hero.png" alt="Training with LeanPlan" />
+              <img src="/Home-angle.png" alt="LeanPlan app — Today dashboard" />
               <div class="hero-img-gradient"></div>
             </div>
             <div class="hero-chips">
@@ -943,11 +945,6 @@
       <div class="foot-links">
         <a href="/privacy">Privacy</a>
         <a href="/terms">Terms</a>
-        <a href="mailto:hello@leanplan.uk">Support</a>
+        <a href="/cdn-cgi/l/email-protection#7e161b1212113e121b1f100e121f10500b15">Support</a>
       </div>
       <div>© 2026 LeanPlan</div>
-    </div>
-  </footer>
-
-</body>
-</html>
