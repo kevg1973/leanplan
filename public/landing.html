@@ -652,15 +652,38 @@
       .hero { padding: 44px 0 36px; }
     }
     /* ── HOW IT WORKS ── */
-    .hiw-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 48px;
+    .hiw-bg {
+      position: relative;
+      border-radius: 24px;
+      overflow: hidden;
+      background: url('/website-section-2.png') center right / cover no-repeat;
+      min-height: 540px;
+      display: flex;
       align-items: center;
     }
 
+    .hiw-bg::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg,
+        rgba(5,9,20,0.97) 0%,
+        rgba(5,9,20,0.88) 45%,
+        rgba(5,9,20,0.3) 70%,
+        rgba(5,9,20,0.0) 100%
+      );
+      pointer-events: none;
+    }
+
+    .hiw-content {
+      position: relative;
+      z-index: 2;
+      padding: 48px 48px;
+      max-width: 520px;
+    }
+
     .hiw-h2 {
-      font-size: clamp(2rem, 4vw, 3.2rem);
+      font-size: clamp(1.8rem, 3.5vw, 2.8rem);
       line-height: 1.02;
       letter-spacing: -0.045em;
       margin-bottom: 10px;
@@ -672,23 +695,25 @@
       margin-bottom: 28px;
     }
 
-    .hiw-steps { display: flex; flex-direction: column; gap: 12px; }
+    .hiw-steps { display: flex; flex-direction: column; gap: 10px; }
 
     .hiw-step {
       display: flex;
       align-items: center;
-      gap: 14px;
-      padding: 16px 18px;
-      border-radius: 16px;
-      background: rgba(255,255,255,0.03);
-      border: 1px solid var(--line);
+      gap: 12px;
+      padding: 14px 16px;
+      border-radius: 14px;
+      background: rgba(5,9,20,0.6);
+      border: 1px solid rgba(255,255,255,0.08);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
     }
 
     .hiw-icon {
-      width: 40px;
-      height: 40px;
-      border-radius: 12px;
-      background: rgba(74,158,248,0.1);
+      width: 38px;
+      height: 38px;
+      border-radius: 11px;
+      background: rgba(74,158,248,0.12);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -696,12 +721,12 @@
     }
 
     .hiw-num {
-      width: 26px;
-      height: 26px;
-      border-radius: 8px;
+      width: 24px;
+      height: 24px;
+      border-radius: 7px;
       background: rgba(74,158,248,0.15);
       color: var(--blue);
-      font-size: 0.82rem;
+      font-size: 0.8rem;
       font-weight: 800;
       display: flex;
       align-items: center;
@@ -711,173 +736,21 @@
 
     .hiw-step-body strong {
       display: block;
-      font-size: 0.95rem;
+      font-size: 0.92rem;
       font-weight: 700;
       margin-bottom: 2px;
     }
 
     .hiw-step-body p {
       color: var(--muted);
-      font-size: 0.83rem;
-      line-height: 1.45;
+      font-size: 0.81rem;
+      line-height: 1.4;
     }
 
-    /* Phone mockup */
-    .hiw-right {
-      display: flex;
-      justify-content: center;
-    }
-
-    .hiw-phone {
-      width: 100%;
-      max-width: 340px;
-      border-radius: 36px;
-      background: #0d1525;
-      border: 1.5px solid rgba(255,255,255,0.1);
-      overflow: hidden;
-      box-shadow: 0 40px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(74,158,248,0.08);
-    }
-
-    .hiw-status {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 12px 20px 6px;
-      font-size: 0.78rem;
-      font-weight: 700;
-    }
-
-    .hiw-app-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 8px 18px 12px;
-      border-bottom: 1px solid rgba(255,255,255,0.06);
-    }
-
-    .hiw-logo { font-size: 1.1rem; font-weight: 800; letter-spacing: -0.03em; }
-
-    .hiw-building-badge {
-      font-size: 0.72rem;
-      font-weight: 600;
-      color: var(--blue);
-      background: rgba(74,158,248,0.1);
-      border: 1px solid rgba(74,158,248,0.2);
-      padding: 4px 10px;
-      border-radius: 100px;
-      display: flex;
-      align-items: center;
-      gap: 5px;
-    }
-
-    .hiw-spin {
-      display: inline-block;
-      animation: spin 1.2s linear infinite;
-    }
-
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    .hiw-phone-body { padding: 18px 18px 20px; }
-
-    .hiw-title {
-      font-size: 1.15rem;
-      font-weight: 700;
-      font-style: italic;
-      margin-bottom: 4px;
-      letter-spacing: -0.02em;
-    }
-
-    .hiw-subtitle {
-      color: var(--muted);
-      font-size: 0.8rem;
-      margin-bottom: 16px;
-    }
-
-    .hiw-rows { display: flex; flex-direction: column; gap: 6px; }
-
-    .hiw-row {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 10px 12px;
-      border-radius: 12px;
-      background: rgba(255,255,255,0.03);
-      border: 1px solid rgba(255,255,255,0.05);
-    }
-
-    .hiw-row.active {
-      background: rgba(74,158,248,0.07);
-      border-color: rgba(74,158,248,0.15);
-    }
-
-    .hiw-row-icon {
-      width: 28px;
-      height: 28px;
-      border-radius: 8px;
-      background: rgba(74,158,248,0.1);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-    }
-
-    .hiw-row-text {
-      flex: 1;
-    }
-
-    .hiw-row-text strong {
-      display: block;
-      font-size: 0.8rem;
-      font-weight: 700;
-      margin-bottom: 1px;
-    }
-
-    .hiw-row-text span {
-      font-size: 0.72rem;
-      color: var(--muted);
-    }
-
-    .hiw-check {
-      width: 20px;
-      height: 20px;
-      border-radius: 50%;
-      background: rgba(74,158,248,0.1);
-      border: 1px solid rgba(74,158,248,0.25);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-    }
-
-    .hiw-spinner {
-      width: 20px;
-      height: 20px;
-      border-radius: 50%;
-      border: 2px solid rgba(74,158,248,0.2);
-      border-top-color: var(--blue);
-      animation: spin 0.9s linear infinite;
-      flex-shrink: 0;
-    }
-
-    .hiw-circle-empty {
-      width: 20px;
-      height: 20px;
-      border-radius: 50%;
-      border: 2px solid rgba(255,255,255,0.1);
-      flex-shrink: 0;
-    }
-
-    .hiw-footer-note {
-      margin-top: 16px;
-      font-size: 0.82rem;
-      color: var(--muted);
-      font-style: italic;
-      line-height: 1.5;
-    }
-
-    @media (max-width: 780px) {
-      .hiw-grid { grid-template-columns: 1fr; }
-      .hiw-right { margin-top: 8px; }
+    @media (max-width: 680px) {
+      .hiw-bg { background-position: center center; min-height: auto; }
+      .hiw-content { padding: 32px 24px; max-width: 100%; }
+      .hiw-bg::before { background: rgba(5,9,20,0.92); }
     }
 
   </style>
@@ -966,16 +839,13 @@
     </div>
 
     <!-- HOW IT WORKS -->
-    <section id="how">
+    <section id="how" style="padding:52px 0;">
       <div class="wrap">
-        <div class="hiw-grid">
-
-          <!-- LEFT: text + steps -->
-          <div class="hiw-left">
+        <div class="hiw-bg">
+          <div class="hiw-content">
             <div class="section-tag">How it works</div>
             <h2 class="hiw-h2">A system that does the work <span style="color:var(--blue);">for you</span></h2>
             <p class="hiw-sub">Set your goal, get your plan, follow it <span style="color:var(--blue);">day by day.</span></p>
-
             <div class="hiw-steps">
               <div class="hiw-step">
                 <div class="hiw-icon">
@@ -987,7 +857,6 @@
                   <p>Your goal, stats, preferences, and setup.</p>
                 </div>
               </div>
-
               <div class="hiw-step">
                 <div class="hiw-icon">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.88 5.79H20l-4.94 3.59 1.88 5.79L12 14.58l-4.94 3.59 1.88-5.79L4 8.79h6.12z"/></svg>
@@ -998,7 +867,6 @@
                   <p>Meals, workouts, and shopping list — generated instantly.</p>
                 </div>
               </div>
-
               <div class="hiw-step">
                 <div class="hiw-icon">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
@@ -1011,99 +879,6 @@
               </div>
             </div>
           </div>
-
-          <!-- RIGHT: phone mockup -->
-          <div class="hiw-right">
-            <div class="hiw-phone">
-              <!-- status bar -->
-              <div class="hiw-status">
-                <span>9:41</span>
-                <div style="display:flex;gap:5px;align-items:center;">
-                  <svg width="15" height="11" viewBox="0 0 15 11" fill="white" opacity="0.9"><rect x="0" y="4" width="3" height="7" rx="0.5"/><rect x="4" y="2.5" width="3" height="8.5" rx="0.5"/><rect x="8" y="1" width="3" height="10" rx="0.5"/><rect x="12" y="0" width="3" height="11" rx="0.5"/></svg>
-                  <svg width="16" height="12" viewBox="0 0 16 12" fill="none" stroke="white" stroke-width="1.5" opacity="0.9"><path d="M1 4.5C3.8 1.7 12.2 1.7 15 4.5"/><path d="M3.5 7C5.5 5 10.5 5 12.5 7"/><circle cx="8" cy="10" r="1.2" fill="white" stroke="none"/></svg>
-                  <div style="width:25px;height:12px;border:1.5px solid rgba(255,255,255,0.5);border-radius:3px;padding:1.5px;display:flex;align-items:center;">
-                    <div style="width:100%;height:100%;background:white;border-radius:1.5px;"></div>
-                  </div>
-                </div>
-              </div>
-              <!-- app header -->
-              <div class="hiw-app-header">
-                <span class="hiw-logo">Lean<span style="color:var(--blue);">Plan</span></span>
-                <div class="hiw-building-badge">Building your plan <span class="hiw-spin">⟳</span></div>
-              </div>
-              <!-- content -->
-              <div class="hiw-phone-body">
-                <div class="hiw-title">Building your plan...</div>
-                <div class="hiw-subtitle">This will only take a few seconds.</div>
-
-                <div class="hiw-rows">
-                  <div class="hiw-row done">
-                    <div class="hiw-row-icon">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M8 12l3 3 5-5"/></svg>
-                    </div>
-                    <div class="hiw-row-text">
-                      <strong>Analyzing your goals</strong>
-                      <span>Fat loss · 1,800 kcal · High protein</span>
-                    </div>
-                    <div class="hiw-check">
-                      <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><polyline points="2,7 5,10 11,3" stroke="var(--blue)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    </div>
-                  </div>
-
-                  <div class="hiw-row done">
-                    <div class="hiw-row-icon">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2" stroke-linecap="round"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2v-4M9 21H5a2 2 0 0 1-2-2v-4m0 0h18"/></svg>
-                    </div>
-                    <div class="hiw-row-text">
-                      <strong>Calculating your nutrition</strong>
-                      <span>Personalising your macros</span>
-                    </div>
-                    <div class="hiw-check">
-                      <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><polyline points="2,7 5,10 11,3" stroke="var(--blue)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    </div>
-                  </div>
-
-                  <div class="hiw-row active">
-                    <div class="hiw-row-icon">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2" stroke-linecap="round"><path d="M12 2a10 10 0 1 1 0 20A10 10 0 0 1 12 2z" opacity="0.3"/><path d="M12 2a10 10 0 0 1 10 10"/></svg>
-                    </div>
-                    <div class="hiw-row-text">
-                      <strong>Creating your meals</strong>
-                      <span>Matching your preferences</span>
-                    </div>
-                    <div class="hiw-spinner"></div>
-                  </div>
-
-                  <div class="hiw-row pending">
-                    <div class="hiw-row-icon" style="opacity:0.35;">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l2 2"/></svg>
-                    </div>
-                    <div class="hiw-row-text" style="opacity:0.4;">
-                      <strong>Building your workouts</strong>
-                      <span>Tailored to your level and goal</span>
-                    </div>
-                    <div class="hiw-circle-empty"></div>
-                  </div>
-
-                  <div class="hiw-row pending">
-                    <div class="hiw-row-icon" style="opacity:0.35;">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/></svg>
-                    </div>
-                    <div class="hiw-row-text" style="opacity:0.4;">
-                      <strong>Generating shopping list</strong>
-                      <span>From your meals</span>
-                    </div>
-                    <div class="hiw-circle-empty"></div>
-                  </div>
-                </div>
-
-                <div class="hiw-footer-note">
-                  Your complete plan will be ready in <span style="color:var(--blue);">under 60 seconds.</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
         </div>
       </div>
     </section>
