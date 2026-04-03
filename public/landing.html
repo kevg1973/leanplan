@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LeanPlan — Your Personal Trainer & Nutritionist</title>
+<meta name="description" content="AI-powered meal plans and workout programmes built around your body, your goals, and your life.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{font-family:'Inter',sans-serif;background:#080d1a;color:#fff;-webkit-font-smoothing:antialiased;overflow-x:hidden;}
+a{text-decoration:none;color:inherit;}
+img{max-width:100%;display:block;}
+
+/* ── Nav ──────────────────────────────────────────────────────────── */
+.nav{display:flex;align-items:center;justify-content:space-between;padding:20px 40px;max-width:1200px;margin:0 auto;}
+.nav-logo{font-size:24px;font-weight:900;letter-spacing:-0.5px;}
+.nav-logo span{color:#4A9EF8;}
+.nav-cta{background:#4A9EF8;color:#fff;font-weight:700;font-size:14px;padding:12px 24px;border-radius:99px;border:none;cursor:pointer;font-family:'Inter',sans-serif;transition:background 0.2s;}
+.nav-cta:hover{background:#3b8de0;}
+
+/* ── Hero ─────────────────────────────────────────────────────────── */
+.hero{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center;max-width:1200px;margin:0 auto;padding:60px 40px 80px;}
+.hero-badge{display:inline-block;background:rgba(74,158,248,0.12);border:1px solid rgba(74,158,248,0.3);color:#4A9EF8;font-size:13px;font-weight:600;padding:8px 18px;border-radius:99px;margin-bottom:24px;}
+.hero h1{font-size:52px;font-weight:900;letter-spacing:-2px;line-height:1.08;margin-bottom:20px;}
+.hero h1 .accent{color:#4A9EF8;}
+.hero-sub{color:#8a94a6;font-size:17px;line-height:1.7;margin-bottom:32px;max-width:480px;}
+.hero-buttons{display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;}
+.btn-primary{background:#4A9EF8;color:#fff;font-weight:700;font-size:16px;padding:16px 32px;border-radius:14px;border:none;cursor:pointer;font-family:'Inter',sans-serif;transition:background 0.2s;}
+.btn-primary:hover{background:#3b8de0;}
+.btn-ghost{background:transparent;color:#fff;font-weight:600;font-size:16px;padding:16px 32px;border-radius:14px;border:1.5px solid rgba(255,255,255,0.2);cursor:pointer;font-family:'Inter',sans-serif;transition:border-color 0.2s;}
+.btn-ghost:hover{border-color:rgba(255,255,255,0.5);}
+.hero-note{color:#555d6e;font-size:13px;}
+.hero-image{position:relative;}
+.hero-image img{width:100%;max-width:480px;margin:0 auto;filter:drop-shadow(0 20px 60px rgba(0,0,0,0.5));}
+
+/* ── Lifestyle Band ──────────────────────────────────────────────── */
+.lifestyle{position:relative;height:500px;overflow:hidden;}
+.lifestyle-bg{position:absolute;inset:0;background:url('/deadlift.png') center/cover no-repeat;}
+.lifestyle-overlay{position:absolute;inset:0;background:linear-gradient(to bottom,#080d1a 0%,rgba(8,13,26,0.2) 25%,rgba(8,13,26,0.2) 60%,#080d1a 100%);}
+.lifestyle-pills{position:absolute;bottom:40px;left:40px;display:flex;flex-direction:column;gap:10px;}
+.lifestyle-pill{background:rgba(8,13,26,0.85);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:12px 20px;font-size:14px;font-weight:600;color:#d1d5db;max-width:400px;}
+
+/* ── Feature Showcases ───────────────────────────────────────────── */
+.features{max-width:1200px;margin:0 auto;padding:80px 40px;}
+.feature{display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center;margin-bottom:100px;}
+.feature:last-child{margin-bottom:0;}
+.feature.reversed{direction:rtl;}
+.feature.reversed>*{direction:ltr;}
+.feature-image img{width:100%;max-width:440px;margin:0 auto;border-radius:20px;filter:drop-shadow(0 16px 48px rgba(0,0,0,0.4));}
+.feature-text h2{font-size:36px;font-weight:900;letter-spacing:-1px;line-height:1.15;margin-bottom:24px;}
+.feature-bullets{list-style:none;display:flex;flex-direction:column;gap:14px;}
+.feature-bullets li{display:flex;align-items:flex-start;gap:12px;font-size:15px;color:#9ca3af;line-height:1.6;}
+.feature-bullets li::before{content:"";flex-shrink:0;width:22px;height:22px;margin-top:2px;border-radius:99px;background:rgba(74,158,248,0.15);border:1.5px solid #4A9EF8;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%234A9EF8' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E");background-size:12px;background-repeat:no-repeat;background-position:center;}
+
+/* ── Audience Cards ──────────────────────────────────────────────── */
+.audience{background:#060a14;padding:80px 40px;}
+.audience-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;max-width:1200px;margin:0 auto;}
+.audience-card{background:#0c1222;border:1px solid #1a2236;border-radius:20px;padding:36px 32px;}
+.audience-card h3{font-size:24px;font-weight:900;letter-spacing:-0.5px;margin-bottom:6px;}
+.audience-card .subtitle{color:#4A9EF8;font-size:15px;font-weight:600;margin-bottom:20px;}
+.audience-card ul{list-style:none;display:flex;flex-direction:column;gap:12px;}
+.audience-card li{display:flex;align-items:center;gap:10px;font-size:14px;color:#9ca3af;line-height:1.5;}
+.audience-card li::before{content:"";flex-shrink:0;width:6px;height:6px;border-radius:99px;background:#4A9EF8;}
+
+/* ── Pricing ─────────────────────────────────────────────────────── */
+.pricing{max-width:1200px;margin:0 auto;padding:80px 40px;text-align:center;}
+.pricing h2{font-size:40px;font-weight:900;letter-spacing:-1.5px;margin-bottom:8px;}
+.pricing .pricing-sub{color:#6b7280;font-size:16px;margin-bottom:48px;}
+.pricing-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:680px;margin:0 auto 40px;}
+.price-card{background:#0c1222;border:1px solid #1a2236;border-radius:20px;padding:32px 28px;text-align:center;position:relative;}
+.price-card.featured{border-color:#4A9EF8;border-width:2px;}
+.price-badge{position:absolute;top:-14px;left:50%;transform:translateX(-50%);background:#4A9EF8;color:#fff;font-size:12px;font-weight:700;padding:5px 16px;border-radius:99px;white-space:nowrap;}
+.price-label{color:#6b7280;font-size:14px;font-weight:600;margin-bottom:12px;}
+.price-amount{font-size:42px;font-weight:900;letter-spacing:-1px;margin-bottom:4px;}
+.price-amount span{font-size:16px;font-weight:500;color:#6b7280;}
+.price-save{color:#4A9EF8;font-size:13px;font-weight:700;margin-bottom:16px;min-height:20px;}
+.price-features{list-style:none;display:flex;flex-direction:column;gap:8px;margin-top:16px;border-top:1px solid #1a2236;padding-top:16px;}
+.price-features li{font-size:13px;color:#9ca3af;}
+.pricing-cta{margin-bottom:12px;}
+.pricing-cta .btn-primary{font-size:18px;padding:18px 48px;}
+.pricing-note{color:#555d6e;font-size:13px;}
+
+/* ── Footer ──────────────────────────────────────────────────────── */
+.footer{border-top:1px solid #1a2236;padding:32px 40px;max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;}
+.footer-logo{font-size:20px;font-weight:900;letter-spacing:-0.5px;}
+.footer-logo span{color:#4A9EF8;}
+.footer-links{display:flex;gap:24px;}
+.footer-links a{color:#6b7280;font-size:13px;transition:color 0.2s;}
+.footer-links a:hover{color:#fff;}
+.footer-copy{color:#3a3f4b;font-size:13px;}
+
+/* ── Mobile ──────────────────────────────────────────────────────── */
+@media(max-width:768px){
+  .nav{padding:16px 20px;}
+  .hero{grid-template-columns:1fr;padding:32px 20px 48px;gap:32px;text-align:center;}
+  .hero h1{font-size:34px;letter-spacing:-1px;}
+  .hero-sub{font-size:15px;margin-left:auto;margin-right:auto;}
+  .hero-buttons{justify-content:center;}
+  .hero-badge{font-size:12px;padding:6px 14px;}
+  .hero-note{text-align:center;}
+  .hero-image img{max-width:320px;}
+  .lifestyle{height:400px;}
+  .lifestyle-pills{left:20px;right:20px;bottom:20px;}
+  .lifestyle-pill{font-size:13px;padding:10px 16px;}
+  .features{padding:48px 20px;}
+  .feature{grid-template-columns:1fr;gap:32px;margin-bottom:64px;}
+  .feature.reversed{direction:ltr;}
+  .feature-image{order:-1;}
+  .feature-image img{max-width:320px;}
+  .feature-text h2{font-size:28px;}
+  .audience{padding:48px 20px;}
+  .audience-grid{grid-template-columns:1fr;}
+  .pricing{padding:48px 20px;}
+  .pricing h2{font-size:30px;}
+  .pricing-grid{grid-template-columns:1fr;max-width:360px;}
+  .footer{flex-direction:column;gap:16px;text-align:center;padding:24px 20px;}
+  .footer-links{gap:16px;}
+}
+</style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav class="nav">
+  <div class="nav-logo">Lean<span>Plan</span></div>
+  <a href="https://www.leanplan.uk" class="nav-cta">Start free trial</a>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="hero-text">
+    <div class="hero-badge">7-day free trial — no credit card needed</div>
+    <h1>Your personal trainer and nutritionist.<br><span class="accent">In your pocket.</span></h1>
+    <p class="hero-sub">AI-powered meal plans and workout programmes built around your body, your goals, and your life. Not someone else's.</p>
+    <div class="hero-buttons">
+      <a href="https://www.leanplan.uk" class="btn-primary">Start your free trial</a>
+      <a href="#features" class="btn-ghost">See how it works</a>
+    </div>
+    <p class="hero-note">Full access for 7 days. Then £9.99/month or £99/year.</p>
+  </div>
+  <div class="hero-image">
+    <img src="/Home-angle.png" alt="LeanPlan app screenshot">
+  </div>
+</section>
+
+<!-- Lifestyle Band -->
+<section class="lifestyle">
+  <div class="lifestyle-bg"></div>
+  <div class="lifestyle-overlay"></div>
+  <div class="lifestyle-pills">
+    <div class="lifestyle-pill">16-week structured programme</div>
+    <div class="lifestyle-pill">Personalised to your equipment & injuries</div>
+    <div class="lifestyle-pill">Foundation → Hypertrophy → Strength → Power</div>
+  </div>
+</section>
+
+<!-- Feature Showcases -->
+<section class="features" id="features">
+
+  <!-- Meal Planning -->
+  <div class="feature">
+    <div class="feature-image">
+      <img src="/phone-mockup-1.png" alt="Meal planning screenshot">
+    </div>
+    <div class="feature-text">
+      <h2>A meal plan built for you. Every single day.</h2>
+      <ul class="feature-bullets">
+        <li>Per-meal macro targets, not just daily totals</li>
+        <li>Training day carb cycling built in</li>
+        <li>Gluten-free, dairy-free, allergies — all respected</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Shopping List -->
+  <div class="feature reversed">
+    <div class="feature-image">
+      <img src="/shopping.png" alt="Shopping list screenshot">
+    </div>
+    <div class="feature-text">
+      <h2>Your weekly shop. Done in seconds.</h2>
+      <ul class="feature-bullets">
+        <li>Organised by aisle — no backtracking</li>
+        <li>Pantry tracking saves you money</li>
+        <li>Email it to yourself in one tap</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Workout Tracking -->
+  <div class="feature">
+    <div class="feature-image">
+      <img src="/updating.png" alt="Workout tracking screenshot">
+    </div>
+    <div class="feature-text">
+      <h2>Train smarter. Track every session.</h2>
+      <ul class="feature-bullets">
+        <li>4 periodisation blocks, auto-progressing</li>
+        <li>Injury and equipment filtering</li>
+        <li>PR celebrations and lift history</li>
+      </ul>
+    </div>
+  </div>
+
+</section>
+
+<!-- Audience Cards -->
+<section class="audience">
+  <div class="audience-grid">
+    <div class="audience-card">
+      <h3>Build muscle</h3>
+      <p class="subtitle">Train harder. Recover smarter.</p>
+      <ul>
+        <li>Hypertrophy-focused periodisation</li>
+        <li>2.2g protein per kg bodyweight targets</li>
+        <li>Training day carb cycling</li>
+      </ul>
+    </div>
+    <div class="audience-card">
+      <h3>Get stronger</h3>
+      <p class="subtitle">Stay strong. Stay active.</p>
+      <ul>
+        <li>Injury-aware exercise selection</li>
+        <li>Anti-inflammatory nutrition guidance</li>
+        <li>Recovery-first approach</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- Pricing -->
+<section class="pricing" id="pricing">
+  <h2>Simple, honest pricing</h2>
+  <p class="pricing-sub">Full access to everything. Cancel anytime.</p>
+
+  <div class="pricing-grid">
+    <div class="price-card">
+      <p class="price-label">Monthly</p>
+      <p class="price-amount">£9.99<span>/month</span></p>
+      <p class="price-save">&nbsp;</p>
+      <ul class="price-features">
+        <li>AI meal plans & shopping lists</li>
+        <li>Structured workout programme</li>
+        <li>AI coach, progress tracking</li>
+      </ul>
+    </div>
+    <div class="price-card featured">
+      <div class="price-badge">Most popular</div>
+      <p class="price-label">Annual</p>
+      <p class="price-amount">£99<span>/year</span></p>
+      <p class="price-save">Save £20 vs monthly</p>
+      <ul class="price-features">
+        <li>AI meal plans & shopping lists</li>
+        <li>Structured workout programme</li>
+        <li>AI coach, progress tracking</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="pricing-cta">
+    <a href="https://www.leanplan.uk" class="btn-primary">Start your free 7-day trial →</a>
+  </div>
+  <p class="pricing-note">No credit card required. Cancel anytime.</p>
+</section>
+
+<!-- Footer -->
+<footer class="footer">
+  <div class="footer-logo">Lean<span>Plan</span></div>
+  <div class="footer-links">
+    <a href="#">Privacy</a>
+    <a href="#">Terms</a>
+    <a href="#">Support</a>
+  </div>
+  <div class="footer-copy">&copy; 2026 LeanPlan</div>
+</footer>
+
+</body>
+</html>
