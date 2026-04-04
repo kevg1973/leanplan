@@ -116,10 +116,25 @@ Theme is managed via `ThemeContext.jsx` — extracted components use `useTheme()
 ### Landing Page & Static Pages
 ```
 public/
-  landing.html         (Marketing landing page — standalone HTML, Inter font, dark navy design)
+  landing.html         (Marketing landing page — standalone HTML, see structure below)
   privacy.html         (Privacy policy)
   terms.html           (Terms of service)
 ```
+
+**Landing page design:** DM Sans font (Google Fonts), dark background `#050914`, blue accent `#4A9EF8`, CSS custom properties. Standalone HTML — no React, no build step.
+
+**Landing page sections (top to bottom):**
+1. Hero — `deadlift-hero.png` background with gradient overlay, nav bar, headline, two CTA buttons
+2. Sticky nav — appears on scroll via IntersectionObserver, duplicates main nav
+3. Social proof — 3 testimonial cards with star ratings
+4. How it works — 3 numbered steps + `plan-builder.png` screenshot (2-column grid)
+5. Features — 2x2 card grid: workouts (`section-3a.png`), progress (`progress-tracking.webp`), meals (`section-3c.webp`), shopping (`section-3d.webp`)
+6. Compare — "Most apps" vs "LeanPlan" side-by-side with x/check icons
+7. CTA box — blue gradient border, "Build my plan" button
+8. FAQ — 6 questions in 2-column grid
+9. Footer — logo, privacy/terms/support links, copyright
+
+**All CTAs link to `https://app.leanplan.uk`.** Responsive at 900px and 680px breakpoints. Support email is CloudFlare-protected.
 
 ### Domain Routing (`server.js`)
 | Hostname | Route | Serves |
