@@ -283,35 +283,65 @@
 
     .proof-grid {
       display: grid;
-      grid-template-columns: repeat(3,1fr);
+      grid-template-columns: repeat(4,1fr);
       gap: 14px;
     }
 
     .proof-card {
-      padding: 20px 22px;
+      padding: 20px;
       border-radius: var(--r);
-      background: rgba(255,255,255,0.02);
+      background: rgba(255,255,255,0.03);
       border: 1px solid var(--line);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
     }
 
-    .stars {
-      color: var(--blue);
-      font-size: 0.78rem;
-      letter-spacing: 2px;
-      margin-bottom: 8px;
+    .proof-avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #fff;
+      flex-shrink: 0;
     }
 
-    .proof-card strong {
-      display: block;
-      font-size: 0.93rem;
-      margin-bottom: 6px;
+    .proof-body p {
+      color: var(--muted);
+      font-size: 0.85rem;
+      line-height: 1.6;
+      margin: 0 0 12px;
+      font-style: italic;
+    }
+
+    .proof-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .proof-name {
+      font-size: 0.82rem;
+      font-weight: 600;
       color: var(--text);
     }
 
-    .proof-card p {
-      color: var(--muted);
-      font-size: 0.85rem;
-      line-height: 1.55;
+    .proof-stars {
+      color: #f5a623;
+      font-size: 0.78rem;
+      letter-spacing: 1px;
+    }
+
+    @media (max-width: 900px) {
+      .proof-grid { grid-template-columns: repeat(2,1fr); }
+    }
+
+    @media (max-width: 480px) {
+      .proof-grid { grid-template-columns: 1fr; }
     }
 
     /* ── SECTIONS ── */
@@ -836,21 +866,51 @@
     <div class="wrap">
       <div class="proof-strip">
         <div class="proof-grid">
+
           <div class="proof-card">
-            <div class="stars">★★★★★</div>
-            <strong>"Takes all the thinking out of it."</strong>
-            <p>Meals, workouts, and the shopping list — all there. I just follow the plan.</p>
+            <div class="proof-avatar" style="background:linear-gradient(135deg,#4a6fa5,#2d4a7a);">D</div>
+            <div class="proof-body">
+              <p>"LeanPlan made everything simple. No more guessing what to eat or how to train. I've never been more consistent."</p>
+              <div class="proof-footer">
+                <span class="proof-name">— Dan, 38</span>
+                <span class="proof-stars">★★★★★</span>
+              </div>
+            </div>
           </div>
+
           <div class="proof-card">
-            <div class="stars">★★★★★</div>
-            <strong>"I actually stick to this."</strong>
-            <p>The daily structure makes it so much easier to stay consistent, even when life gets busy.</p>
+            <div class="proof-avatar" style="background:linear-gradient(135deg,#7a4a6f,#5a2d52);">S</div>
+            <div class="proof-body">
+              <p>"I love how the meal plans fit my life. I'm eating better, have more energy, and finally seeing results."</p>
+              <div class="proof-footer">
+                <span class="proof-name">— Sarah, 34</span>
+                <span class="proof-stars">★★★★★</span>
+              </div>
+            </div>
           </div>
+
           <div class="proof-card">
-            <div class="stars">★★★★★</div>
-            <strong>"The shopping list saves me loads of time."</strong>
-            <p>No more guessing what to buy or piecing meals together myself.</p>
+            <div class="proof-avatar" style="background:linear-gradient(135deg,#4a7a5a,#2d5a3d);">J</div>
+            <div class="proof-body">
+              <p>"The workouts are spot on, and the progress tracking keeps me motivated. It just works."</p>
+              <div class="proof-footer">
+                <span class="proof-name">— James, 45</span>
+                <span class="proof-stars">★★★★★</span>
+              </div>
+            </div>
           </div>
+
+          <div class="proof-card">
+            <div class="proof-avatar" style="background:linear-gradient(135deg,#7a6a4a,#5a4a2d);">L</div>
+            <div class="proof-body">
+              <p>"It's like having a coach in my pocket. The little adjustments make a huge difference."</p>
+              <div class="proof-footer">
+                <span class="proof-name">— Laura, 41</span>
+                <span class="proof-stars">★★★★★</span>
+              </div>
+            </div>
+          </div>
+
         </div>
       </div>
     </div>
