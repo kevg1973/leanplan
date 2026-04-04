@@ -386,49 +386,82 @@
     }
 
     /* ── FEATURES ── */
-    .features-grid {
+    /* ── FEATURES ── */
+    .feat-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 16px;
     }
 
-    .feat {
-      border-radius: var(--r);
-      background: rgba(255,255,255,0.02);
-      border: 1px solid var(--line);
+    .feat-card {
+      position: relative;
+      border-radius: 20px;
       overflow: hidden;
+      min-height: 380px;
+      background-size: cover;
+      background-position: center;
+      display: flex;
+      align-items: flex-end;
+      border: 1px solid rgba(255,255,255,0.06);
     }
 
-    .feat-body {
-      padding: 24px 24px 16px;
+    .feat-card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg,
+        rgba(5,9,20,0.08) 0%,
+        rgba(5,9,20,0.55) 40%,
+        rgba(5,9,20,0.95) 100%
+      );
+      pointer-events: none;
     }
 
-    .feat-body h3 {
-      font-size: 1.12rem;
+    .feat-card-inner {
+      position: relative;
+      z-index: 2;
+      padding: 24px;
+      width: 100%;
+    }
+
+    .feat-card-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      background: rgba(74,158,248,0.15);
+      border: 1px solid rgba(74,158,248,0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 12px;
+    }
+
+    .feat-card h3 {
+      font-size: 1.15rem;
       font-weight: 700;
-      margin-bottom: 8px;
       letter-spacing: -0.025em;
+      margin-bottom: 6px;
     }
 
-    .feat-body p {
-      color: var(--muted);
-      font-size: 0.88rem;
-      line-height: 1.6;
+    .feat-card p {
+      color: rgba(240,244,255,0.7);
+      font-size: 0.85rem;
+      line-height: 1.55;
       margin-bottom: 14px;
     }
 
-    .feat-bullets {
+    .feat-card-bullets {
       display: flex;
       flex-direction: column;
-      gap: 7px;
+      gap: 6px;
     }
 
-    .feat-bullet {
+    .feat-card-bullet {
       display: flex;
       align-items: center;
-      gap: 9px;
-      color: var(--muted);
-      font-size: 0.83rem;
+      gap: 8px;
+      font-size: 0.82rem;
+      color: rgba(240,244,255,0.8);
     }
 
     .tick {
@@ -443,30 +476,11 @@
       flex-shrink: 0;
     }
 
-    .tick svg {
-      width: 9px;
-      height: 9px;
-    }
+    .tick svg { width: 9px; height: 9px; }
 
-    .feat-img {
-      height: 220px;
-      border-top: 1px solid var(--line);
-      overflow: hidden;
-      position: relative;
-    }
-
-    .feat-img img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      object-position: center top;
-    }
-
-    .feat-img-gradient {
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(180deg, rgba(5,9,20,0.0) 40%, rgba(5,9,20,0.7) 100%);
-      pointer-events: none;
+    @media (max-width: 680px) {
+      .feat-grid { grid-template-columns: 1fr; }
+      .feat-card { min-height: 320px; }
     }
 
     /* ── COMPARE ── */
@@ -872,105 +886,65 @@
         <div class="section-tag">Features</div>
         <h2>Built to remove the guesswork from fitness</h2>
         <p class="sub">LeanPlan isn't another tracker. It's a complete system you can follow in real life.</p>
-        <div class="features-grid">
+        <div class="feat-grid">
 
-          <div class="feat">
-            <div class="feat-body">
+          <div class="feat-card" style="background-image:url('/section-3a.png')">
+            <div class="feat-card-inner">
+              <div class="feat-card-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+              </div>
               <h3>Personalised meal plans</h3>
               <p>Your calories, your macros, your dietary needs. Generated fresh every week — with training day carb cycling built in.</p>
-              <div class="feat-bullets">
-                <div class="feat-bullet">
-                  <div class="tick"><svg viewBox="0 0 10 10" fill="none"><polyline points="2,5.5 4.5,8 8,3" stroke="#29c36a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-                  Per-meal macro targets, not just daily totals
-                </div>
-                <div class="feat-bullet">
-                  <div class="tick"><svg viewBox="0 0 10 10" fill="none"><polyline points="2,5.5 4.5,8 8,3" stroke="#29c36a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-                  Gluten-free, dairy-free, allergies all respected
-                </div>
-                <div class="feat-bullet">
-                  <div class="tick"><svg viewBox="0 0 10 10" fill="none"><polyline points="2,5.5 4.5,8 8,3" stroke="#29c36a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-                  Swap any meal you don't fancy, calorie-neutral
-                </div>
+              <div class="feat-card-bullets">
+                <div class="feat-card-bullet"><div class="tick"><svg viewBox="0 0 10 10" fill="none"><polyline points="2,5.5 4.5,8 8,3" stroke="#29c36a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>Per-meal macro targets, not just daily totals</div>
+                <div class="feat-card-bullet"><div class="tick"><svg viewBox="0 0 10 10" fill="none"><polyline points="2,5.5 4.5,8 8,3" stroke="#29c36a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>Gluten-free, dairy-free, allergies all respected</div>
+                <div class="feat-card-bullet"><div class="tick"><svg viewBox="0 0 10 10" fill="none"><polyline points="2,5.5 4.5,8 8,3" stroke="#29c36a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>Swap any meal you don't fancy, calorie-neutral</div>
               </div>
-            </div>
-            <div class="feat-img">
-              <img src="/phone-mockup-1.png" alt="LeanPlan meal planning" />
-              <div class="feat-img-gradient"></div>
             </div>
           </div>
 
-          <div class="feat">
-            <div class="feat-body">
-              <h3>Smart shopping list</h3>
-              <p>Auto-generated from your meal plan, organised by supermarket aisle. Email it to yourself in one tap.</p>
-              <div class="feat-bullets">
-                <div class="feat-bullet">
-                  <div class="tick"><svg viewBox="0 0 10 10" fill="none"><polyline points="2,5.5 4.5,8 8,3" stroke="#29c36a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-                  Organised by aisle — no backtracking
-                </div>
-                <div class="feat-bullet">
-                  <div class="tick"><svg viewBox="0 0 10 10" fill="none"><polyline points="2,5.5 4.5,8 8,3" stroke="#29c36a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-                  Pantry tracking — mark what you already have
-                </div>
-                <div class="feat-bullet">
-                  <div class="tick"><svg viewBox="0 0 10 10" fill="none"><polyline points="2,5.5 4.5,8 8,3" stroke="#29c36a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-                  Leftovers excluded automatically
-                </div>
+          <div class="feat-card" style="background-image:url('/section-3d.png')">
+            <div class="feat-card-inner">
+              <div class="feat-card-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
               </div>
-            </div>
-            <div class="feat-img">
-              <img src="/shopping.png" alt="LeanPlan shopping list" />
-              <div class="feat-img-gradient"></div>
-            </div>
-          </div>
-
-          <div class="feat">
-            <div class="feat-body">
-              <h3>Structured workout programme</h3>
-              <p>A 16-week programme that progresses automatically — built around your goal, fitness level, and equipment.</p>
-              <div class="feat-bullets">
-                <div class="feat-bullet">
-                  <div class="tick"><svg viewBox="0 0 10 10" fill="none"><polyline points="2,5.5 4.5,8 8,3" stroke="#29c36a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-                  4 periodisation blocks, auto-progressing
-                </div>
-                <div class="feat-bullet">
-                  <div class="tick"><svg viewBox="0 0 10 10" fill="none"><polyline points="2,5.5 4.5,8 8,3" stroke="#29c36a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-                  Injury and equipment filtering
-                </div>
-                <div class="feat-bullet">
-                  <div class="tick"><svg viewBox="0 0 10 10" fill="none"><polyline points="2,5.5 4.5,8 8,3" stroke="#29c36a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-                  PR celebrations and lift history
-                </div>
-              </div>
-            </div>
-            <div class="feat-img">
-              <img src="/workout-today.png" alt="LeanPlan workout programme" />
-              <div class="feat-img-gradient"></div>
-            </div>
-          </div>
-
-          <div class="feat">
-            <div class="feat-body">
               <h3>Progress tracking</h3>
               <p>Weight, measurements, workout history, and lift PRs — see exactly what's working over time.</p>
-              <div class="feat-bullets">
-                <div class="feat-bullet">
-                  <div class="tick"><svg viewBox="0 0 10 10" fill="none"><polyline points="2,5.5 4.5,8 8,3" stroke="#29c36a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-                  Weight chart with trend line
-                </div>
-                <div class="feat-bullet">
-                  <div class="tick"><svg viewBox="0 0 10 10" fill="none"><polyline points="2,5.5 4.5,8 8,3" stroke="#29c36a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-                  Lift tracker with personal records
-                </div>
-                <div class="feat-bullet">
-                  <div class="tick"><svg viewBox="0 0 10 10" fill="none"><polyline points="2,5.5 4.5,8 8,3" stroke="#29c36a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-                  Weekly check-in to keep you on track
-                </div>
+              <div class="feat-card-bullets">
+                <div class="feat-card-bullet"><div class="tick"><svg viewBox="0 0 10 10" fill="none"><polyline points="2,5.5 4.5,8 8,3" stroke="#29c36a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>Weight chart with trend line</div>
+                <div class="feat-card-bullet"><div class="tick"><svg viewBox="0 0 10 10" fill="none"><polyline points="2,5.5 4.5,8 8,3" stroke="#29c36a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>Lift tracker with personal records</div>
+                <div class="feat-card-bullet"><div class="tick"><svg viewBox="0 0 10 10" fill="none"><polyline points="2,5.5 4.5,8 8,3" stroke="#29c36a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>Weekly check-in to keep you on track</div>
               </div>
             </div>
-            <div class="feat-img">
-              <img src="/couple-post-workout.png" alt="Progress with LeanPlan" />
-              <div class="feat-img-gradient"></div>
+          </div>
+
+          <div class="feat-card" style="background-image:url('/section-3b.png')">
+            <div class="feat-card-inner">
+              <div class="feat-card-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+              </div>
+              <h3>Smart shopping list</h3>
+              <p>Auto-generated from your meal plan, organised by supermarket aisle. Email it to yourself in one tap.</p>
+              <div class="feat-card-bullets">
+                <div class="feat-card-bullet"><div class="tick"><svg viewBox="0 0 10 10" fill="none"><polyline points="2,5.5 4.5,8 8,3" stroke="#29c36a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>Organised by aisle — no backtracking</div>
+                <div class="feat-card-bullet"><div class="tick"><svg viewBox="0 0 10 10" fill="none"><polyline points="2,5.5 4.5,8 8,3" stroke="#29c36a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>Pantry tracking — mark what you already have</div>
+                <div class="feat-card-bullet"><div class="tick"><svg viewBox="0 0 10 10" fill="none"><polyline points="2,5.5 4.5,8 8,3" stroke="#29c36a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>Leftovers excluded automatically</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="feat-card" style="background-image:url('/section-3c.png')">
+            <div class="feat-card-inner">
+              <div class="feat-card-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+              </div>
+              <h3>Structured workout programme</h3>
+              <p>A 16-week programme that progresses automatically — built around your goal, fitness level, and equipment.</p>
+              <div class="feat-card-bullets">
+                <div class="feat-card-bullet"><div class="tick"><svg viewBox="0 0 10 10" fill="none"><polyline points="2,5.5 4.5,8 8,3" stroke="#29c36a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>4 periodisation blocks, auto-progressing</div>
+                <div class="feat-card-bullet"><div class="tick"><svg viewBox="0 0 10 10" fill="none"><polyline points="2,5.5 4.5,8 8,3" stroke="#29c36a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>Injury and equipment filtering</div>
+                <div class="feat-card-bullet"><div class="tick"><svg viewBox="0 0 10 10" fill="none"><polyline points="2,5.5 4.5,8 8,3" stroke="#29c36a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>PR celebrations and lift history</div>
+              </div>
             </div>
           </div>
 
