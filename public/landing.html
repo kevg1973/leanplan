@@ -332,11 +332,26 @@
     }
 
     @media (max-width: 900px) {
-      .proof-grid { grid-template-columns: repeat(2,1fr); }
+      .proof-grid {
+        display: flex;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        -webkit-overflow-scrolling: touch;
+        gap: 14px;
+        padding-bottom: 12px;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+      }
+      .proof-grid::-webkit-scrollbar { display: none; }
+      .proof-card {
+        flex: 0 0 80vw;
+        max-width: 320px;
+        scroll-snap-align: start;
+      }
     }
 
     @media (max-width: 480px) {
-      .proof-grid { grid-template-columns: 1fr; }
+      .proof-card { flex: 0 0 88vw; }
     }
 
     /* ── SECTIONS ── */
