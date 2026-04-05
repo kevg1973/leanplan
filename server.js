@@ -1550,6 +1550,36 @@ const calcSlotTargets = (dailyCal, dailyProtein, isTrainingDay) => {
   return { cal, protein, carbs, isTrainingDay };
 };
 
+// ── Meal image fetcher (Pexels API + Supabase cache) ────────────────────────
+const fetchMealImage = async (mealName) => {
+  try {
+    const { data } = await supabaseAdmin
+      .from("meal_images")
+      .select("image_url")
+      .eq("meal_name", mealName.toLowerCase().trim())
+      .single();
+    if (data?.image_url) return data.image_url;
+
+    const query = encodeURIComponent(mealName);
+    const r = await fetch(`https://api.pexels.com/v1/search?query=${query}&per_page=1&orientation=landscape`, {
+      headers: { Authorization: process.env.PEXELS_API_KEY }
+    });
+    const json = await r.json();
+    const url = json.photos?.[0]?.src?.medium || null;
+
+    if (url) {
+      await supabaseAdmin.from("meal_images").upsert({
+        meal_name: mealName.toLowerCase().trim(),
+        image_url: url,
+      });
+    }
+    return url;
+  } catch (err) {
+    console.error("fetchMealImage error:", err.message);
+    return null;
+  }
+};
+
 // ── Path C: Guided ingredient-first meal plan ─────────────────────────────────
 app.post("/api/generate-meal-plan-v3", async (req, res) => {
   const { profile, days = 5 } = req.body;
@@ -1708,7 +1738,13 @@ Return JSON:
     const clean = text.replace(/```json|```/g, "").trim();
     const parsed = JSON.parse(clean);
     if (!parsed.meals || parsed.meals.length !== 5) throw new Error(`Day ${dateKey}: invalid meal count`);
-    return { date: dateKey, meals: parsed.meals, isTrainingDay: training };
+    const mealsWithImages = await Promise.all(
+      parsed.meals.map(async (meal) => {
+        const imageUrl = await fetchMealImage(meal.name);
+        return { ...meal, imageUrl };
+      })
+    );
+    return { date: dateKey, meals: mealsWithImages, isTrainingDay: training };
   };
 
   try {
