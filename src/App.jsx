@@ -22,6 +22,7 @@ import { MealsTab } from "./components/MealsTab.jsx";
 import { TrainTab } from "./components/TrainTab.jsx";
 import { ProfileTab } from "./components/ProfileTab.jsx";
 import { DAILY_TIPS } from "./data/workouts.js";
+import { AddToHomeScreen } from "./components/AddToHomeScreen.jsx";
 
 let C = LIGHT;
 
@@ -94,6 +95,7 @@ function AppInner() {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [authLoading, setAuthLoading] = useState(true); // true until auth check completes
   const [syncing, setSyncing] = useState(false);
+  const [showHomeScreenPrompt, setShowHomeScreenPrompt] = useState(false);
 
   // Listen to system dark mode changes
   useEffect(() => {
@@ -299,6 +301,13 @@ function AppInner() {
               });
               try { localStorage.setItem("leanplan_v4", JSON.stringify({ profile: googleProfile, entries:[], favourites:[], removed:[], mealLog:{}, workoutLog:{}, water:{}, journal:{}, measurements:[], darkOverride:null })); } catch(e){}
               console.log("Google OAuth: saved pending profile for", session.user.email);
+              // Show Add to Home Screen prompt on iOS Safari if not already installed
+              const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+              const isInstalled = window.matchMedia('(display-mode: standalone)').matches;
+              const hasSeenPrompt = localStorage.getItem('leanplan_hs_prompt_seen');
+              if (isIOS && !isInstalled && !hasSeenPrompt) {
+                setTimeout(() => setShowHomeScreenPrompt(true), 1500);
+              }
             } catch(e) { console.error("Google OAuth profile save failed:", e); }
           } else {
             try {
@@ -475,6 +484,13 @@ function AppInner() {
         setShowCreateAccount(false);
         setPendingProfile(null);
         setTrialStart();
+        // Show Add to Home Screen prompt on iOS Safari if not already installed
+        const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+        const isInstalled = window.matchMedia('(display-mode: standalone)').matches;
+        const hasSeenPrompt = localStorage.getItem('leanplan_hs_prompt_seen');
+        if (isIOS && !isInstalled && !hasSeenPrompt) {
+          setTimeout(() => setShowHomeScreenPrompt(true), 1500);
+        }
       }}
     />;
   }
@@ -623,6 +639,11 @@ function AppInner() {
           onDone={() => setShowWeeklyCheckIn(false)}
           onAddEntry={(entry) => setEntries(prev => [...prev, entry])}
         />
+      )}
+
+      {/* Add to Home Screen prompt — iOS Safari only, after onboarding */}
+      {showHomeScreenPrompt && (
+        <AddToHomeScreen onDismiss={() => setShowHomeScreenPrompt(false)} />
       )}
     </div>
     </ThemeProvider>

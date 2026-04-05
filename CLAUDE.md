@@ -6,7 +6,7 @@ LeanPlan is a React PWA fitness and nutrition app. Built by Kevin Grey (solo dev
 - **App:** https://app.leanplan.uk (React PWA)
 - **Landing page:** https://www.leanplan.uk (standalone HTML)
 
-**Current update number: 238**
+**Current update number: 260**
 
 ---
 
@@ -38,6 +38,7 @@ LeanPlan is a React PWA fitness and nutrition app. Built by Kevin Grey (solo dev
 - `ADMIN_EMAILS` — comma-separated emails with permanent Pro access (e.g. `kevg1973@gmail.com`)
 - `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`
 - `RESEND_API_KEY`
+- `PEXELS_API_KEY` — Pexels image API for meal photos
 - `CRON_SECRET` — secret header for cron-job.org trial reminder endpoint
 
 ---
@@ -50,8 +51,14 @@ LeanPlan is a React PWA fitness and nutrition app. Built by Kevin Grey (solo dev
 
 ---
 
-## Supabase Schema — `profiles` table
+## Supabase Schema
+
+### `profiles` table
 Columns: `id`, `email`, `profile_data` (jsonb), `entries`, `favourites`, `removed`, `meal_log`, `workout_log`, `water`, `journal`, `measurements`, `dark_override`, `is_pro`, `stripe_customer_id`, `stripe_subscription_id`, `stripe_plan`, `liked_meals`, `disliked_meals`, `meal_plan` (jsonb), `trial_start`, `reminder_sent`, `cancel_at`, `progress_photos` (jsonb)
+
+### `meal_images` table
+Columns: `meal_name` (TEXT, PRIMARY KEY), `image_url` (TEXT), `created_at` (TIMESTAMPTZ)
+Cache for Pexels meal photos — each unique meal name is looked up once, then served from cache.
 
 ---
 
@@ -108,7 +115,6 @@ src/
   data/
     exercises.js       (EXERCISE_DB — full exercise database with steps, tips, muscles)
     workouts.js        (PERIODISATION_BLOCKS, buildWorkout, getCurrentBlock, getWeeklyPlan, WORKOUTS, SUPPS, DAILY_TIPS)
-    meals.js           (ALL_MEALS, filterMeals)
 ```
 
 Theme is managed via `ThemeContext.jsx` — extracted components use `useTheme()` hook. `App.jsx` still uses a mutable `let C` for the main shell; all other components are fully context-driven.
@@ -121,20 +127,20 @@ public/
   terms.html           (Terms of service)
 ```
 
-**Landing page design:** DM Sans font (Google Fonts), dark background `#050914`, blue accent `#4A9EF8`, CSS custom properties. Standalone HTML — no React, no build step.
+**Landing page design:** DM Sans font (Google Fonts), dark background `#050914`, blue accent `#4A9EF8`, CSS custom properties. Standalone HTML — no React, no build step. All images are WebP for performance.
 
 **Landing page sections (top to bottom):**
-1. Hero — `deadlift-hero.png` background with gradient overlay, nav bar, headline, two CTA buttons
+1. Hero — `couple-post-workout-hero.webp` background with gradient overlay, nav bar, headline, two CTA buttons
 2. Sticky nav — appears on scroll via IntersectionObserver, duplicates main nav
-3. Social proof — 3 testimonial cards with star ratings
-4. How it works — 3 numbered steps + `plan-builder.png` screenshot (2-column grid)
-5. Features — 2x2 card grid: workouts (`section-3a.png`), progress (`progress-tracking.webp`), meals (`section-3c.webp`), shopping (`section-3d.webp`)
+3. Social proof — review tiles with real avatar photos (`dan-48.webp`, `sarah-34.webp`, `james-38.webp`, `laura-41.webp`), swipeable carousel on mobile via CSS scroll snap
+4. How it works — 3 numbered steps + `plan-builder.webp` phone mockup (2-column grid)
+5. Features — 2x2 card grid: workouts (`section-3a.webp`), progress (`progress-tracking.webp`), meals (`section-3c.webp`), shopping (`section-3d.webp`)
 6. Compare — "Most apps" vs "LeanPlan" side-by-side with x/check icons
 7. CTA box — blue gradient border, "Build my plan" button
 8. FAQ — 6 questions in 2-column grid
 9. Footer — logo, privacy/terms/support links, copyright
 
-**All CTAs link to `https://app.leanplan.uk`.** Responsive at 900px and 680px breakpoints. Support email is CloudFlare-protected.
+**No pricing section** — visitors go straight into the free trial. **All CTAs link to `https://app.leanplan.uk`.** Responsive at 900px and 680px breakpoints. Support email is CloudFlare-protected.
 
 ### Domain Routing (`server.js`)
 | Hostname | Route | Serves |
@@ -189,7 +195,7 @@ Deferred — UI stub exists, shows "coming soon".
 | `POST /api/stripe/portal` | Open billing portal |
 | `GET /api/pro-status?email=` | Check BYPASS_PRO + admin email override |
 | `POST /api/forgot-password` | Send temp password via Resend |
-| `POST /api/generate-meal-plan-v3` | Current guided ingredient-first plan |
+| `POST /api/generate-meal-plan-v3` | Current guided ingredient-first plan (includes meal images via Pexels) |
 | `POST /api/swap-meal` | Calorie-neutral meal swap |
 | `POST /api/chat` | AI coach with live context |
 | `POST /api/send-trial-reminders` | Daily cron — sends day 5 trial reminder emails |
@@ -233,6 +239,7 @@ Deferred — UI stub exists, shows "coming soon".
 - ✅ Cancellation email via Resend (triggered on `subscription.updated` with `cancel_at_period_end`)
 - ✅ AI coach rate limiting (20 messages/day)
 - ✅ Progress photos (upload, timeline, compare, flip)
+- ✅ Meal images via Pexels API + Supabase `meal_images` cache (displayed in MealCarousel)
 - ✅ Marketing landing page (`public/landing.html`)
 - ✅ Privacy and Terms pages
 - ✅ Domain split — `app.leanplan.uk` (PWA) / `www.leanplan.uk` (landing)
@@ -253,8 +260,10 @@ Deferred — UI stub exists, shows "coming soon".
 - Google OAuth redirect uses `https://app.leanplan.uk` — hardcoded in `CreateAccountScreen.jsx` and `AuthScreen.jsx`
 - `leanplan_pending_google_profile` localStorage key bridges OAuth redirect for post-onboarding Google signup
 - Cancellation email fires on `customer.subscription.updated` (when `cancel_at_period_end === true`), NOT on `customer.subscription.deleted`
-- `landing.html` is standalone HTML (no React, no build step) — uses Inter font from Google Fonts
+- `landing.html` is standalone HTML (no React, no build step) — uses DM Sans font from Google Fonts, all images WebP
 - `server.js` routes by `req.hostname` — `app.leanplan.uk` gets React app, everything else gets landing page
+- `fetchMealImage()` in server.js checks `meal_images` table first, falls back to Pexels API, caches result — each meal name only calls Pexels once
+- `src/data/meals.js` was deleted — `ALL_MEALS` and `filterMeals` were dead code from the v1 meal system, never used by the current AI-generated v3 system
 
 ---
 
@@ -293,6 +302,9 @@ Deferred — UI stub exists, shows "coming soon".
 - ~~Marketing website~~ ✅ (`landing.html`)
 - ~~Cancellation email~~ ✅ (Resend, triggered on subscription update)
 - ~~Domain split~~ ✅ (`app.leanplan.uk` / `www.leanplan.uk`)
+- ~~Meal images~~ ✅ (Pexels API + Supabase `meal_images` cache)
+- ~~Landing page redesign~~ ✅ (Updates 239–259, WebP images, review carousel, no pricing section)
+- ~~Dead code cleanup~~ ✅ (`src/data/meals.js` deleted, unused images removed)
 
 ---
 
