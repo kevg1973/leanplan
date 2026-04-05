@@ -44,6 +44,9 @@ export const CreateAccountScreen = ({ profileData, onDone }) => {
     const trialStart = new Date().toISOString();
     try { await saveProfileToSupabase(userId, trialStart); } catch(e) { console.error("Profile save error:", e); }
 
+    // Send welcome email — fire and forget, don't block account creation
+    try { fetch("/api/send-welcome", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ email, name: profileData?.name || "" }) }); } catch(e) {}
+
     setLoading(false);
     onDone(data.user, email);
   };
