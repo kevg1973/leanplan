@@ -89,7 +89,11 @@ export const MealCarousel = ({ meals, favourites, likedMeals, mealLog, today, on
         <div style={{ position:"absolute", top:-40, right:-40, width:160, height:160, borderRadius:"50%", background:`${mc.accent}15`, pointerEvents:"none" }} />
         <div style={{ position:"absolute", bottom:-20, left:-20, width:100, height:100, borderRadius:"50%", background:`${mc.accent}08`, pointerEvents:"none" }} />
 
-        {/* Meal type label */}
+        {/* Meal image */}
+        {m.imageUrl && (
+          <img src={m.imageUrl} alt={m.name} style={{ width:"calc(100% + 32px)", margin:"-16px -16px 12px", height:160, objectFit:"cover", borderRadius:"24px 24px 0 0", display:"block" }} />
+        )}
+
         {/* Meal type label */}
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
           <span style={{ color:mc.accent, fontSize:11, fontWeight:700, letterSpacing:"0.08em", background:`${mc.accent}18`, padding:"3px 9px", borderRadius:99 }}>{mc.label.toUpperCase()}</span>
