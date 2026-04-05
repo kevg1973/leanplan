@@ -405,7 +405,7 @@ app.post("/api/send-welcome", async (req, res) => {
     await resend.emails.send({
       from: "LeanPlan <hello@leanplan.uk>",
       to: email,
-      subject: "Your LeanPlan plan is ready 💪",
+      subject: `Let's get to work, ${displayName} 💪`,
       html: `<!DOCTYPE html>
 <html>
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"></head>
@@ -422,38 +422,66 @@ app.post("/api/send-welcome", async (req, res) => {
         <!-- Main card -->
         <tr><td style="background:#1a1a1a;border-radius:20px;padding:36px 32px;border:1px solid #2a2a2a;">
 
-          <p style="margin:0 0 8px;font-size:12px;font-weight:700;color:#3b82f6;text-transform:uppercase;letter-spacing:1.5px;">Welcome 🎉</p>
-          <h1 style="margin:0 0 12px;font-size:26px;font-weight:700;color:#ffffff;letter-spacing:-0.3px;">Welcome to LeanPlan, ${displayName}!</h1>
-          <p style="margin:0 0 28px;font-size:15px;color:#9ca3af;line-height:1.6;">Your personalised meal plan and workout programme are ready. You have <strong style="color:#ffffff;">7 days of full access</strong> — no card needed.</p>
+          <!-- Hero -->
+          <h1 style="margin:0 0 6px;font-size:30px;font-weight:800;color:#ffffff;letter-spacing:-0.5px;line-height:1.1;">Your plan is live.</h1>
+          <p style="margin:0 0 24px;font-size:16px;font-weight:600;color:#3b82f6;letter-spacing:-0.2px;">Meals planned. Workouts scheduled. No guesswork.</p>
 
-          <!-- CTA -->
-          <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
-            <tr><td align="center">
-              <a href="${APP_URL}" style="display:inline-block;background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:#ffffff;text-decoration:none;font-size:16px;font-weight:700;padding:16px 40px;border-radius:12px;letter-spacing:-0.2px;">Open LeanPlan →</a>
-            </td></tr>
-          </table>
+          <!-- Intro -->
+          <p style="margin:0 0 28px;font-size:15px;color:#9ca3af;line-height:1.7;">You've just taken the hardest step — starting. LeanPlan has built your personalised meal plan and workout programme. Everything is ready and waiting for you.</p>
 
           <div style="border-top:1px solid #2a2a2a;margin-bottom:24px;"></div>
 
-          <!-- Next steps -->
-          <p style="margin:0 0 14px;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:1.5px;">Here's what to do next</p>
+          <!-- Feature blocks -->
           <table width="100%" cellpadding="0" cellspacing="0">
-            <tr><td style="padding:8px 0;font-size:14px;color:#d1d5db;border-bottom:1px solid #222;">
-              <strong style="color:#3b82f6;">1.</strong> &nbsp;Check your meal plan and shopping list
+            <tr><td style="padding:14px 0;border-bottom:1px solid #222;">
+              <table cellpadding="0" cellspacing="0"><tr>
+                <td style="vertical-align:top;padding-right:14px;font-size:24px;line-height:1;">🍽️</td>
+                <td>
+                  <p style="margin:0 0 3px;font-size:15px;font-weight:700;color:#ffffff;">Your Meal Plan</p>
+                  <p style="margin:0;font-size:13px;color:#9ca3af;line-height:1.5;">Calorie-matched meals built around your diet and goals</p>
+                </td>
+              </tr></table>
             </td></tr>
-            <tr><td style="padding:8px 0;font-size:14px;color:#d1d5db;border-bottom:1px solid #222;">
-              <strong style="color:#3b82f6;">2.</strong> &nbsp;Start today's workout
+            <tr><td style="padding:14px 0;border-bottom:1px solid #222;">
+              <table cellpadding="0" cellspacing="0"><tr>
+                <td style="vertical-align:top;padding-right:14px;font-size:24px;line-height:1;">🏋️</td>
+                <td>
+                  <p style="margin:0 0 3px;font-size:15px;font-weight:700;color:#ffffff;">Your Programme</p>
+                  <p style="margin:0;font-size:13px;color:#9ca3af;line-height:1.5;">Progressive workouts tailored to your equipment and fitness level</p>
+                </td>
+              </tr></table>
             </td></tr>
-            <tr><td style="padding:8px 0;font-size:14px;color:#d1d5db;">
-              <strong style="color:#3b82f6;">3.</strong> &nbsp;Add LeanPlan to your Home Screen for the best experience
+            <tr><td style="padding:14px 0;">
+              <table cellpadding="0" cellspacing="0"><tr>
+                <td style="vertical-align:top;padding-right:14px;font-size:24px;line-height:1;">🛒</td>
+                <td>
+                  <p style="margin:0 0 3px;font-size:15px;font-weight:700;color:#ffffff;">Shopping List</p>
+                  <p style="margin:0;font-size:13px;color:#9ca3af;line-height:1.5;">Everything you need, organised by supermarket aisle</p>
+                </td>
+              </tr></table>
             </td></tr>
           </table>
+
+          <!-- CTA -->
+          <table width="100%" cellpadding="0" cellspacing="0" style="margin:28px 0 14px;">
+            <tr><td align="center">
+              <a href="${APP_URL}" style="display:block;background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:#ffffff;text-decoration:none;font-size:17px;font-weight:700;padding:16px 0;border-radius:12px;letter-spacing:-0.2px;text-align:center;">Open LeanPlan →</a>
+            </td></tr>
+          </table>
+
+          <p style="margin:0 0 0;font-size:13px;color:#6b7280;text-align:center;line-height:1.6;">Your 7-day free trial is active. No card needed — explore everything.</p>
+
+          <div style="border-top:1px solid #2a2a2a;margin:24px 0;"></div>
+
+          <!-- Home screen tip -->
+          <p style="margin:0 0 8px;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:1.5px;">One tip before you start</p>
+          <p style="margin:0;font-size:13px;color:#9ca3af;line-height:1.7;">Add LeanPlan to your Home Screen for the best experience — and so we can send you workout reminders. In Safari, tap the share icon <span style="color:#3b82f6;">⬆</span> then <strong style="color:#d1d5db;">"Add to Home Screen"</strong>.</p>
 
         </td></tr>
 
         <!-- Footer -->
         <tr><td align="center" style="padding-top:24px;">
-          <p style="margin:0;font-size:12px;color:#4b5563;line-height:1.8;">Questions? Reply to this email — we're happy to help.<br>
+          <p style="margin:0;font-size:12px;color:#4b5563;line-height:1.8;">Questions? Just reply to this email — we're here to help.<br>
           LeanPlan · Manchester, UK · <a href="https://www.leanplan.uk" style="color:#3b82f6;text-decoration:none;">leanplan.uk</a></p>
         </td></tr>
 
