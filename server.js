@@ -394,6 +394,71 @@ app.post("/api/stripe/webhook", async (req, res) => {
   res.json({ received: true });
 });
 
+// ── TEMPORARY: Test email endpoint (remove after debugging) ─────────────────
+app.post("/api/test-email", async (req, res) => {
+  const email = "kevg1973@gmail.com";
+  const planLabel = "Monthly";
+  const planPrice = "£9.99/month";
+  const planSub = "Cancel any time from your account settings.";
+
+  console.log("Test email attempted");
+  try {
+    const result = await resend.emails.send({
+      from: "LeanPlan <hello@leanplan.uk>",
+      to: email,
+      subject: "Welcome to LeanPlan Pro 💪",
+      html: `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"></head>
+<body style="margin:0;padding:0;background-color:#0a0a0a;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#0a0a0a;padding:40px 20px;">
+    <tr><td align="center">
+      <table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;">
+        <tr><td align="center" style="padding-bottom:28px;">
+          <img src="https://www.leanplan.uk/transparent-logo.png" alt="LeanPlan" style="height:44px;display:block;" />
+        </td></tr>
+        <tr><td style="background:#1a1a1a;border-radius:20px;padding:36px 32px;border:1px solid #2a2a2a;">
+          <p style="margin:0 0 8px;font-size:12px;font-weight:700;color:#3b82f6;text-transform:uppercase;letter-spacing:1.5px;">You're in 🎉</p>
+          <h1 style="margin:0 0 12px;font-size:26px;font-weight:700;color:#ffffff;letter-spacing:-0.3px;">Welcome to LeanPlan Pro</h1>
+          <p style="margin:0 0 4px;font-size:15px;color:#9ca3af;line-height:1.6;">Your <strong style="color:#ffffff;">${planLabel} plan (${planPrice})</strong> is now active.</p>
+          <p style="margin:0 0 28px;font-size:13px;color:#6b7280;">${planSub}</p>
+          <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
+            <tr><td align="center">
+              <a href="${APP_URL}" style="display:inline-block;background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:#ffffff;text-decoration:none;font-size:16px;font-weight:700;padding:16px 40px;border-radius:12px;letter-spacing:-0.2px;">Open LeanPlan →</a>
+            </td></tr>
+          </table>
+          <div style="border-top:1px solid #2a2a2a;margin-bottom:24px;"></div>
+          <p style="margin:0 0 14px;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:1.5px;">What's included</p>
+          <table width="100%" cellpadding="0" cellspacing="0">
+            <tr><td style="padding:7px 0;font-size:14px;color:#d1d5db;border-bottom:1px solid #222;">🍽️ &nbsp;AI-generated personalised meal plans</td></tr>
+            <tr><td style="padding:7px 0;font-size:14px;color:#d1d5db;border-bottom:1px solid #222;">🏋️ &nbsp;Structured workout programme, goal-based</td></tr>
+            <tr><td style="padding:7px 0;font-size:14px;color:#d1d5db;border-bottom:1px solid #222;">🤖 &nbsp;AI nutrition & fitness coach</td></tr>
+            <tr><td style="padding:7px 0;font-size:14px;color:#d1d5db;border-bottom:1px solid #222;">📊 &nbsp;Progress photos, weight & measurements</td></tr>
+            <tr><td style="padding:7px 0;font-size:14px;color:#d1d5db;border-bottom:1px solid #222;">🛒 &nbsp;Smart shopping list — copy or email to yourself</td></tr>
+            <tr><td style="padding:7px 0;font-size:14px;color:#d1d5db;">💊 &nbsp;Personalised supplement guide</td></tr>
+          </table>
+          <div style="border-top:1px solid #2a2a2a;margin-top:24px;margin-bottom:20px;"></div>
+          <p style="margin:0 0 6px;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:1.5px;">Getting started</p>
+          <p style="margin:0;font-size:13px;color:#9ca3af;line-height:1.7;">Head to <strong style="color:#fff;">Meals</strong> to generate your first meal plan, then <strong style="color:#fff;">Train</strong> to see your workout programme. Your AI coach is on the <strong style="color:#fff;">Coach</strong> tab — ask it anything.</p>
+        </td></tr>
+        <tr><td align="center" style="padding-top:24px;">
+          <p style="margin:0;font-size:12px;color:#4b5563;line-height:1.8;">LeanPlan · Manchester, UK<br>
+          Questions? Reply to this email or visit <a href="https://www.leanplan.uk" style="color:#3b82f6;text-decoration:none;">leanplan.uk</a></p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`,
+    });
+    console.log("Test email result:", JSON.stringify(result));
+    res.json({ success: true, result });
+  } catch (err) {
+    console.error("Test email error:", err);
+    res.status(500).json({ success: false, error: err.message, details: err });
+  }
+});
+
 // ── Manage subscription portal ────────────────────────────────────────────────
 app.post("/api/stripe/portal", async (req, res) => {
   const { customerId } = req.body;
