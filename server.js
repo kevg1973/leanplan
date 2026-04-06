@@ -433,7 +433,7 @@ app.post("/api/send-welcome", async (req, res) => {
               <!-- Heading -->
               <h1 style="margin:0 0 8px;font-size:28px;font-weight:800;color:#ffffff;letter-spacing:-0.5px;line-height:1.1;">This is where things change.</h1>
               <p style="margin:0 0 16px;font-size:15px;font-weight:600;color:#3b82f6;">Meals planned. Workouts scheduled. No guesswork.</p>
-              <p style="margin:0 0 24px;font-size:14px;color:#6b7280;line-height:1.6;">Hi ${displayName} — you've done what most people never do. You've started. Now we handle the rest.</p>
+              <p style="margin:0 0 24px;font-size:16px;color:#e0e0e0;line-height:1.6;">Hi ${displayName} — you've done what most people never do. You've started. Now we handle the rest.</p>
 
               <!-- Divider -->
               <div style="border-top:1px solid #2a2a2a;margin-bottom:22px;"></div>
