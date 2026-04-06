@@ -1592,7 +1592,7 @@ app.post("/api/send-trial-reminders", async (req, res) => {
 
     const { data: users, error } = await supabaseAdmin
       .from("profiles")
-      .select("id, email, trial_start, is_pro, reminder_sent, profile_data")
+      .select("id, email, trial_start, is_pro, reminder_sent, profile_data, workout_log, meal_log, entries")
       .eq("is_pro", false)
       .gte("trial_start", sixDaysAgo)
       .lte("trial_start", fourDaysAgo);
