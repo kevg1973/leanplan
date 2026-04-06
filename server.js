@@ -536,6 +536,24 @@ app.post("/api/send-welcome", async (req, res) => {
   }
 });
 
+// ── TEMPORARY: Test welcome email (remove after testing) ────────────────────
+app.get("/api/test-welcome-email", async (req, res) => {
+  console.log("Test welcome email triggered");
+  try {
+    const response = await fetch(`${APP_URL}/api/send-welcome`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: "kevg1973@gmail.com", name: "Kevin" }),
+    });
+    const result = await response.json();
+    console.log("Test welcome email result:", JSON.stringify(result));
+    res.json(result);
+  } catch (err) {
+    console.error("Test welcome email error:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ── Manage subscription portal ────────────────────────────────────────────────
 app.post("/api/stripe/portal", async (req, res) => {
   const { customerId } = req.body;
