@@ -541,12 +541,14 @@ app.post("/api/send-welcome", async (req, res) => {
 
 // ── TEMPORARY: Test welcome email (remove after testing) ────────────────────
 app.get("/api/test-welcome-email", async (req, res) => {
-  console.log("Test welcome email triggered");
+  const name = req.query.name || "Kevin";
+  const sex = req.query.sex || "male";
+  console.log(`Test welcome email triggered: name=${name}, sex=${sex}`);
   try {
     const response = await fetch(`${APP_URL}/api/send-welcome`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: "kevg1973@gmail.com", name: "Kevin", sex: "male" }),
+      body: JSON.stringify({ email: "kevg1973@gmail.com", name, sex }),
     });
     const result = await response.json();
     console.log("Test welcome email result:", JSON.stringify(result));
@@ -559,9 +561,11 @@ app.get("/api/test-welcome-email", async (req, res) => {
 
 // ── TEMPORARY: Test day 4 email (remove after testing) ──────────────────────
 app.get("/api/test-day4-email", async (req, res) => {
-  console.log("Test day 4 email triggered");
+  const name = req.query.name || "Kevin";
+  const sex = req.query.sex || "male";
+  console.log(`Test day 4 email triggered: name=${name}, sex=${sex}`);
   try {
-    await sendDay4Email("kevg1973@gmail.com", "Kevin", "male");
+    await sendDay4Email("kevg1973@gmail.com", name, sex);
     console.log("Test day 4 email sent");
     res.json({ success: true });
   } catch (err) {
