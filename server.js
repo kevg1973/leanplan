@@ -421,7 +421,7 @@ app.post("/api/send-welcome", async (req, res) => {
         </td></tr>
 
         <!-- Card -->
-        <tr><td style="background:#1a1a1a;border-radius:16px;overflow:hidden;">
+        <tr><td style="background:#1a1a1a;border-radius:16px;overflow:hidden;border:1px solid #2a2a2a;">
 
           <!-- Hero image -->
           <img src="https://www.leanplan.uk/welcome-email-header.webp" alt="" style="width:100%;display:block;" />
