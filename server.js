@@ -582,8 +582,8 @@ app.get("/api/test-day7-email", async (req, res) => {
   console.log(`Test day 7 email triggered: name=${name}, sex=${sex}, engaged=${engaged}`);
   try {
     const stats = engaged
-      ? { workoutsLogged:3, mealsLogged:12, startWeightKg:83, currentWeightKg:80, targetWeightKg:73, goal:"lose_weight", hasEngaged:true }
-      : { workoutsLogged:0, mealsLogged:0, startWeightKg:83, currentWeightKg:83, targetWeightKg:73, goal:"lose_weight", hasEngaged:false };
+      ? { workoutsLogged:3, mealsLogged:12, startWeightKg:83, currentWeightKg:80, targetWeightKg:73, kgLost:3, kgToGo:7, goal:"lose_weight", hasEngaged:true }
+      : { workoutsLogged:0, mealsLogged:0, startWeightKg:83, currentWeightKg:83, targetWeightKg:73, kgLost:0, kgToGo:10, goal:"lose_weight", hasEngaged:false };
     await sendDay7Email("kevg1973@gmail.com", name, sex, stats);
     console.log("Test day 7 email sent");
     res.json({ success: true, engaged });
@@ -1605,67 +1605,87 @@ const sendDay7Email = async (email, name, sex, stats) => {
   const goalLines = {
     lose_weight: "You came here to lose weight. You've already started — don't stop now.",
     build_muscle: "You came here to build muscle. The foundation is laid — keep building.",
-    get_fitter: "You came here to get fitter. Seven days in and you're already moving — keep going.",
+    get_fitter: "You came here to get fitter. Seven days in and you're already moving.",
     all: "You came here to transform. Seven days in, you're already on your way.",
   };
   const goalLine = goalLines[stats.goal] || goalLines.all;
 
-  const weightDiff = stats.startWeightKg && stats.currentWeightKg && stats.currentWeightKg < stats.startWeightKg
-    ? parseFloat((stats.startWeightKg - stats.currentWeightKg).toFixed(1))
-    : null;
-  const weightDisplay = stats.currentWeightKg && stats.currentWeightKg !== stats.startWeightKg
-    ? `${stats.startWeightKg}kg → ${stats.currentWeightKg}kg${weightDiff ? ` <span style="color:#22c55e;font-weight:700;">(${weightDiff}kg lost) 🎉</span>` : ""}`
-    : `${stats.startWeightKg || "—"}kg`;
+  const progressSub = stats.kgLost > 0 ? `${stats.kgLost} kg lost` : "keep going";
+  const progressSubColor = stats.kgLost > 0 ? "#22c55e" : "#666";
+  const targetSub = stats.kgToGo > 0 ? `${stats.kgToGo} kg to go` : "Target reached!";
+  const targetSubColor = stats.kgToGo > 0 ? "#666" : "#22c55e";
+
+  const progressBanner = stats.kgLost > 0
+    ? `<table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:16px;"><tr><td style="background:#0f1e3a;border-radius:12px;padding:14px 16px;"><p style="margin:0;font-size:15px;font-weight:600;color:#3b82f6;">🎉 ${stats.kgLost}kg lost so far — you're making real progress</p></td></tr></table>`
+    : "";
 
   const engagedBody = `
-              <h1 style="margin:0 0 16px;font-size:28px;font-weight:800;color:#ffffff;letter-spacing:-0.5px;line-height:1.1;">Look what you did in 7 days, ${displayName}.</h1>
-              <p style="margin:0 0 20px;font-size:16px;color:#e0e0e0;line-height:1.6;">You showed up. Here's what you achieved this week:</p>
+              <h1 style="margin:0 0 14px;font-size:26px;font-weight:800;color:#ffffff;letter-spacing:-0.5px;line-height:1.1;">Look what you did in 7 days, ${displayName}.</h1>
+              <p style="margin:0 0 16px;font-size:15px;color:#e0e0e0;line-height:1.6;">You showed up. Here's your week at a glance:</p>
 
-              <!-- Stats block -->
-              <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
-                <tr><td style="background:#0f1e3a;border-radius:10px;padding:20px;">
-                  <table width="100%" cellpadding="0" cellspacing="0">
-                    <tr><td style="padding:6px 0;font-size:15px;color:#d1d5db;">💪 &nbsp;<strong style="color:#fff;">Workouts completed</strong> — ${stats.workoutsLogged}</td></tr>
-                    <tr><td style="padding:6px 0;font-size:15px;color:#d1d5db;border-top:1px solid #1a2a4a;">🍽️ &nbsp;<strong style="color:#fff;">Meals logged</strong> — ${stats.mealsLogged}</td></tr>
-                    <tr><td style="padding:6px 0;font-size:15px;color:#d1d5db;border-top:1px solid #1a2a4a;">⚖️ &nbsp;<strong style="color:#fff;">Weight</strong> — ${weightDisplay}</td></tr>
-                  </table>
-                </td></tr>
+              ${progressBanner}
+
+              <!-- Stats grid -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:16px;">
+                <tr>
+                  <td style="width:50%;padding-right:4px;vertical-align:top;">
+                    <div style="background:#222232;border-radius:12px;padding:16px;">
+                      <p style="margin:0 0 4px;font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:1px;">WORKOUTS</p>
+                      <p style="margin:0 0 4px;font-size:32px;font-weight:800;color:#f97316;line-height:1;">${stats.workoutsLogged}</p>
+                      <p style="margin:0;font-size:13px;color:#666;">completed this week</p>
+                    </div>
+                  </td>
+                  <td style="width:50%;padding-left:4px;vertical-align:top;">
+                    <div style="background:#222232;border-radius:12px;padding:16px;">
+                      <p style="margin:0 0 4px;font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:1px;">MEALS LOGGED</p>
+                      <p style="margin:0 0 4px;font-size:32px;font-weight:800;color:#f97316;line-height:1;">${stats.mealsLogged}</p>
+                      <p style="margin:0;font-size:13px;color:#666;">meals this week</p>
+                    </div>
+                  </td>
+                </tr>
+              </table>
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:16px;">
+                <tr>
+                  <td style="width:50%;padding-right:4px;vertical-align:top;">
+                    <div style="background:#222232;border-radius:12px;padding:16px;">
+                      <p style="margin:0 0 4px;font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:1px;">PROGRESS</p>
+                      <p style="margin:0 0 4px;font-size:28px;font-weight:800;color:#ffffff;line-height:1;">${stats.currentWeightKg}kg</p>
+                      <p style="margin:0;font-size:13px;color:${progressSubColor};">${progressSub}</p>
+                    </div>
+                  </td>
+                  <td style="width:50%;padding-left:4px;vertical-align:top;">
+                    <div style="background:#222232;border-radius:12px;padding:16px;">
+                      <p style="margin:0 0 4px;font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:1px;">TARGET</p>
+                      <p style="margin:0 0 4px;font-size:28px;font-weight:800;color:#ffffff;line-height:1;">${stats.targetWeightKg}kg</p>
+                      <p style="margin:0;font-size:13px;color:${targetSubColor};">${targetSub}</p>
+                    </div>
+                  </td>
+                </tr>
               </table>
 
-              <p style="margin:0 0 24px;font-size:16px;color:#e0e0e0;line-height:1.6;">${goalLine}</p>
+              <p style="margin:16px 0 20px;font-size:15px;color:#e0e0e0;line-height:1.6;">${goalLine}</p>
 
-              <div style="border-top:1px solid #2a2a2a;margin-bottom:24px;"></div>
+              <div style="border-top:1px solid #2a2a2a;margin-bottom:20px;"></div>
 
-              <p style="margin:0 0 8px;font-size:18px;font-weight:700;color:#ffffff;">Don't lose your progress.</p>
-              <p style="margin:0 0 24px;font-size:16px;color:#e0e0e0;line-height:1.6;">Your meal plan, workout programme, and everything you've built this week disappears tonight unless you subscribe.</p>`;
+              <p style="margin:0 0 6px;font-size:17px;font-weight:700;color:#ffffff;">Don't lose your progress.</p>
+              <p style="margin:0 0 20px;font-size:14px;color:#a0a0a0;line-height:1.6;">Your meal plan, workout programme, and everything you've built disappears tonight unless you subscribe.</p>`;
 
   const notEngagedBody = `
-              <h1 style="margin:0 0 16px;font-size:28px;font-weight:800;color:#ffffff;letter-spacing:-0.5px;line-height:1.1;">Your trial ends today, ${displayName}.</h1>
-              <p style="margin:0 0 24px;font-size:16px;color:#e0e0e0;line-height:1.6;">Life gets in the way — we get it. But your personalised meal plan and workout programme are still here, ready and waiting for you.</p>
+              <h1 style="margin:0 0 14px;font-size:26px;font-weight:800;color:#ffffff;letter-spacing:-0.5px;line-height:1.1;">Your trial ends today, ${displayName}.</h1>
+              <p style="margin:0 0 20px;font-size:15px;color:#e0e0e0;line-height:1.6;">Life gets in the way — we get it. But your personalised meal plan and workout programme are still here, ready and waiting for you.</p>
 
-              <!-- Blue tick box -->
-              <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+              <!-- Info box -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin:20px 0;">
                 <tr><td style="background:#0f1e3a;border-radius:10px;padding:20px;">
-                  <table width="100%" cellpadding="0" cellspacing="0">
-                    <tr>
-                      <td style="width:40px;vertical-align:top;">
-                        <div style="width:40px;height:40px;border-radius:50%;background:#3b82f6;text-align:center;line-height:40px;">
-                          <span style="color:#ffffff;font-size:20px;font-weight:700;">✓</span>
-                        </div>
-                      </td>
-                      <td style="padding-left:14px;vertical-align:top;">
-                        <p style="margin:0 0 4px;font-size:16px;font-weight:700;color:#3b82f6;">Your plan is still personalised to you.</p>
-                        <p style="margin:0;font-size:14px;color:#9ca3af;line-height:1.5;">Meals matched to your diet. Workouts built around your equipment and fitness level. Shopping list ready to go.</p>
-                      </td>
-                    </tr>
-                  </table>
+                  <p style="margin:0 0 6px;font-size:15px;font-weight:700;color:#3b82f6;">Your plan is still personalised to you.</p>
+                  <p style="margin:0;font-size:14px;color:#a0a0a0;line-height:1.6;">Meals matched to your diet. Workouts built around your equipment and fitness level. Shopping list ready to go.</p>
                 </td></tr>
               </table>
 
-              <div style="border-top:1px solid #2a2a2a;margin-bottom:24px;"></div>
+              <div style="border-top:1px solid #2a2a2a;margin-bottom:20px;"></div>
 
-              <p style="margin:0 0 8px;font-size:18px;font-weight:700;color:#ffffff;">Start fresh today.</p>
-              <p style="margin:0 0 24px;font-size:16px;color:#e0e0e0;line-height:1.6;">Subscribe and pick up exactly where you left off — or start a brand new plan with one tap.</p>`;
+              <p style="margin:0 0 6px;font-size:17px;font-weight:700;color:#ffffff;">Start fresh today.</p>
+              <p style="margin:0 0 20px;font-size:14px;color:#a0a0a0;line-height:1.6;">Subscribe and pick up exactly where you left off — or start a brand new plan with one tap.</p>`;
 
   const ctaText = stats.hasEngaged ? "Keep my plan →" : "Start my plan →";
   const bodyContent = stats.hasEngaged ? engagedBody : notEngagedBody;
@@ -1694,7 +1714,7 @@ const sendDay7Email = async (email, name, sex, stats) => {
           <img src="${heroImg}" alt="" style="width:100%;display:block;" />
 
           <!-- Card body -->
-          <table width="100%" cellpadding="0" cellspacing="0" style="padding:32px;">
+          <table width="100%" cellpadding="0" cellspacing="0" style="padding:28px 24px;">
             <tr><td>
 
               ${bodyContent}
@@ -1706,7 +1726,7 @@ const sendDay7Email = async (email, name, sex, stats) => {
                 </td></tr>
               </table>
 
-              <p style="margin:0;font-size:14px;color:#888;text-align:center;line-height:1.6;">From £9.99/month — cancel anytime.</p>
+              <p style="margin:0;font-size:13px;color:#888;text-align:center;line-height:1.6;">From £9.99/month — cancel anytime.</p>
 
             </td></tr>
           </table>
@@ -1715,7 +1735,7 @@ const sendDay7Email = async (email, name, sex, stats) => {
 
         <!-- Footer -->
         <tr><td align="center" style="padding-top:24px;">
-          <p style="margin:0;font-size:12px;color:#4b5563;line-height:1.8;">Questions? Just reply to this email — we're happy to help.<br>
+          <p style="margin:0;font-size:13px;color:#4b5563;line-height:1.8;">Questions? Just reply to this email — we're happy to help.<br>
           LeanPlan · Manchester, UK · <a href="https://www.leanplan.uk" style="color:#3b82f6;text-decoration:none;">leanplan.uk</a></p>
         </td></tr>
 
@@ -1794,9 +1814,11 @@ app.post("/api/send-trial-reminders", async (req, res) => {
             : startWeightKg;
           const targetWeightKg = user.profile_data?.targetWeightKg || null;
           const goal = user.profile_data?.goal || "all";
+          const kgLost = startWeightKg && currentWeightKg ? parseFloat((startWeightKg - currentWeightKg).toFixed(1)) : 0;
+          const kgToGo = currentWeightKg && targetWeightKg ? parseFloat((currentWeightKg - targetWeightKg).toFixed(1)) : 0;
 
           await sendDay7Email(user.email, userName, userSex, {
-            workoutsLogged, mealsLogged, startWeightKg, currentWeightKg, targetWeightKg, goal, hasEngaged
+            workoutsLogged, mealsLogged, startWeightKg, currentWeightKg, targetWeightKg, kgLost: Math.max(0, kgLost), kgToGo: Math.max(0, kgToGo), goal, hasEngaged
           });
           day7Sent++;
           console.log(`Day 7 email sent to ${user.email} (engaged: ${hasEngaged})`);
