@@ -403,7 +403,7 @@ app.post("/api/send-welcome", async (req, res) => {
   const subjectLine = name ? `Let's get to work, ${name} 💪` : "Let's get to work 💪";
   const heroImg = sex === "female"
     ? "https://www.leanplan.uk/email-welcome-female.webp"
-    : "https://www.leanplan.uk/email-welcome-male.webp";
+    : "https://www.leanplan.uk/email-welcome-male-v2.webp";
 
   try {
     await resend.emails.send({
