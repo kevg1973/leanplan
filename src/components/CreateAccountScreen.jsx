@@ -45,7 +45,7 @@ export const CreateAccountScreen = ({ profileData, onDone }) => {
     try { await saveProfileToSupabase(userId, trialStart); } catch(e) { console.error("Profile save error:", e); }
 
     // Send welcome email — fire and forget, don't block account creation
-    try { fetch("/api/send-welcome", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ email, name: profileData?.name || "" }) }); } catch(e) {}
+    try { fetch("/api/send-welcome", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ email, name: profileData?.name || "", sex: profileData?.sex || "male" }) }); } catch(e) {}
 
     setLoading(false);
     onDone(data.user, email);

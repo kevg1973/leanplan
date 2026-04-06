@@ -396,11 +396,14 @@ app.post("/api/stripe/webhook", async (req, res) => {
 
 // ── Post-signup welcome email ────────────────────────────────────────────────
 app.post("/api/send-welcome", async (req, res) => {
-  const { email, name } = req.body;
+  const { email, name, sex } = req.body;
   if (!email) return res.json({ success: false, error: "No email" });
 
   const displayName = name || "there";
   const subjectLine = name ? `Let's get to work, ${name} 💪` : "Let's get to work 💪";
+  const heroImg = sex === "female"
+    ? "https://www.leanplan.uk/email-welcome-female.webp"
+    : "https://www.leanplan.uk/email-welcome-male.webp";
 
   try {
     await resend.emails.send({
@@ -424,7 +427,7 @@ app.post("/api/send-welcome", async (req, res) => {
         <tr><td style="background:#1a1a1a;border-radius:16px;overflow:hidden;border:1px solid #2a2a2a;">
 
           <!-- Hero image -->
-          <img src="https://www.leanplan.uk/welcome-email-header.webp" alt="" style="width:100%;display:block;" />
+          <img src="${heroImg}" alt="" style="width:100%;display:block;" />
 
           <!-- Card body -->
           <table width="100%" cellpadding="0" cellspacing="0" style="padding:32px;">
@@ -543,13 +546,26 @@ app.get("/api/test-welcome-email", async (req, res) => {
     const response = await fetch(`${APP_URL}/api/send-welcome`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: "kevg1973@gmail.com", name: "Kevin" }),
+      body: JSON.stringify({ email: "kevg1973@gmail.com", name: "Kevin", sex: "male" }),
     });
     const result = await response.json();
     console.log("Test welcome email result:", JSON.stringify(result));
     res.json(result);
   } catch (err) {
     console.error("Test welcome email error:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── TEMPORARY: Test day 4 email (remove after testing) ──────────────────────
+app.get("/api/test-day4-email", async (req, res) => {
+  console.log("Test day 4 email triggered");
+  try {
+    await sendDay4Email("kevg1973@gmail.com", "Kevin", "male");
+    console.log("Test day 4 email sent");
+    res.json({ success: true });
+  } catch (err) {
+    console.error("Test day 4 email error:", err.message);
     res.status(500).json({ error: err.message });
   }
 });
@@ -1454,6 +1470,108 @@ app.get("*", (req, res) => {
   res.sendFile(join(__dirname, "dist", "index.html"));
 });
 
+// ── Day 4 mid-trial email ────────────────────────────────────────────────────
+const sendDay4Email = async (email, name, sex) => {
+  const displayName = name || "there";
+  const heroImg = sex === "female"
+    ? "https://www.leanplan.uk/email-day4-female.webp"
+    : "https://www.leanplan.uk/email-day4-male.webp";
+
+  await resend.emails.send({
+    from: "LeanPlan <hello@leanplan.uk>",
+    to: email,
+    subject: `Day 4 check-in, ${displayName} 👊`,
+    html: `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"></head>
+<body style="margin:0;padding:0;background-color:#0a0a0a;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#0a0a0a;padding:40px 20px;">
+    <tr><td align="center">
+      <table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;">
+
+        <!-- Logo -->
+        <tr><td align="center" style="padding-bottom:24px;">
+          <img src="https://www.leanplan.uk/transparent-logo.png" alt="LeanPlan" style="height:40px;display:block;" />
+        </td></tr>
+
+        <!-- Card -->
+        <tr><td style="background:#1a1a2a;border-radius:16px;overflow:hidden;border:1px solid #2a2a2a;">
+
+          <!-- Hero image -->
+          <img src="${heroImg}" alt="" style="width:100%;display:block;" />
+
+          <!-- Card body -->
+          <table width="100%" cellpadding="0" cellspacing="0" style="padding:32px;">
+            <tr><td>
+
+              <!-- Heading -->
+              <h1 style="margin:0 0 16px;font-size:28px;font-weight:800;color:#ffffff;letter-spacing:-0.5px;line-height:1.1;">Quick check-in, ${displayName}.</h1>
+
+              <!-- Body -->
+              <p style="margin:0 0 8px;font-size:16px;color:#e0e0e0;line-height:1.6;">Most people start strong... then overthink things.</p>
+              <p style="margin:0 0 24px;font-size:16px;color:#e0e0e0;line-height:1.6;">They try to follow everything perfectly — and end up doing nothing.</p>
+
+              <!-- Blue tick box -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+                <tr><td style="background:#0f1e3a;border-radius:10px;padding:20px;">
+                  <table width="100%" cellpadding="0" cellspacing="0">
+                    <tr>
+                      <td style="width:40px;vertical-align:top;">
+                        <div style="width:40px;height:40px;border-radius:50%;background:#3b82f6;text-align:center;line-height:40px;">
+                          <span style="color:#ffffff;font-size:20px;font-weight:700;">✓</span>
+                        </div>
+                      </td>
+                      <td style="padding-left:14px;vertical-align:top;">
+                        <p style="margin:0 0 4px;font-size:16px;font-weight:700;color:#3b82f6;">You don't need to be perfect.</p>
+                        <p style="margin:0 0 4px;font-size:14px;color:#9ca3af;line-height:1.5;">Just follow your next meal. Do your next workout.</p>
+                        <p style="margin:0;font-size:15px;font-weight:700;color:#ffffff;">That's it.</p>
+                      </td>
+                    </tr>
+                  </table>
+                </td></tr>
+              </table>
+
+              <!-- Blockquote -->
+              <div style="border-left:3px solid #3b82f6;padding-left:16px;margin:24px 0;">
+                <p style="margin:0 0 4px;font-size:16px;font-weight:600;color:#ffffff;line-height:1.4;">That's how this works.</p>
+                <p style="margin:0;font-size:16px;font-weight:600;color:#3b82f6;line-height:1.4;">Simple, consistent progress.</p>
+              </div>
+
+              <!-- Divider -->
+              <div style="border-top:1px solid #2a2a2a;margin:24px 0;"></div>
+
+              <!-- Body continued -->
+              <p style="margin:0 0 8px;font-size:16px;color:#e0e0e0;line-height:1.6;">If you've drifted a bit, no problem — just pick up where you left off.</p>
+              <p style="margin:0 0 24px;font-size:16px;color:#e0e0e0;line-height:1.6;">Everything is still there, ready for you.</p>
+
+              <!-- CTA -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:14px;">
+                <tr><td>
+                  <a href="${APP_URL}" style="display:block;background:#3b82f6;color:#ffffff;text-decoration:none;font-size:16px;font-weight:700;padding:16px 0;border-radius:10px;text-align:center;">Open Your Plan →</a>
+                </td></tr>
+              </table>
+
+              <p style="margin:0;font-size:14px;color:#888;text-align:center;line-height:1.6;">Your trial ends in 3 days — everything stays when you subscribe.</p>
+
+            </td></tr>
+          </table>
+
+        </td></tr>
+
+        <!-- Footer -->
+        <tr><td align="center" style="padding-top:24px;">
+          <p style="margin:0;font-size:12px;color:#4b5563;line-height:1.8;">Questions? Just reply to this email — we're happy to help.<br>
+          LeanPlan · Manchester, UK · <a href="https://www.leanplan.uk" style="color:#3b82f6;text-decoration:none;">leanplan.uk</a></p>
+        </td></tr>
+
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`,
+  });
+};
+
 // ── Trial reminder cron endpoint ─────────────────────────────────────────────
 // Called daily by Railway cron job
 app.post("/api/send-trial-reminders", async (req, res) => {
@@ -1464,31 +1582,49 @@ app.post("/api/send-trial-reminders", async (req, res) => {
   }
 
   try {
-    // Find all users who:
-    // - Started trial 5 days ago (between 5.0 and 5.99 days ago)
-    // - Are not pro
-    // - Haven't been sent a reminder yet
-    const fiveDaysAgo = new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString();
+    // Find all trial users (days 4–6) who are not pro
+    const fourDaysAgo = new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString();
     const sixDaysAgo = new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString();
 
     const { data: users, error } = await supabaseAdmin
       .from("profiles")
-      .select("id, email, trial_start, is_pro, reminder_sent")
+      .select("id, email, trial_start, is_pro, reminder_sent, profile_data")
       .eq("is_pro", false)
-      .eq("reminder_sent", false)
       .gte("trial_start", sixDaysAgo)
-      .lte("trial_start", fiveDaysAgo);
+      .lte("trial_start", fourDaysAgo);
 
     if (error) {
       console.error("Trial reminder query error:", error.message);
       return res.status(500).json({ error: "Database query failed" });
     }
 
-    console.log(`Trial reminders: found ${users?.length || 0} users to remind`);
+    console.log(`Trial cron: found ${users?.length || 0} trial users in day 4-6 window`);
 
     let sent = 0;
+    let day4Sent = 0;
+
     for (const user of (users || [])) {
       if (!user.email) continue;
+
+      const trialStart = new Date(user.trial_start);
+      const daysIntoTrial = Math.floor((Date.now() - trialStart) / (1000 * 60 * 60 * 24));
+
+      // Day 4: send mid-trial email
+      if (daysIntoTrial === 4) {
+        try {
+          const name = user.profile_data?.name || "";
+          const sex = user.profile_data?.sex || "male";
+          await sendDay4Email(user.email, name, sex);
+          day4Sent++;
+          console.log(`Day 4 email sent to ${user.email}`);
+        } catch (err) {
+          console.error(`Day 4 email failed for ${user.email}:`, err.message);
+        }
+        continue;
+      }
+
+      // Day 5: send trial ending reminder (existing logic)
+      if (daysIntoTrial !== 5 || user.reminder_sent) continue;
 
       // Send reminder email
       const { error: emailError } = await resend.emails.send({
@@ -1611,7 +1747,7 @@ app.post("/api/send-trial-reminders", async (req, res) => {
       }
     }
 
-    res.json({ success: true, sent, total: users?.length || 0 });
+    res.json({ success: true, day5Sent: sent, day4Sent, total: users?.length || 0 });
   } catch (err) {
     console.error("Trial reminder error:", err.message);
     res.status(500).json({ error: err.message });
