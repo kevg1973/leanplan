@@ -5,6 +5,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
+import webpush from "web-push";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -21,6 +22,18 @@ const supabaseAdmin = createClient(
 
 // ── Resend email client ───────────────────────────────────────────────────────
 const resend = new Resend(process.env.RESEND_API_KEY);
+
+// ── Web Push (VAPID) ─────────────────────────────────────────────────────────
+if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
+  webpush.setVapidDetails(
+    process.env.VAPID_SUBJECT || "mailto:hello@leanplan.uk",
+    process.env.VAPID_PUBLIC_KEY,
+    process.env.VAPID_PRIVATE_KEY
+  );
+  console.log("Web push VAPID configured");
+} else {
+  console.log("Web push VAPID not configured — push notifications disabled");
+}
 
 // ── Auto detect test/live from secret key ────────────────────────────────────
 const IS_TEST = process.env.STRIPE_SECRET_KEY?.startsWith("sk_test_");
@@ -589,6 +602,60 @@ app.get("/api/test-day7-email", async (req, res) => {
     res.json({ success: true, engaged });
   } catch (err) {
     console.error("Test day 7 email error:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── Push notification helper ─────────────────────────────────────────────────
+const sendPushNotification = async (userId, subscription, title, body, url) => {
+  try {
+    await webpush.sendNotification(subscription, JSON.stringify({ title, body, url: url || "/" }));
+    console.log(`Push sent to user ${userId}: ${title}`);
+  } catch (err) {
+    if (err.statusCode === 404 || err.statusCode === 410) {
+      console.log(`Push subscription expired for user ${userId} — removing`);
+      await supabaseAdmin.from("profiles").update({ push_subscription: null }).eq("id", userId);
+    } else {
+      console.error(`Push send failed for user ${userId}:`, err.message);
+    }
+  }
+};
+
+// ── Push subscribe endpoint ─────────────────────────────────────────────────
+app.post("/api/push/subscribe", async (req, res) => {
+  const { subscription } = req.body;
+  if (!subscription) return res.status(400).json({ error: "No subscription" });
+
+  const token = req.headers.authorization?.replace("Bearer ", "");
+  if (!token) return res.status(401).json({ error: "No token" });
+
+  try {
+    const { data: { user }, error } = await supabaseAdmin.auth.getUser(token);
+    if (error || !user) return res.status(401).json({ error: "Invalid token" });
+
+    await supabaseAdmin.from("profiles").update({ push_subscription: subscription }).eq("id", user.id);
+    console.log(`Push subscription saved for ${user.email}`);
+    res.json({ success: true });
+  } catch (err) {
+    console.error("Push subscribe error:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── TEMPORARY: Test push notification ────────────────────────────────────────
+app.get("/api/push/test", async (req, res) => {
+  try {
+    const { data, error } = await supabaseAdmin
+      .from("profiles")
+      .select("id, push_subscription")
+      .eq("email", "kevg1973@gmail.com")
+      .single();
+    if (error || !data?.push_subscription) return res.status(400).json({ error: "No subscription found" });
+
+    await sendPushNotification(data.id, data.push_subscription, "LeanPlan", "Push notifications are working! 💪", "/");
+    res.json({ success: true });
+  } catch (err) {
+    console.error("Push test error:", err.message);
     res.status(500).json({ error: err.message });
   }
 });
@@ -1763,7 +1830,7 @@ app.post("/api/send-trial-reminders", async (req, res) => {
 
     const { data: users, error } = await supabaseAdmin
       .from("profiles")
-      .select("id, email, trial_start, is_pro, reminder_sent, profile_data, workout_log, meal_log, entries")
+      .select("id, email, trial_start, is_pro, reminder_sent, profile_data, workout_log, meal_log, entries, push_subscription")
       .eq("is_pro", false)
       .gte("trial_start", eightDaysAgo)
       .lte("trial_start", fourDaysAgo);
@@ -1952,7 +2019,66 @@ app.post("/api/send-trial-reminders", async (req, res) => {
       }
     }
 
-    res.json({ success: true, day4Sent, day5Sent: sent, day7Sent, total: users?.length || 0 });
+    // ── Push notification triggers ──────────────────────────────────────────
+    let pushSent = 0;
+    try {
+      const todayDate = new Date().toLocaleDateString("en-CA", { timeZone: "Europe/London" }); // YYYY-MM-DD
+      const todayDayName = new Date().toLocaleDateString("en-GB", { timeZone: "Europe/London", weekday: "long" }).toLowerCase();
+      const todayDayNum = new Date(new Date().toLocaleString("en-US", { timeZone: "Europe/London" })).getDay(); // 0=Sun
+
+      const { data: pushUsers } = await supabaseAdmin
+        .from("profiles")
+        .select("id, email, push_subscription, profile_data, workout_log, meal_log")
+        .not("push_subscription", "is", null);
+
+      for (const pu of (pushUsers || [])) {
+        if (!pu.push_subscription) continue;
+
+        // Trigger 1 — Missed workout
+        try {
+          const workoutDays = (pu.profile_data?.workoutsPerWeek || 3);
+          const dayMap = { 2: [1,4], 3: [1,3,5], 4: [1,2,4,5], 5: [1,2,3,4,6] };
+          const scheduledDays = dayMap[workoutDays] || dayMap[3];
+          const isWorkoutDay = scheduledDays.includes(todayDayNum);
+          const hasWorkedOutToday = !!(pu.workout_log || {})[todayDate];
+          if (isWorkoutDay && !hasWorkedOutToday) {
+            await sendPushNotification(pu.id, pu.push_subscription, "Your workout is waiting 💪", "Don't skip today's session — it only takes 30 minutes.", "/train");
+            pushSent++;
+          }
+        } catch (e) { console.error(`Push trigger 1 failed for ${pu.email}:`, e.message); }
+
+        // Trigger 2 — Streak at risk (Wednesday or later, no workouts this week)
+        try {
+          if (todayDayNum >= 3) {
+            const now = new Date(new Date().toLocaleString("en-US", { timeZone: "Europe/London" }));
+            const startOfWeek = new Date(now);
+            startOfWeek.setDate(now.getDate() - now.getDay() + 1);
+            const startOfWeekStr = startOfWeek.toISOString().split("T")[0];
+            const thisWeekLogged = Object.keys(pu.workout_log || {}).some(d => d >= startOfWeekStr);
+            if (!thisWeekLogged) {
+              await sendPushNotification(pu.id, pu.push_subscription, "Streak at risk 🔥", "You haven't logged a workout yet this week — don't break the habit.", "/train");
+              pushSent++;
+            }
+          }
+        } catch (e) { console.error(`Push trigger 2 failed for ${pu.email}:`, e.message); }
+
+        // Trigger 3 — Weekly summary (Sundays)
+        try {
+          if (todayDayNum === 0) {
+            const now = new Date();
+            const weekAgo = new Date(now - 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+            const weeklyWorkouts = Object.keys(pu.workout_log || {}).filter(d => d >= weekAgo).length;
+            await sendPushNotification(pu.id, pu.push_subscription, "Your week in review 📊", `You trained ${weeklyWorkouts}x this week — keep the momentum going.`, "/");
+            pushSent++;
+          }
+        } catch (e) { console.error(`Push trigger 3 failed for ${pu.email}:`, e.message); }
+      }
+      console.log(`Push notifications: ${pushSent} sent to ${pushUsers?.length || 0} subscribed users`);
+    } catch (pushErr) {
+      console.error("Push notification section error:", pushErr.message);
+    }
+
+    res.json({ success: true, day4Sent, day5Sent: sent, day7Sent, pushSent, total: users?.length || 0 });
   } catch (err) {
     console.error("Trial reminder error:", err.message);
     res.status(500).json({ error: err.message });

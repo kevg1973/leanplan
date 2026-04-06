@@ -23,6 +23,7 @@ import { TrainTab } from "./components/TrainTab.jsx";
 import { ProfileTab } from "./components/ProfileTab.jsx";
 import { DAILY_TIPS } from "./data/workouts.js";
 import { AddToHomeScreen } from "./components/AddToHomeScreen.jsx";
+import { PushNotifications } from "./components/PushNotifications.jsx";
 
 let C = LIGHT;
 
@@ -96,6 +97,7 @@ function AppInner() {
   const [authLoading, setAuthLoading] = useState(true); // true until auth check completes
   const [syncing, setSyncing] = useState(false);
   const [showHomeScreenPrompt, setShowHomeScreenPrompt] = useState(false);
+  const [showPushPrompt, setShowPushPrompt] = useState(false);
 
   // Listen to system dark mode changes
   useEffect(() => {
@@ -256,6 +258,13 @@ function AppInner() {
     const thisWeekMonday = (() => { const d = new Date(); d.setDate(d.getDate() - d.getDay() + 1); return d.toISOString().split("T")[0]; })();
     if (isMonday && lastCheckIn !== thisWeekMonday) {
       setTimeout(() => setShowWeeklyCheckIn(true), 1500);
+    }
+
+    // Show push prompt for installed PWA users who haven't been asked
+    const isInstalled = window.matchMedia('(display-mode: standalone)').matches;
+    const hasAskedPush = localStorage.getItem('leanplan_push_asked');
+    if (isInstalled && !hasAskedPush && 'Notification' in window && Notification.permission === 'default') {
+      setTimeout(() => setShowPushPrompt(true), 3000);
     }
 
     const finishLoading = () => {
@@ -643,7 +652,20 @@ function AppInner() {
 
       {/* Add to Home Screen prompt — iOS Safari only, after onboarding */}
       {showHomeScreenPrompt && (
-        <AddToHomeScreen onDismiss={() => setShowHomeScreenPrompt(false)} />
+        <AddToHomeScreen onDismiss={() => {
+          setShowHomeScreenPrompt(false);
+          // After home screen prompt, check if we should show push prompt
+          const isInstalled = window.matchMedia('(display-mode: standalone)').matches;
+          const hasAskedPush = localStorage.getItem('leanplan_push_asked');
+          if (isInstalled && !hasAskedPush) {
+            setTimeout(() => setShowPushPrompt(true), 2000);
+          }
+        }} />
+      )}
+
+      {/* Push notification prompt — installed PWA only */}
+      {showPushPrompt && user && (
+        <PushNotifications user={user} onDismiss={() => setShowPushPrompt(false)} />
       )}
     </div>
     </ThemeProvider>
