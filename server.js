@@ -574,6 +574,25 @@ app.get("/api/test-day4-email", async (req, res) => {
   }
 });
 
+// ── TEMPORARY: Test day 7 email (remove after testing) ──────────────────────
+app.get("/api/test-day7-email", async (req, res) => {
+  const name = req.query.name || "Kevin";
+  const sex = req.query.sex || "male";
+  const engaged = req.query.engaged !== "false";
+  console.log(`Test day 7 email triggered: name=${name}, sex=${sex}, engaged=${engaged}`);
+  try {
+    const stats = engaged
+      ? { workoutsLogged:3, mealsLogged:12, startWeightKg:83, currentWeightKg:80, targetWeightKg:73, goal:"lose_weight", hasEngaged:true }
+      : { workoutsLogged:0, mealsLogged:0, startWeightKg:83, currentWeightKg:83, targetWeightKg:73, goal:"lose_weight", hasEngaged:false };
+    await sendDay7Email("kevg1973@gmail.com", name, sex, stats);
+    console.log("Test day 7 email sent");
+    res.json({ success: true, engaged });
+  } catch (err) {
+    console.error("Test day 7 email error:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ── Manage subscription portal ────────────────────────────────────────────────
 app.post("/api/stripe/portal", async (req, res) => {
   const { customerId } = req.body;
@@ -1576,6 +1595,138 @@ const sendDay4Email = async (email, name, sex) => {
   });
 };
 
+// ── Day 7 last-chance email ──────────────────────────────────────────────────
+const sendDay7Email = async (email, name, sex, stats) => {
+  const displayName = name || "there";
+  const heroImg = sex === "female"
+    ? "https://www.leanplan.uk/email-day7-female.webp"
+    : "https://www.leanplan.uk/email-day7-male.webp";
+
+  const goalLines = {
+    lose_weight: "You came here to lose weight. You've already started — don't stop now.",
+    build_muscle: "You came here to build muscle. The foundation is laid — keep building.",
+    get_fitter: "You came here to get fitter. Seven days in and you're already moving — keep going.",
+    all: "You came here to transform. Seven days in, you're already on your way.",
+  };
+  const goalLine = goalLines[stats.goal] || goalLines.all;
+
+  const weightDiff = stats.startWeightKg && stats.currentWeightKg && stats.currentWeightKg < stats.startWeightKg
+    ? parseFloat((stats.startWeightKg - stats.currentWeightKg).toFixed(1))
+    : null;
+  const weightDisplay = stats.currentWeightKg && stats.currentWeightKg !== stats.startWeightKg
+    ? `${stats.startWeightKg}kg → ${stats.currentWeightKg}kg${weightDiff ? ` <span style="color:#22c55e;font-weight:700;">(${weightDiff}kg lost) 🎉</span>` : ""}`
+    : `${stats.startWeightKg || "—"}kg`;
+
+  const engagedBody = `
+              <h1 style="margin:0 0 16px;font-size:28px;font-weight:800;color:#ffffff;letter-spacing:-0.5px;line-height:1.1;">Look what you did in 7 days, ${displayName}.</h1>
+              <p style="margin:0 0 20px;font-size:16px;color:#e0e0e0;line-height:1.6;">You showed up. Here's what you achieved this week:</p>
+
+              <!-- Stats block -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+                <tr><td style="background:#0f1e3a;border-radius:10px;padding:20px;">
+                  <table width="100%" cellpadding="0" cellspacing="0">
+                    <tr><td style="padding:6px 0;font-size:15px;color:#d1d5db;">💪 &nbsp;<strong style="color:#fff;">Workouts completed</strong> — ${stats.workoutsLogged}</td></tr>
+                    <tr><td style="padding:6px 0;font-size:15px;color:#d1d5db;border-top:1px solid #1a2a4a;">🍽️ &nbsp;<strong style="color:#fff;">Meals logged</strong> — ${stats.mealsLogged}</td></tr>
+                    <tr><td style="padding:6px 0;font-size:15px;color:#d1d5db;border-top:1px solid #1a2a4a;">⚖️ &nbsp;<strong style="color:#fff;">Weight</strong> — ${weightDisplay}</td></tr>
+                  </table>
+                </td></tr>
+              </table>
+
+              <p style="margin:0 0 24px;font-size:16px;color:#e0e0e0;line-height:1.6;">${goalLine}</p>
+
+              <div style="border-top:1px solid #2a2a2a;margin-bottom:24px;"></div>
+
+              <p style="margin:0 0 8px;font-size:18px;font-weight:700;color:#ffffff;">Don't lose your progress.</p>
+              <p style="margin:0 0 24px;font-size:16px;color:#e0e0e0;line-height:1.6;">Your meal plan, workout programme, and everything you've built this week disappears tonight unless you subscribe.</p>`;
+
+  const notEngagedBody = `
+              <h1 style="margin:0 0 16px;font-size:28px;font-weight:800;color:#ffffff;letter-spacing:-0.5px;line-height:1.1;">Your trial ends today, ${displayName}.</h1>
+              <p style="margin:0 0 24px;font-size:16px;color:#e0e0e0;line-height:1.6;">Life gets in the way — we get it. But your personalised meal plan and workout programme are still here, ready and waiting for you.</p>
+
+              <!-- Blue tick box -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+                <tr><td style="background:#0f1e3a;border-radius:10px;padding:20px;">
+                  <table width="100%" cellpadding="0" cellspacing="0">
+                    <tr>
+                      <td style="width:40px;vertical-align:top;">
+                        <div style="width:40px;height:40px;border-radius:50%;background:#3b82f6;text-align:center;line-height:40px;">
+                          <span style="color:#ffffff;font-size:20px;font-weight:700;">✓</span>
+                        </div>
+                      </td>
+                      <td style="padding-left:14px;vertical-align:top;">
+                        <p style="margin:0 0 4px;font-size:16px;font-weight:700;color:#3b82f6;">Your plan is still personalised to you.</p>
+                        <p style="margin:0;font-size:14px;color:#9ca3af;line-height:1.5;">Meals matched to your diet. Workouts built around your equipment and fitness level. Shopping list ready to go.</p>
+                      </td>
+                    </tr>
+                  </table>
+                </td></tr>
+              </table>
+
+              <div style="border-top:1px solid #2a2a2a;margin-bottom:24px;"></div>
+
+              <p style="margin:0 0 8px;font-size:18px;font-weight:700;color:#ffffff;">Start fresh today.</p>
+              <p style="margin:0 0 24px;font-size:16px;color:#e0e0e0;line-height:1.6;">Subscribe and pick up exactly where you left off — or start a brand new plan with one tap.</p>`;
+
+  const ctaText = stats.hasEngaged ? "Keep my plan →" : "Start my plan →";
+  const bodyContent = stats.hasEngaged ? engagedBody : notEngagedBody;
+
+  await resend.emails.send({
+    from: "LeanPlan <hello@leanplan.uk>",
+    to: email,
+    subject: `Your trial ends today, ${displayName} ⏰`,
+    html: `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"></head>
+<body style="margin:0;padding:0;background-color:#0a0a0a;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#0a0a0a;padding:40px 20px;">
+    <tr><td align="center">
+      <table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;">
+
+        <!-- Logo -->
+        <tr><td align="center" style="padding-bottom:24px;">
+          <img src="https://www.leanplan.uk/transparent-logo.png" alt="LeanPlan" style="height:40px;display:block;" />
+        </td></tr>
+
+        <!-- Card -->
+        <tr><td style="background:#1a1a2a;border-radius:16px;overflow:hidden;border:1px solid #2a2a2a;">
+
+          <!-- Hero image -->
+          <img src="${heroImg}" alt="" style="width:100%;display:block;" />
+
+          <!-- Card body -->
+          <table width="100%" cellpadding="0" cellspacing="0" style="padding:32px;">
+            <tr><td>
+
+              ${bodyContent}
+
+              <!-- CTA -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:14px;">
+                <tr><td>
+                  <a href="${APP_URL}" style="display:block;background:#3b82f6;color:#ffffff;text-decoration:none;font-size:16px;font-weight:700;padding:16px 0;border-radius:10px;text-align:center;">${ctaText}</a>
+                </td></tr>
+              </table>
+
+              <p style="margin:0;font-size:14px;color:#888;text-align:center;line-height:1.6;">From £9.99/month — cancel anytime.</p>
+
+            </td></tr>
+          </table>
+
+        </td></tr>
+
+        <!-- Footer -->
+        <tr><td align="center" style="padding-top:24px;">
+          <p style="margin:0;font-size:12px;color:#4b5563;line-height:1.8;">Questions? Just reply to this email — we're happy to help.<br>
+          LeanPlan · Manchester, UK · <a href="https://www.leanplan.uk" style="color:#3b82f6;text-decoration:none;">leanplan.uk</a></p>
+        </td></tr>
+
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`,
+  });
+};
+
 // ── Trial reminder cron endpoint ─────────────────────────────────────────────
 // Called daily by Railway cron job
 app.post("/api/send-trial-reminders", async (req, res) => {
@@ -1588,13 +1739,13 @@ app.post("/api/send-trial-reminders", async (req, res) => {
   try {
     // Find all trial users (days 4–6) who are not pro
     const fourDaysAgo = new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString();
-    const sixDaysAgo = new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString();
+    const eightDaysAgo = new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString();
 
     const { data: users, error } = await supabaseAdmin
       .from("profiles")
       .select("id, email, trial_start, is_pro, reminder_sent, profile_data, workout_log, meal_log, entries")
       .eq("is_pro", false)
-      .gte("trial_start", sixDaysAgo)
+      .gte("trial_start", eightDaysAgo)
       .lte("trial_start", fourDaysAgo);
 
     if (error) {
@@ -1602,10 +1753,11 @@ app.post("/api/send-trial-reminders", async (req, res) => {
       return res.status(500).json({ error: "Database query failed" });
     }
 
-    console.log(`Trial cron: found ${users?.length || 0} trial users in day 4-6 window`);
+    console.log(`Trial cron: found ${users?.length || 0} trial users in day 4-8 window`);
 
     let sent = 0;
     let day4Sent = 0;
+    let day7Sent = 0;
 
     for (const user of (users || [])) {
       if (!user.email) continue;
@@ -1623,6 +1775,33 @@ app.post("/api/send-trial-reminders", async (req, res) => {
           console.log(`Day 4 email sent to ${user.email}`);
         } catch (err) {
           console.error(`Day 4 email failed for ${user.email}:`, err.message);
+        }
+        continue;
+      }
+
+      // Day 7: send last-chance email
+      if (daysIntoTrial === 7) {
+        try {
+          const userName = user.profile_data?.name || "";
+          const userSex = user.profile_data?.sex || "male";
+          const workoutsLogged = Object.keys(user.workout_log || {}).length;
+          const mealsLogged = Object.values(user.meal_log || {}).reduce((sum, day) => sum + (Array.isArray(day) ? day.length : 0), 0);
+          const hasWeighIn = (user.entries || []).length > 0;
+          const hasEngaged = workoutsLogged > 0 || mealsLogged >= 3 || hasWeighIn;
+          const startWeightKg = user.profile_data?.startWeightKg || null;
+          const currentWeightKg = hasWeighIn
+            ? (user.entries[user.entries.length - 1].weightKg || parseFloat((user.entries[user.entries.length - 1].weight * 0.453592).toFixed(1)))
+            : startWeightKg;
+          const targetWeightKg = user.profile_data?.targetWeightKg || null;
+          const goal = user.profile_data?.goal || "all";
+
+          await sendDay7Email(user.email, userName, userSex, {
+            workoutsLogged, mealsLogged, startWeightKg, currentWeightKg, targetWeightKg, goal, hasEngaged
+          });
+          day7Sent++;
+          console.log(`Day 7 email sent to ${user.email} (engaged: ${hasEngaged})`);
+        } catch (err) {
+          console.error(`Day 7 email failed for ${user.email}:`, err.message);
         }
         continue;
       }
@@ -1751,7 +1930,7 @@ app.post("/api/send-trial-reminders", async (req, res) => {
       }
     }
 
-    res.json({ success: true, day5Sent: sent, day4Sent, total: users?.length || 0 });
+    res.json({ success: true, day4Sent, day5Sent: sent, day7Sent, total: users?.length || 0 });
   } catch (err) {
     console.error("Trial reminder error:", err.message);
     res.status(500).json({ error: err.message });
