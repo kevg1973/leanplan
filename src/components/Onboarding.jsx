@@ -138,18 +138,18 @@ export const Onboarding = ({ onDone }) => {
   const [step, setStep] = useState(1);
   const [building, setBuilding] = useState(false);
   const [data, setData] = useState({
-    name:"", goal:"lose_weight",
+    name:"", goal:"",
     startWeightKg:83, targetWeightKg:73,
-    heightCm:175, age:35, sex:"male",
-    fitnessLevel:"beginner",
+    heightCm:175, age:35, sex:"",
+    fitnessLevel:"",
     injuries:[], equipment:[], workoutStyle:"mixed",
     workoutsPerWeek:3, paceId:"normal",
-    dietType:"omnivore", dairyPref:"dairy_free",
-    glutenPref:"gluten_free", milkAlt:"soya",
+    dietType:"", dairyPref:"",
+    glutenPref:"", milkAlt:"",
     allergies:[], dislikes:[],
-    cookingTime:"moderate", sleepQuality:"average", mealPlanDays:5, appMode:"guided",
-    activityLevel:"moderate",
-    supplementsOpen:"maybe", supplementsInterested:[],
+    cookingTime:"", sleepQuality:"", mealPlanDays:5, appMode:"guided",
+    activityLevel:"",
+    supplementsOpen:"", supplementsInterested:[],
   });
 
   const update = (k,v) => setData(d=>({...d,[k]:v}));
