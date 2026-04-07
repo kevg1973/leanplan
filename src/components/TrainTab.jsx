@@ -30,6 +30,14 @@ export const TrainTab = ({ profile, workoutLog, setWorkoutLog, setProfile, saved
     setTimeout(() => setPrToast(null), 3000);
   };
 
+  const finishWorkout = () => {
+    setWorkoutLog(wl=>({...wl,[todayKey()]:{type:selectedType,date:todayKey(),time:new Date().toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"})}}));
+    setSavedWorkout(null);
+    setLoggedWeights({});
+    showPrToast("Workout complete! Well done. 💪");
+    setView("calendar");
+  };
+
   const saveLift = (exName, weight, reps, sets) => {
     if (!weight) return;
     const newWeight = parseFloat(weight);
@@ -46,10 +54,6 @@ export const TrainTab = ({ profile, workoutLog, setWorkoutLog, setProfile, saved
       showPrToast(`🏆 New PB! ${exName} — ${newWeight}kg`);
     }
 
-    // Auto-log the workout on first exercise saved
-    if (!workoutLog[todayKey()] && activeWorkout) {
-      setWorkoutLog(wl=>({...wl,[todayKey()]:{type:selectedType,date:todayKey(),time:new Date().toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"})}}));
-    }
   };
   const getLastLift = (exName) => {
     const entries = lifts[exName];
@@ -79,11 +83,6 @@ export const TrainTab = ({ profile, workoutLog, setWorkoutLog, setProfile, saved
     const exercises = buildWorkout(type, profile, isDeload ? {...block, sets: Math.max(2, block.sets-1), reps:"12-15", rest:"60 sec"} : block);
     setSavedWorkout({ workout:w, exercises });
     setView("workout");
-  };
-
-  const logWorkout = (type) => {
-    setWorkoutLog(wl=>({...wl,[today]:{type,date:today,time:new Date().toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"})}}));
-    buildAndShowWorkout(type);
   };
 
   const historyWeeks = Array.from({length:4},(_,i)=>{
@@ -118,7 +117,7 @@ export const TrainTab = ({ profile, workoutLog, setWorkoutLog, setProfile, saved
         </div>
       )}
       <div style={{ display:"flex", background:C.card, border:`1px solid ${C.border}`, borderRadius:12, padding:3, marginBottom:12, gap:2 }}>
-        {[["workout", isGuided?"Custom":"Workout"],["calendar","Programme"],["lifts","Progress"]].map(([k,l])=>(
+        {[["workout", "Workout"],["calendar","Programme"],["lifts","Progress"]].map(([k,l])=>(
           <button key={k} onClick={()=>setView(k)} style={{ flex:1, background:view===k?C.accent:"transparent", color:view===k?"#fff":C.muted, border:"none", borderRadius:10, padding:"8px 0", fontSize:13, fontWeight:600, cursor:"pointer", fontFamily:FONT, transition:"all 0.2s" }}>{l}</button>
         ))}
       </div>
@@ -482,6 +481,7 @@ export const TrainTab = ({ profile, workoutLog, setWorkoutLog, setProfile, saved
             <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:6 }}><Icon name="medal" size={14} color={activeWorkout.color} /><p style={{ color:activeWorkout.color, fontSize:12, fontWeight:700, margin:0 }}>COACH NOTES</p></div>
             <p style={{ color:C.text, fontSize:13, lineHeight:1.75, margin:0 }}>{activeWorkout.note}</p>
           </Card>
+          {!workoutLog[todayKey()]&&<Btn onClick={finishWorkout} color={C.green} style={{ width:"100%", marginBottom:8 }}>Finish workout ✓</Btn>}
           <div style={{ display:"flex", gap:8 }}>
             <Btn onClick={()=>setActiveWorkout(null)} outline color={C.accent} style={{ width:"100%" }}>← Back to workout selection</Btn>
           </div>
