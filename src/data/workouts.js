@@ -157,7 +157,26 @@ export const buildWorkout = (type, profile, block) => {
     ];
   }
 
-  return exercises.filter(Boolean).map(ex => ({
+  const filtered = exercises.filter(Boolean);
+
+  // Minimum exercise counts per session type
+  const minimums = { "full-body":5, "upper-body":4, "lower-body":3, "cardio":2, "strength":4 };
+  const minimum = minimums[type] || 3;
+
+  if (filtered.length < minimum) {
+    // Identify which muscle groups came up short
+    const expectedGroups = {
+      "full-body": ["chest","back","legs","shoulders","core"],
+      "upper-body": ["chest","back","shoulders","arms"],
+      "lower-body": ["legs","core"],
+      "cardio": ["cardio"],
+      "strength": ["chest","back","legs","shoulders"],
+    };
+    const missingGroups = (expectedGroups[type]||[]).filter(g => !filtered.some(ex => ex.muscle === g));
+    return { tooFewExercises:true, sessionType:type, picked:filtered.length, minimum, missingGroups };
+  }
+
+  return filtered.map(ex => ({
     name: ex.name,
     sets,
     reps: blockReps,

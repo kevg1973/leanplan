@@ -8,7 +8,7 @@ import { Icon } from "./Icon.jsx";
 import { Card, Section, Row, Btn, BigChip, ProgressBar } from "./ui.jsx";
 import { LiftTracker } from "./LiftTracker.jsx";
 
-export const TrainTab = ({ profile, workoutLog, setWorkoutLog, setProfile, savedWorkout, setSavedWorkout, entries=[] }) => {
+export const TrainTab = ({ profile, workoutLog, setWorkoutLog, setProfile, savedWorkout, setSavedWorkout, setTab, entries=[] }) => {
   const C = useTheme();
   const [selectedType, setSelectedType] = useState("full-body");
   const activeWorkout = savedWorkout?.workout || null;
@@ -24,6 +24,7 @@ export const TrainTab = ({ profile, workoutLog, setWorkoutLog, setProfile, saved
     try { return JSON.parse(localStorage.getItem("leanplan_lifts")||"{}" ); } catch { return {}; }
   });
   const [prToast, setPrToast] = useState(null);
+  const [exerciseWarning, setExerciseWarning] = useState(null);
 
   const showPrToast = (msg) => {
     setPrToast(msg);
@@ -80,8 +81,15 @@ export const TrainTab = ({ profile, workoutLog, setWorkoutLog, setProfile, saved
 
   const buildAndShowWorkout = (type) => {
     const w = WORKOUTS[type];
-    const exercises = buildWorkout(type, profile, isDeload ? {...block, sets: Math.max(2, block.sets-1), reps:"12-15", rest:"60 sec"} : block);
-    setSavedWorkout({ workout:w, exercises });
+    const result = buildWorkout(type, profile, isDeload ? {...block, sets: Math.max(2, block.sets-1), reps:"12-15", rest:"60 sec"} : block);
+    if (result?.tooFewExercises) {
+      setExerciseWarning(result);
+      setSavedWorkout(null);
+      setView("workout");
+      return;
+    }
+    setExerciseWarning(null);
+    setSavedWorkout({ workout:w, exercises:result });
     setView("workout");
   };
 
@@ -359,7 +367,29 @@ export const TrainTab = ({ profile, workoutLog, setWorkoutLog, setProfile, saved
       </>}
 
       {view==="workout"&&<>
-        {!activeWorkout&&<>
+        {exerciseWarning&&<Card style={{ textAlign:"center", padding:"32px 20px" }}>
+          <div style={{ width:56, height:56, borderRadius:99, background:`${C.red}15`, border:`2px solid ${C.red}33`, display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 16px" }}>
+            <Icon name="target" size={24} color={C.red} />
+          </div>
+          <h3 style={{ color:C.text, fontSize:18, fontWeight:700, marginBottom:8 }}>Not enough exercises available</h3>
+          <p style={{ color:C.muted, fontSize:14, lineHeight:1.6, marginBottom:6 }}>
+            Your current equipment and injury settings don't give us enough exercises to build a full {exerciseWarning.sessionType.replace(/-/g," ")} session.
+          </p>
+          <p style={{ color:C.muted, fontSize:13, lineHeight:1.6, marginBottom:6 }}>
+            Found {exerciseWarning.picked} exercise{exerciseWarning.picked!==1?"s":""}, need at least {exerciseWarning.minimum}.
+          </p>
+          {exerciseWarning.missingGroups.length>0&&<p style={{ color:C.red, fontSize:13, fontWeight:600, marginBottom:16 }}>
+            Missing: {exerciseWarning.missingGroups.join(", ")} exercises
+          </p>}
+          <p style={{ color:C.muted, fontSize:13, lineHeight:1.6, marginBottom:20 }}>
+            Try adding more equipment in your profile, or adjust your injury settings.
+          </p>
+          <div style={{ display:"flex", gap:8, flexDirection:"column" }}>
+            <Btn onClick={()=>{ setExerciseWarning(null); setTab("Profile"); }} color={C.accent} style={{ width:"100%" }}>Update profile</Btn>
+            <Btn onClick={()=>{ setExerciseWarning(null); setView("calendar"); }} outline color={C.accent} style={{ width:"100%" }}>Back to programme</Btn>
+          </div>
+        </Card>}
+        {!exerciseWarning&&!activeWorkout&&<>
           {isGuided && (
             <div style={{ background:todaySession?`${todaySession.color}10`:`${C.green}10`, border:`1px solid ${todaySession?`${todaySession.color}30`:`${C.green}30`}`, borderRadius:14, padding:"10px 14px", marginBottom:12, display:"flex", gap:10, alignItems:"center" }}>
               <span style={{ fontSize:18, flexShrink:0 }}>{todaySession ? "💡" : "💚"}</span>
@@ -380,7 +410,7 @@ export const TrainTab = ({ profile, workoutLog, setWorkoutLog, setProfile, saved
           </Card>
         </>}
 
-        {activeWorkout&&<>
+        {!exerciseWarning&&activeWorkout&&<>
           <div style={{ background:`linear-gradient(135deg, ${activeWorkout.color}, ${activeWorkout.color}88)`, borderRadius:16, padding:"16px 18px", marginBottom:14, color:"#fff" }}>
             <h3 style={{ margin:0, fontSize:20, fontWeight:700 }}>{activeWorkout.title}</h3>
             <p style={{ opacity:0.85, fontSize:13, margin:"4px 0 0" }}>{block.name} Block · Week {weekInBlock+1} · {isDeload?"Deload":block.reps+" reps"}</p>
