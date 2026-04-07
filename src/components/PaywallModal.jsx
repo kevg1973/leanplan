@@ -66,14 +66,14 @@ export const PaywallModal = ({ onClose }) => {
           {/* Monthly */}
           <div onClick={()=>setSelectedPlan("monthly")} style={{ flex:1, border:`2px solid ${selectedPlan==="monthly"?C.accent:C.border}`, borderRadius:16, padding:"16px 12px", cursor:"pointer", background:selectedPlan==="monthly"?`${C.accent}08`:C.card, textAlign:"center", position:"relative" }}>
             <p style={{ color:C.muted, fontSize:13, fontWeight:600, margin:"0 0 6px" }}>Monthly</p>
-            <p style={{ color:C.text, fontSize:26, fontWeight:800, margin:"0 0 2px", letterSpacing:"-0.5px" }}>£9.99<span style={{ fontSize:14, fontWeight:500 }}>/month</span></p>
+            <p style={{ color:C.text, fontSize:26, fontWeight:800, margin:"0 0 2px", letterSpacing:"-0.5px" }}>£14.99<span style={{ fontSize:14, fontWeight:500 }}>/month</span></p>
             <div style={{ height:26, marginBottom:8 }} />
             <div style={{ borderTop:`1px solid ${C.border}`, marginBottom:10 }} />
             <div style={{ border:`1.5px solid ${selectedPlan==="monthly"?C.accent:C.border}`, borderRadius:99, padding:"6px 0", display:"flex", alignItems:"center", justifyContent:"center", gap:6 }}>
               <div style={{ width:16, height:16, borderRadius:99, border:`2px solid ${selectedPlan==="monthly"?C.accent:C.border}`, background: selectedPlan==="monthly"?C.accent:"transparent", display:"flex", alignItems:"center", justifyContent:"center" }}>
                 {selectedPlan==="monthly" && <span style={{ color:"#fff", fontSize:9, fontWeight:700 }}>✓</span>}
               </div>
-              <span style={{ color:C.text, fontSize:13, fontWeight:600 }}>£9.99/month</span>
+              <span style={{ color:C.text, fontSize:13, fontWeight:600 }}>£14.99/month</span>
             </div>
           </div>
 
@@ -81,16 +81,16 @@ export const PaywallModal = ({ onClose }) => {
           <div onClick={()=>setSelectedPlan("annual")} style={{ flex:1, border:`2px solid ${selectedPlan==="annual"?C.green:C.border}`, borderRadius:16, padding:"16px 12px", cursor:"pointer", background:selectedPlan==="annual"?`${C.green}08`:C.card, textAlign:"center", position:"relative" }}>
             <div style={{ position:"absolute", top:-12, left:"50%", transform:"translateX(-50%)", background:"#f59e0b", color:"#fff", borderRadius:99, padding:"3px 12px", fontSize:11, fontWeight:700, whiteSpace:"nowrap" }}>⭐ Most popular</div>
             <p style={{ color:C.muted, fontSize:13, fontWeight:600, margin:"0 0 6px" }}>Annual</p>
-            <p style={{ color:C.text, fontSize:26, fontWeight:800, margin:"0 0 2px", letterSpacing:"-0.5px" }}>£99<span style={{ fontSize:14, fontWeight:500 }}>/year</span></p>
+            <p style={{ color:C.text, fontSize:26, fontWeight:800, margin:"0 0 2px", letterSpacing:"-0.5px" }}>£149<span style={{ fontSize:14, fontWeight:500 }}>/year</span></p>
             <div style={{ display:"inline-block", background:`${C.accent}15`, borderRadius:99, padding:"2px 10px", marginBottom:8 }}>
-              <span style={{ color:C.accent, fontSize:12, fontWeight:700 }}>Save £20</span>
+              <span style={{ color:C.accent, fontSize:12, fontWeight:700 }}>Save £30</span>
             </div>
             <div style={{ borderTop:`1px solid ${C.border}`, marginBottom:10 }} />
             <div style={{ border:`1.5px solid ${selectedPlan==="annual"?C.green:C.border}`, borderRadius:99, padding:"6px 0", display:"flex", alignItems:"center", justifyContent:"center", gap:6 }}>
               <div style={{ width:16, height:16, borderRadius:99, border:`2px solid ${selectedPlan==="annual"?C.green:C.border}`, background: selectedPlan==="annual"?C.green:"transparent", display:"flex", alignItems:"center", justifyContent:"center" }}>
                 {selectedPlan==="annual" && <span style={{ color:"#fff", fontSize:9, fontWeight:700 }}>✓</span>}
               </div>
-              <span style={{ color:C.text, fontSize:13, fontWeight:600 }}>£99/year</span>
+              <span style={{ color:C.text, fontSize:13, fontWeight:600 }}>£149/year</span>
             </div>
           </div>
         </div>

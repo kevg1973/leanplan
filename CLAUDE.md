@@ -64,7 +64,7 @@ Cache for Pexels meal photos — each unique meal name is looked up once, then s
 
 ## Business Model
 - 7-day free trial → paid only (no free tier)
-- **£9.99/month or £99/year**
+- **£14.99/month or £149/year**
 - `effectiveIsPro = isPro || isTrialActive()`
 - Account creation is **mandatory** after onboarding — no skip option
 - Stripe webhook marks existing accounts as `is_pro: true` on payment

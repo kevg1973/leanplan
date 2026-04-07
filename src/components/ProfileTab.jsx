@@ -597,7 +597,7 @@ export const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride,
           </div>
         </div>
       ) : (
-        <Btn onClick={onUpgrade} color="#5856d6" style={{ width:"100%", marginBottom:16 }}>✦ Upgrade to Pro from £9.99/mo</Btn>
+        <Btn onClick={onUpgrade} color="#5856d6" style={{ width:"100%", marginBottom:16 }}>✦ Upgrade to Pro from £14.99/mo</Btn>
       )}
 
       <div style={{ marginTop:8 }}>

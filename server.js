@@ -212,8 +212,8 @@ app.post("/api/stripe/webhook", async (req, res) => {
 
       // Send welcome email via Resend
       const planLabel = plan === "annual" ? "Annual" : "Monthly";
-      const planPrice = plan === "annual" ? "£99/year" : "£9.99/month";
-      const planSub = plan === "annual" ? "That's just £8.25/month — 2 months free." : "Cancel any time from your account settings.";
+      const planPrice = plan === "annual" ? "£149/year" : "£14.99/month";
+      const planSub = plan === "annual" ? "That's just £12.42/month — 2 months free." : "Cancel any time from your account settings.";
 
       await resend.emails.send({
         from: "LeanPlan <hello@leanplan.uk>",
@@ -1794,7 +1794,7 @@ const sendDay7Email = async (email, name, sex, stats) => {
                 </td></tr>
               </table>
 
-              <p style="margin:0;font-size:13px;color:#888;text-align:center;line-height:1.6;">From £9.99/month — cancel anytime.</p>
+              <p style="margin:0;font-size:13px;color:#888;text-align:center;line-height:1.6;">From £14.99/month — cancel anytime.</p>
 
             </td></tr>
           </table>
