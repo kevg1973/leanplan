@@ -427,6 +427,7 @@ export const TrainTab = ({ profile, workoutLog, setWorkoutLog, setProfile, saved
             const isLogged = loggedWeights[ex.name];
             const loggedEntry = allLifts.length > 0 ? allLifts[allLifts.length - 1] : null;
             const isNewPB = isLogged && loggedEntry && personalBest && loggedEntry.weight >= personalBest;
+            const isBW = fullEx && (fullEx.equip.length===0 || (fullEx.equip.length===1 && fullEx.equip[0]==="bodyweight"));
             const inputs = liftInputs[ex.name] || { weight:"", reps: String(ex.reps?.split("-")?.[0]||"10"), sets: String(ex.sets||"3") };
             const setInput = (field, val) => setLiftInputs(li => ({...li, [ex.name]: {...(li[ex.name]||{weight:"",reps:String(ex.reps?.split("-")?.[0]||"10"),sets:String(ex.sets||"3")}), [field]: val}}));
             return <Card key={i} style={{ borderLeft:`3px solid ${isLogged ? C.green : activeWorkout.color}` }}>
@@ -451,11 +452,11 @@ export const TrainTab = ({ profile, workoutLog, setWorkoutLog, setProfile, saved
 
               {/* Inline weight logger — always visible */}
               <div style={{ marginTop:12, paddingTop:12, borderTop:`1px solid ${C.border}` }}>
-                {lastLift&&!isLogged&&<p style={{ color:C.muted, fontSize:11, margin:"0 0 8px" }}>Last time: <span style={{ color:C.accent, fontWeight:600 }}>{lastLift.weight}kg × {lastLift.reps} reps</span></p>}
+                {lastLift&&!isLogged&&<p style={{ color:C.muted, fontSize:11, margin:"0 0 8px" }}>Last time: <span style={{ color:C.accent, fontWeight:600 }}>{isBW?"":`${lastLift.weight}kg × `}{lastLift.reps} reps</span></p>}
                 {isLogged ? (
                   <div style={{ display:"flex", alignItems:"center", gap:8 }}>
                     <div style={{ flex:1, background:`${C.green}10`, border:`1px solid ${C.green}33`, borderRadius:10, padding:"8px 12px" }}>
-                      <span style={{ color:C.green, fontSize:13, fontWeight:600 }}>✓ Logged: {inputs.weight}kg × {inputs.reps} reps × {inputs.sets} sets</span>
+                      <span style={{ color:C.green, fontSize:13, fontWeight:600 }}>✓ Logged: {isBW?"":`${inputs.weight}kg × `}{inputs.reps} reps × {inputs.sets} sets</span>
                       {isNewPB && <p style={{ color:"#f5a623", fontSize:11, fontWeight:600, margin:"4px 0 0" }}>🏆 New personal best!</p>}
                     </div>
                     <button onClick={()=>setLoggedWeights(lw=>({...lw,[ex.name]:false}))} style={{ background:"none", border:"none", color:C.muted, fontSize:12, cursor:"pointer", fontFamily:FONT, padding:"4px 6px" }}>Edit</button>
@@ -463,10 +464,10 @@ export const TrainTab = ({ profile, workoutLog, setWorkoutLog, setProfile, saved
                 ) : (
                   <div>
                     <div style={{ display:"flex", gap:6, marginBottom:8 }}>
-                      <div style={{ flex:1 }}>
+                      {!isBW&&<div style={{ flex:1 }}>
                         <p style={{ color:C.muted, fontSize:11, margin:"0 0 4px", fontWeight:600 }}>KG</p>
                         <input type="number" value={inputs.weight} onChange={e=>setInput("weight",e.target.value)} placeholder={lastLift?`${lastLift.weight}`:"0"} style={{ width:"100%", background:C.sectionBg, border:`1px solid ${C.border}`, borderRadius:8, padding:"8px 10px", fontSize:14, fontFamily:FONT, color:C.text, outline:"none" }} />
-                      </div>
+                      </div>}
                       <div style={{ flex:1 }}>
                         <p style={{ color:C.muted, fontSize:11, margin:"0 0 4px", fontWeight:600 }}>REPS</p>
                         <input type="number" value={inputs.reps} onChange={e=>setInput("reps",e.target.value)} placeholder="10" style={{ width:"100%", background:C.sectionBg, border:`1px solid ${C.border}`, borderRadius:8, padding:"8px 10px", fontSize:14, fontFamily:FONT, color:C.text, outline:"none" }} />
@@ -476,8 +477,8 @@ export const TrainTab = ({ profile, workoutLog, setWorkoutLog, setProfile, saved
                         <input type="number" value={inputs.sets} onChange={e=>setInput("sets",e.target.value)} placeholder="3" style={{ width:"100%", background:C.sectionBg, border:`1px solid ${C.border}`, borderRadius:8, padding:"8px 10px", fontSize:14, fontFamily:FONT, color:C.text, outline:"none" }} />
                       </div>
                     </div>
-                    <button onClick={()=>saveLift(ex.name, inputs.weight, inputs.reps, inputs.sets)} disabled={!inputs.weight} style={{ width:"100%", background:inputs.weight?C.green:C.sectionBg, border:"none", borderRadius:10, padding:"9px 0", color:inputs.weight?"#fff":C.muted, fontSize:13, fontWeight:700, cursor:inputs.weight?"pointer":"default", fontFamily:FONT, transition:"all 0.2s" }}>
-                      Log Weight
+                    <button onClick={()=>saveLift(ex.name, isBW?"0":inputs.weight, inputs.reps, inputs.sets)} disabled={isBW?false:!inputs.weight} style={{ width:"100%", background:(isBW||inputs.weight)?C.green:C.sectionBg, border:"none", borderRadius:10, padding:"9px 0", color:(isBW||inputs.weight)?"#fff":C.muted, fontSize:13, fontWeight:700, cursor:(isBW||inputs.weight)?"pointer":"default", fontFamily:FONT, transition:"all 0.2s" }}>
+                      {isBW?"Log Exercise":"Log Weight"}
                     </button>
                   </div>
                 )}

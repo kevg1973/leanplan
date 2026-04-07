@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { supabase } from "./supabase.js";
 import { ThemeProvider, LIGHT, DARK } from "./ThemeContext.jsx";
 import { FONT, TABS, TAB_ICON_MAP } from "./constants.js";
@@ -98,6 +98,19 @@ function AppInner() {
   const [syncing, setSyncing] = useState(false);
   const [showHomeScreenPrompt, setShowHomeScreenPrompt] = useState(false);
   const [showPushPrompt, setShowPushPrompt] = useState(false);
+
+  // Clear active workout when equipment or injuries change
+  const prevEquipRef = useRef(null);
+  const prevInjuriesRef = useRef(null);
+  useEffect(() => {
+    const equip = JSON.stringify(profile?.equipment || []);
+    const injuries = JSON.stringify(profile?.injuries || []);
+    if (prevEquipRef.current !== null && (equip !== prevEquipRef.current || injuries !== prevInjuriesRef.current)) {
+      setTodaysWorkout(null);
+    }
+    prevEquipRef.current = equip;
+    prevInjuriesRef.current = injuries;
+  }, [profile?.equipment, profile?.injuries]);
 
   // Listen to system dark mode changes
   useEffect(() => {
