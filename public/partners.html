@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LeanPlan — Creator Partner Programme</title>
+  <meta name="description" content="Earn 30% recurring commission on every subscriber you refer to LeanPlan. Monthly payouts, free Pro account, no minimums." />
+  <link rel="icon" href="/favicon.ico" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=Syne:wght@700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'DM Sans', ui-sans-serif, system-ui, -apple-system, sans-serif;
+      color: #F8FAFC;
+      background: #0E1220;
+      font-size: 15px;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    a { color: inherit; text-decoration: none; }
+
+    .wrap {
+      width: min(1100px, calc(100% - 32px));
+      margin: 0 auto;
+    }
+
+    /* ── NAV ── */
+    nav {
+      padding: 20px 0;
+    }
+
+    .nav-inner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 1.35rem;
+      letter-spacing: -0.03em;
+    }
+
+    .logo span { color: #3B82F6; }
+
+    .logo-box {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+    }
+
+    .logo-icon {
+      width: 30px;
+      height: 30px;
+      border-radius: 8px;
+      background: #2563EB;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 16px;
+      color: #fff;
+    }
+
+    .btn-nav {
+      background: #2563EB;
+      color: #fff;
+      font-weight: 500;
+      padding: 9px 22px;
+      border-radius: 99px;
+      font-size: 0.88rem;
+      transition: opacity 0.18s;
+    }
+    .btn-nav:hover { opacity: 0.88; }
+
+    /* ── SECTION SHARED ── */
+    section { padding: 72px 0; }
+
+    .section-label {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: #3B82F6;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 12px;
+    }
+
+    .section-title {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: clamp(1.6rem, 3.5vw, 2.4rem);
+      line-height: 1.1;
+      letter-spacing: -0.035em;
+      margin-bottom: 12px;
+    }
+
+    .section-sub {
+      color: rgba(248,250,252,0.55);
+      font-size: 1rem;
+      line-height: 1.65;
+      max-width: 580px;
+      margin-bottom: 36px;
+    }
+
+    /* ── HERO ── */
+    .hero {
+      padding: 80px 0 56px;
+      text-align: center;
+    }
+
+    .hero-badge {
+      display: inline-block;
+      background: rgba(37,99,235,0.12);
+      border: 1px solid rgba(59,130,246,0.2);
+      color: #93C5FD;
+      font-size: 0.82rem;
+      font-weight: 500;
+      padding: 6px 18px;
+      border-radius: 99px;
+      margin-bottom: 24px;
+    }
+
+    .hero h1 {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: clamp(1.8rem, 4.5vw, 3rem);
+      line-height: 1.08;
+      letter-spacing: -0.04em;
+      max-width: 720px;
+      margin: 0 auto 20px;
+    }
+
+    .hero-sub {
+      color: rgba(248,250,252,0.55);
+      font-size: 1.05rem;
+      line-height: 1.65;
+      max-width: 540px;
+      margin: 0 auto 44px;
+    }
+
+    .stats-strip {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      max-width: 680px;
+      margin: 0 auto;
+    }
+
+    .stat-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(59,130,246,0.2);
+      border-radius: 16px;
+      padding: 24px 16px;
+      text-align: center;
+    }
+
+    .stat-card .num {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 1.8rem;
+      color: #3B82F6;
+      letter-spacing: -0.03em;
+    }
+
+    .stat-card .label {
+      color: rgba(248,250,252,0.55);
+      font-size: 0.82rem;
+      margin-top: 4px;
+    }
+
+    /* ── EARNINGS ── */
+    .earnings-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .earn-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(59,130,246,0.2);
+      border-radius: 16px;
+      padding: 24px 18px;
+    }
+
+    .earn-card .earn-count {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 1.3rem;
+      color: #F8FAFC;
+      margin-bottom: 4px;
+    }
+
+    .earn-card .earn-type {
+      color: rgba(248,250,252,0.55);
+      font-size: 0.82rem;
+      margin-bottom: 14px;
+    }
+
+    .earn-card .earn-amount {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 1.15rem;
+      color: #3B82F6;
+    }
+
+    .earn-card .earn-freq {
+      color: rgba(248,250,252,0.55);
+      font-size: 0.78rem;
+      margin-top: 2px;
+    }
+
+    .earn-note {
+      color: rgba(248,250,252,0.55);
+      font-size: 0.86rem;
+      line-height: 1.6;
+      max-width: 640px;
+    }
+
+    /* ── AUDIENCE ── */
+    .audience-stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .audience-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(59,130,246,0.2);
+      border-radius: 16px;
+      padding: 24px 18px;
+      text-align: center;
+    }
+
+    .audience-card .aud-num {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 1.5rem;
+      color: #F8FAFC;
+      letter-spacing: -0.02em;
+    }
+
+    .audience-card .aud-label {
+      color: rgba(248,250,252,0.55);
+      font-size: 0.82rem;
+      margin-top: 4px;
+    }
+
+    .pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .pill {
+      padding: 6px 16px;
+      border-radius: 99px;
+      font-size: 0.82rem;
+      font-weight: 500;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.08);
+      color: rgba(248,250,252,0.7);
+    }
+
+    .pill.accent {
+      background: rgba(37,99,235,0.12);
+      border-color: rgba(59,130,246,0.25);
+      color: #93C5FD;
+    }
+
+    /* ── PRODUCT ── */
+    .product-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .product-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(59,130,246,0.2);
+      border-radius: 16px;
+      padding: 28px 22px;
+    }
+
+    .product-card .p-icon {
+      font-size: 1.5rem;
+      margin-bottom: 12px;
+    }
+
+    .product-card h3 {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 1rem;
+      margin-bottom: 8px;
+    }
+
+    .product-card p {
+      color: rgba(248,250,252,0.55);
+      font-size: 0.86rem;
+      line-height: 1.6;
+    }
+
+    /* ── HOW IT WORKS ── */
+    .steps-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+
+    .step-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(59,130,246,0.2);
+      border-radius: 16px;
+      padding: 28px 20px;
+    }
+
+    .step-num {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 1.8rem;
+      color: #2563EB;
+      margin-bottom: 12px;
+    }
+
+    .step-card h3 {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 0.95rem;
+      margin-bottom: 6px;
+    }
+
+    .step-card p {
+      color: rgba(248,250,252,0.55);
+      font-size: 0.84rem;
+      line-height: 1.55;
+    }
+
+    /* ── PRICING ── */
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    .price-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(59,130,246,0.2);
+      border-radius: 16px;
+      padding: 28px 22px;
+    }
+
+    .price-card .p-emoji {
+      font-size: 1.5rem;
+      margin-bottom: 12px;
+    }
+
+    .price-card h3 {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 1.05rem;
+      margin-bottom: 8px;
+    }
+
+    .price-card p {
+      color: rgba(248,250,252,0.55);
+      font-size: 0.86rem;
+      line-height: 1.6;
+    }
+
+    /* ── CTA ── */
+    .cta-section {
+      padding: 48px 0 72px;
+    }
+
+    .cta-box {
+      border-radius: 26px;
+      background: rgba(37,99,235,0.06);
+      border: 1px solid rgba(59,130,246,0.2);
+      padding: 56px 48px;
+      text-align: center;
+    }
+
+    .cta-box .section-title {
+      margin-bottom: 14px;
+    }
+
+    .cta-box .section-sub {
+      max-width: 520px;
+      margin: 0 auto 30px;
+    }
+
+    .btn-cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #2563EB;
+      color: #fff;
+      font-weight: 700;
+      padding: 15px 34px;
+      border-radius: 14px;
+      font-size: 1.02rem;
+      transition: opacity 0.18s, transform 0.18s;
+      box-shadow: 0 10px 28px rgba(37,99,235,0.28);
+    }
+    .btn-cta:hover { opacity: 0.9; transform: translateY(-1px); }
+
+    .cta-note {
+      margin-top: 14px;
+      font-size: 0.84rem;
+      color: rgba(248,250,252,0.4);
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      padding: 32px 0 48px;
+      border-top: 1px solid rgba(59,130,246,0.1);
+    }
+
+    .foot-inner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 14px;
+      color: rgba(248,250,252,0.35);
+      font-size: 0.84rem;
+    }
+
+    .foot-links {
+      display: flex;
+      gap: 20px;
+    }
+
+    .foot-links a {
+      color: rgba(248,250,252,0.35);
+      transition: color 0.18s;
+    }
+    .foot-links a:hover { color: rgba(248,250,252,0.6); }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 600px) {
+      section { padding: 48px 0; }
+
+      .hero { padding: 56px 0 40px; }
+      .hero h1 { font-size: 1.6rem; }
+
+      .stats-strip { grid-template-columns: 1fr; max-width: 320px; }
+      .earnings-grid { grid-template-columns: 1fr; }
+      .audience-stats { grid-template-columns: 1fr 1fr; }
+      .product-grid { grid-template-columns: 1fr; }
+      .steps-grid { grid-template-columns: 1fr; }
+      .pricing-grid { grid-template-columns: 1fr; }
+      .cta-box { padding: 36px 20px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <div class="wrap nav-inner">
+      <a href="/" class="logo-box">
+        <div class="logo-icon">L</div>
+        <span class="logo">Lean<span>Plan</span></span>
+      </a>
+      <a href="mailto:hello@leanplan.uk" class="btn-nav">Get in touch</a>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="wrap">
+      <div class="hero-badge">Creator Partner Programme</div>
+      <h1>Earn 30% recurring commission on every subscriber you refer</h1>
+      <p class="hero-sub">Not a one-off deal. Every month your followers stay subscribed, you earn. We handle everything else.</p>
+      <div class="stats-strip">
+        <div class="stat-card">
+          <div class="num">30%</div>
+          <div class="label">Commission on all plans</div>
+        </div>
+        <div class="stat-card">
+          <div class="num">£4.50</div>
+          <div class="label">Per monthly subscriber per month</div>
+        </div>
+        <div class="stat-card">
+          <div class="num">£44.70</div>
+          <div class="label">Per annual signup, paid upfront</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <main>
+    <div class="wrap">
+
+      <!-- EARNINGS POTENTIAL -->
+      <section>
+        <div class="section-label">Earnings potential</div>
+        <div class="section-title">What 30% of £14.99 looks like</div>
+        <div class="section-sub">Commission keeps coming every month your referrals stay subscribed — not just the first payment.</div>
+        <div class="earnings-grid">
+          <div class="earn-card">
+            <div class="earn-count">25</div>
+            <div class="earn-type">monthly subscribers</div>
+            <div class="earn-amount">£112/month</div>
+            <div class="earn-freq">recurring</div>
+          </div>
+          <div class="earn-card">
+            <div class="earn-count">50</div>
+            <div class="earn-type">monthly subscribers</div>
+            <div class="earn-amount">£225/month</div>
+            <div class="earn-freq">recurring</div>
+          </div>
+          <div class="earn-card">
+            <div class="earn-count">100</div>
+            <div class="earn-type">monthly subscribers</div>
+            <div class="earn-amount">£450/month</div>
+            <div class="earn-freq">recurring</div>
+          </div>
+          <div class="earn-card">
+            <div class="earn-count">20</div>
+            <div class="earn-type">annual subscribers</div>
+            <div class="earn-amount">£894</div>
+            <div class="earn-freq">paid in one go</div>
+          </div>
+        </div>
+        <p class="earn-note">Annual plans pay out upfront in full. 30% of £149 = £44.70 per annual signup — paid the moment they subscribe.</p>
+      </section>
+
+      <!-- YOUR AUDIENCE -->
+      <section>
+        <div class="section-label">Your audience</div>
+        <div class="section-title">Built for real people, not gym obsessives</div>
+        <div class="section-sub">LeanPlan is designed for the audience that most fitness apps ignore — people in their 30s, 40s and 50s who want structure, not another tool to figure out.</div>
+        <div class="audience-stats">
+          <div class="audience-card">
+            <div class="aud-num">30–55</div>
+            <div class="aud-label">Primary age demographic</div>
+          </div>
+          <div class="audience-card">
+            <div class="aud-num">UK first</div>
+            <div class="aud-label">Ireland + Australia too</div>
+          </div>
+          <div class="audience-card">
+            <div class="aud-num">10–15kg</div>
+            <div class="aud-label">Typical weight loss goal</div>
+          </div>
+          <div class="audience-card">
+            <div class="aud-num">7 days</div>
+            <div class="aud-label">Free trial, no card needed</div>
+          </div>
+        </div>
+        <div class="pills">
+          <span class="pill">Gluten-free</span>
+          <span class="pill">Dairy-free</span>
+          <span class="pill">Joint injuries</span>
+          <span class="pill">Busy schedules</span>
+          <span class="pill accent">Midlife fitness</span>
+          <span class="pill accent">Real transformations</span>
+          <span class="pill accent">40+ fitness</span>
+        </div>
+      </section>
+
+      <!-- THE PRODUCT -->
+      <section>
+        <div class="section-label">The product</div>
+        <div class="section-title">Six things no other app does together</div>
+        <div class="section-sub">LeanPlan tells users exactly what to eat and do — no blank screen, no decision fatigue.</div>
+        <div class="product-grid">
+          <div class="product-card">
+            <div class="p-icon">🧠</div>
+            <h3>AI-generated personalised meal plans</h3>
+            <p>A full week of meals built around your diet, allergies, calorie targets and what's in your pantry. Generated in seconds.</p>
+          </div>
+          <div class="product-card">
+            <div class="p-icon">🏋️</div>
+            <h3>Injury-aware workout programmes</h3>
+            <p>Filters exercises by your actual kit and skips anything your back or knees can't handle. Fully personalised from day one.</p>
+          </div>
+          <div class="product-card">
+            <div class="p-icon">🔄</div>
+            <h3>Automatic carb cycling</h3>
+            <p>Adds 40g of targeted carbs on training days. Splits them across meals automatically. You don't have to think about it.</p>
+          </div>
+          <div class="product-card">
+            <div class="p-icon">🛒</div>
+            <h3>Auto-generated shopping list</h3>
+            <p>Sorted into 9 supermarket aisles. Pantry feature remembers what you keep stocked and stops listing it every week.</p>
+          </div>
+          <div class="product-card">
+            <div class="p-icon">💬</div>
+            <h3>AI coach with live context</h3>
+            <p>Sees your calories logged today, workouts this week, weight trend. Real coaching based on what's actually happening.</p>
+          </div>
+          <div class="product-card">
+            <div class="p-icon">📈</div>
+            <h3>Progressive training periodisation</h3>
+            <p>4-block programme that automatically advances every 4 weeks. Deload weeks built in. No guesswork, ever.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- HOW IT WORKS -->
+      <section>
+        <div class="section-label">How it works</div>
+        <div class="section-title">Up and running in 24 hours</div>
+        <div class="section-sub">We set everything up for you — your link, your tracking, your payouts.</div>
+        <div class="steps-grid">
+          <div class="step-card">
+            <div class="step-num">1.</div>
+            <h3>Get in touch</h3>
+            <p>Email us or reply to our message. We respond same day.</p>
+          </div>
+          <div class="step-card">
+            <div class="step-num">2.</div>
+            <h3>Get your link + free Pro</h3>
+            <p>Unique referral link set up within 24 hours. Free Pro account so you can use the app yourself.</p>
+          </div>
+          <div class="step-card">
+            <div class="step-num">3.</div>
+            <h3>Share with your audience</h3>
+            <p>Bio, stories, video descriptions — wherever works for you. No posting minimums.</p>
+          </div>
+          <div class="step-card">
+            <div class="step-num">4.</div>
+            <h3>Earn every month</h3>
+            <p>Monthly payouts with a full breakdown of active referrals and earnings.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- PRICING -->
+      <section>
+        <div class="section-label">Pricing</div>
+        <div class="section-title">Less than a single PT session</div>
+        <div class="section-sub">Priced to convert — affordable enough that your audience doesn't hesitate, premium enough that they take it seriously.</div>
+        <div class="pricing-grid">
+          <div class="price-card">
+            <div class="p-emoji">📅</div>
+            <h3>£14.99/month</h3>
+            <p>Full access. Cancel anytime. You earn £4.50 every month they stay.</p>
+          </div>
+          <div class="price-card">
+            <div class="p-emoji">🗓️</div>
+            <h3>£149/year</h3>
+            <p>2 months free vs monthly. You earn £44.70 upfront on every annual signup.</p>
+          </div>
+          <div class="price-card">
+            <div class="p-emoji">🆓</div>
+            <h3>7-day free trial</h3>
+            <p>No card required. Full access from day one. Low barrier for your audience.</p>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- CTA -->
+  <section class="cta-section">
+    <div class="wrap">
+      <div class="cta-box">
+        <div class="section-title">Ready to partner with us?</div>
+        <div class="section-sub">Email us and we'll have your referral link and free Pro account set up within 24 hours. No exclusivity, no posting minimums, no upfront commitment.</div>
+        <a href="mailto:hello@leanplan.uk" class="btn-cta">hello@leanplan.uk</a>
+        <div class="cta-note">Or reply to our message — we respond same day</div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="wrap foot-inner">
+      <span class="logo">Lean<span>Plan</span></span>
+      <div class="foot-links">
+        <a href="https://www.leanplan.uk">Home</a>
+        <a href="/privacy">Privacy</a>
+        <a href="/terms">Terms</a>
+      </div>
+      <div>&copy; 2026 LeanPlan</div>
+    </div>
+  </footer>
+
+</body>
+</html>
