@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useTheme } from "../ThemeContext.jsx";
 import { FONT } from "../constants.js";
 
@@ -6,6 +6,16 @@ export const MealCarousel = ({ meals, favourites, likedMeals, mealLog, today, on
   const C = useTheme();
   const [activeIdx, setActiveIdx] = useState(0);
   const [showMethod, setShowMethod] = useState(false);
+
+  // Reset to first meal when the day changes
+  const prevMealsRef = useRef(meals);
+  useEffect(() => {
+    if (meals !== prevMealsRef.current) {
+      setActiveIdx(0);
+      setShowMethod(false);
+      prevMealsRef.current = meals;
+    }
+  }, [meals]);
   const [dragStart, setDragStart] = useState(null);
   const [dragDelta, setDragDelta] = useState(0);
   const [animDir, setAnimDir] = useState(null); // 'left' | 'right' | null
