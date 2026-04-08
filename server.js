@@ -2100,6 +2100,8 @@ app.listen(PORT, async () => {
 });
 
 // ── Core ingredient selector ──────────────────────────────────────────────────
+const pickRandom = (arr, n) => [...arr].sort(() => Math.random() - 0.5).slice(0, n);
+
 const selectCoreIngredients = (profile) => {
   const dietType = profile?.dietType || "omnivore";
   const isGF = profile?.glutenPref === "gluten_free";
@@ -2110,35 +2112,55 @@ const selectCoreIngredients = (profile) => {
   const style = profile?.mealStyle || "all";
   const usesProtein = profile?.supplementsInterested?.includes("protein") || false;
 
+  const fishItems = ["tinned tuna","tinned salmon","cod fillet","salmon fillet","sea bass","sardines","mackerel fillet","prawns","smoked salmon","mussels","trout fillet"];
+  const redMeatItems = ["lean beef mince","sirloin steak","lamb mince","lamb chops","pork tenderloin","pork chops"];
+  const porkItems = ["pork tenderloin","pork chops"];
+  const lambItems = ["lamb mince","lamb chops"];
+  const shellfishItems = ["prawns","mussels"];
+
   // Proteins by diet type
   const proteinPools = {
-    omnivore:    ["chicken breast", "eggs", "tinned tuna", "lean beef mince", "tinned salmon"],
-    pescatarian: ["eggs", "tinned tuna", "tinned salmon", "cod fillet"],
-    vegetarian:  ["eggs", "Greek yoghurt", "cottage cheese", "halloumi", "lentils", "chickpeas"],
-    vegan:       ["tofu", "lentils", "chickpeas", "black beans", "edamame", "tempeh"],
+    omnivore:    ["chicken breast","turkey mince","lean beef mince","sirloin steak","lamb mince","lamb chops","pork tenderloin","pork chops","eggs","tinned tuna","tinned salmon","cod fillet","salmon fillet","sea bass","sardines","mackerel fillet","prawns"],
+    pescatarian: ["eggs","tinned tuna","tinned salmon","cod fillet","salmon fillet","sea bass","prawns","mackerel fillet","sardines","smoked salmon","mussels","trout fillet"],
+    vegetarian:  ["eggs","Greek yoghurt","cottage cheese","halloumi","lentils","chickpeas","black beans","tofu","tempeh","edamame","paneer","quorn mince"],
+    vegan:       ["tofu","lentils","chickpeas","black beans","edamame","tempeh","kidney beans","butter beans","cannellini beans","pea protein powder","hemp seeds"],
   };
 
   // Filter proteins by dislikes
   let proteins = (proteinPools[dietType] || proteinPools.omnivore).filter(p => {
     if (dislikes.some(d => p.includes(d))) return false;
-    if (dislikes.includes("fish") && ["tinned tuna","tinned salmon","cod fillet"].includes(p)) return false;
-    if (dislikes.includes("oily fish") && ["tinned tuna","tinned salmon"].includes(p)) return false;
-    if (dislikes.includes("red meat") && p === "lean beef mince") return false;
+    if (dislikes.includes("fish") && fishItems.includes(p)) return false;
+    if (dislikes.includes("oily fish") && ["tinned tuna","tinned salmon","salmon fillet","sardines","mackerel fillet"].includes(p)) return false;
+    if (dislikes.includes("red meat") && redMeatItems.includes(p)) return false;
+    if (dislikes.includes("pork") && porkItems.includes(p)) return false;
+    if (dislikes.includes("lamb") && lambItems.includes(p)) return false;
+    if (dislikes.includes("shellfish") && shellfishItems.includes(p)) return false;
     return true;
-  }).slice(0, 3);
+  });
+  proteins = pickRandom(proteins, 3);
 
   // Carbs
   const carbs = isGF
     ? ["brown rice", "sweet potato", "quinoa", "rice cakes"]
     : ["brown rice", "sweet potato", "oats", "wholegrain bread", "quinoa"];
 
-  // Veg — age 50+ includes anti-inflammatory options
-  const veg = age >= 50
-    ? ["broccoli", "spinach", "frozen peas", "courgette", "kale", "sweet pepper"]
-    : ["broccoli", "spinach", "frozen peas", "courgette", "sweet pepper", "carrot"];
+  // Veg — expanded pool with avocado, pick 6
+  const vegPool = ["broccoli","spinach","frozen peas","courgette","sweet pepper","carrot","mushrooms","asparagus","green beans","cherry tomatoes","aubergine","butternut squash","leeks","kale","cabbage","pak choi","sugar snap peas","avocado"];
+  let veg = pickRandom(vegPool, 6);
+  // Age 50+: ensure kale is included for anti-inflammatory benefit
+  if (age >= 50 && !veg.includes("kale")) {
+    const idx = veg.indexOf("carrot");
+    if (idx !== -1) veg[idx] = "kale";
+    else veg[veg.length - 1] = "kale";
+  }
 
-  // Fruit
-  const fruit = ["banana", "berries", "apple", "orange"];
+  // Fruit — pick 4 from expanded pool
+  const fruitPool = ["banana","mixed berries","apple","orange","mango","pineapple chunks","grapes","kiwi","melon","peach","pear","raspberries","blueberries"];
+  const fruit = pickRandom(fruitPool, 4);
+
+  // Nuts and seeds — pick 2
+  const nutsPool = ["almonds","cashews","mixed nuts","walnuts","pumpkin seeds","sunflower seeds","chia seeds","flaxseeds","brazil nuts","pecans"];
+  const nuts = pickRandom(nutsPool, 2);
 
   // Dairy/alternatives
   const dairy = isDF
@@ -2148,14 +2170,15 @@ const selectCoreIngredients = (profile) => {
     : ["Greek yoghurt"];
 
   // Base pantry
-  const base = isGF
-    ? ["tinned tomatoes", "tinned chickpeas", "olive oil", "tamari", "garlic", "onion"]
-    : ["tinned tomatoes", "tinned chickpeas", "olive oil", "tamari", "garlic", "onion"];
+  const base = ["tinned tomatoes", "tinned chickpeas", "olive oil", "tamari", "garlic", "onion"];
+
+  // Herbs and spices (always available, not on shopping list)
+  const herbs = ["cumin", "smoked paprika", "turmeric", "mixed herbs", "coriander", "chilli flakes", "ginger", "cinnamon"];
 
   // Supplements
   const extras = usesProtein ? ["pea protein powder"] : [];
 
-  return { proteins, carbs, veg, fruit, dairy, base, extras };
+  return { proteins, carbs, veg, fruit, nuts, dairy, base, herbs, extras };
 };
 
 // ── Calculate per-slot targets ────────────────────────────────────────────────
@@ -2297,10 +2320,12 @@ app.post("/api/generate-meal-plan-v3", async (req, res) => {
     ...ingredients.carbs,
     ...ingredients.veg,
     ...ingredients.fruit,
+    ...ingredients.nuts,
     ...ingredients.dairy,
     ...ingredients.base,
     ...ingredients.extras,
   ].join(", ");
+  const herbList = ingredients.herbs.join(", ");
 
   // Training day detection — distribute evenly across plan
   const trainDays = profile?.workoutsPerWeek || 3;
@@ -2362,6 +2387,10 @@ MILK: ${milkType}
 ${hardRules ? `HARD RULES (never break):\n${hardRules}\n` : ""}${ageGuidance ? `${ageGuidance}\n` : ""}
 CORE INGREDIENTS (build meals from these — use all of them across the day, do not add exotic ingredients):
 ${ingredientList}
+NUTS/SEEDS FOR SNACKS: ${ingredients.nuts.join(", ")}
+PANTRY HERBS & SPICES (always available, use freely for flavour): ${herbList}
+
+VARIETY: If the same protein appears in more than one meal, use different cooking methods and flavour profiles (e.g. one Asian-inspired, one Mediterranean). Vary herbs and spices across meals to avoid repetition.
 
 MEAL SLOTS — hit these targets precisely:
 1. BREAKFAST (~${targets.cal.breakfast}cal, ~${targets.protein.breakfast}g protein, ~${targets.carbs.breakfast}g carbs): ${dayTemplate.breakfast}
@@ -2444,7 +2473,7 @@ app.post("/api/swap-meal", async (req, res) => {
   ].filter(Boolean).join("\n");
 
   const ingredients = selectCoreIngredients(profile);
-  const ingredientList = [...ingredients.proteins, ...ingredients.carbs, ...ingredients.veg, ...ingredients.fruit, ...ingredients.dairy, ...ingredients.base, ...ingredients.extras].join(", ");
+  const ingredientList = [...ingredients.proteins, ...ingredients.carbs, ...ingredients.veg, ...ingredients.fruit, ...ingredients.nuts, ...ingredients.dairy, ...ingredients.base, ...ingredients.extras].join(", ");
 
   const isLeftover = slot === "lunch" && prevDinnerName;
   const slotLabels = { breakfast:"Breakfast", morningSnack:"Morning snack", lunch:"Lunch", afternoonSnack:"Afternoon snack", dinner:"Dinner" };
@@ -2458,6 +2487,8 @@ MUST HIT THESE EXACT TARGETS (this is a calorie-neutral swap):
 - Fat: ${targets.fat}g ± 3
 
 CORE INGREDIENTS: ${ingredientList}
+NUTS/SEEDS FOR SNACKS: ${ingredients.nuts.join(", ")}
+PANTRY HERBS & SPICES (always available, use freely): ${ingredients.herbs.join(", ")}
 COOKING TIME: ${cookTime}
 MILK: ${milkType}
 ${hardRules ? `\nHARD RULES:\n${hardRules}` : ""}
