@@ -2110,7 +2110,6 @@ const selectCoreIngredients = (profile) => {
   const dislikes = (profile?.dislikes || []).map(d => d.toLowerCase());
   const age = parseFloat(profile?.age) || 0;
   const style = profile?.mealStyle || "all";
-  const usesProtein = profile?.supplementsInterested?.includes("protein") || false;
 
   const fishItems = ["tinned tuna","tinned salmon","cod fillet","salmon fillet","sea bass","sardines","mackerel fillet","prawns","smoked salmon","mussels","trout fillet"];
   const redMeatItems = ["lean beef mince","sirloin steak","lamb mince","lamb chops","pork tenderloin","pork chops"];
@@ -2123,7 +2122,7 @@ const selectCoreIngredients = (profile) => {
     omnivore:    ["chicken breast","turkey mince","lean beef mince","sirloin steak","lamb mince","lamb chops","pork tenderloin","pork chops","eggs","tinned tuna","tinned salmon","cod fillet","salmon fillet","sea bass","sardines","mackerel fillet","prawns"],
     pescatarian: ["eggs","tinned tuna","tinned salmon","cod fillet","salmon fillet","sea bass","prawns","mackerel fillet","sardines","smoked salmon","mussels","trout fillet"],
     vegetarian:  ["eggs","Greek yoghurt","cottage cheese","halloumi","lentils","chickpeas","black beans","tofu","tempeh","edamame","paneer","quorn mince"],
-    vegan:       ["tofu","lentils","chickpeas","black beans","edamame","tempeh","kidney beans","butter beans","cannellini beans","pea protein powder","hemp seeds"],
+    vegan:       ["tofu","lentils","chickpeas","black beans","edamame","tempeh","kidney beans","butter beans","cannellini beans","hemp seeds"],
   };
 
   // Filter proteins by dislikes
@@ -2176,7 +2175,14 @@ const selectCoreIngredients = (profile) => {
   const herbs = ["cumin", "smoked paprika", "turmeric", "mixed herbs", "coriander", "chilli flakes", "ginger", "cinnamon"];
 
   // Supplements
-  const extras = usesProtein ? ["pea protein powder"] : [];
+  const extras = [];
+  if (profile?.supplementsInterested?.includes("protein")) {
+    if (dietType === "vegan" || isDF) {
+      extras.push("pea protein powder");
+    } else {
+      extras.push("whey protein powder");
+    }
+  }
 
   return { proteins, carbs, veg, fruit, nuts, dairy, base, herbs, extras };
 };
@@ -2210,7 +2216,7 @@ const calcSlotTargets = (dailyCal, dailyProtein, isTrainingDay) => {
   return { cal, protein, carbs, isTrainingDay };
 };
 
-// ── Meal image fetcher (Pexels API + Supabase cache) ────────────────────────
+// ── Meal image fetcher (Unsplash API + Supabase cache) ──────────────────────
 const simplifyMealQuery = (mealName) => {
   const stripWords = new Set(["grilled","roasted","baked","steamed","fried","sauteed","poached","pan-fried","slow-cooked","braised","smoked","crispy","spiced","seasoned","with","and","on","in","a","the","of","topped","served","drizzled","mash","mashed","chunks","sliced","diced","chopped","wedges","strips"]);
   const words = mealName.toLowerCase().replace(/[^a-z\s-]/g, "").split(/\s+/).filter(w => !stripWords.has(w) && w.length > 1);
@@ -2225,7 +2231,7 @@ const searchUnsplash = async (query) => {
   return json.results?.[0]?.urls?.regular || null;
 };
 
-const fetchMealImage = async (mealName) => {
+const fetchMealImage = async (mealName, imageQuery) => {
   try {
     const { data } = await supabaseAdmin
       .from("meal_images")
@@ -2234,12 +2240,12 @@ const fetchMealImage = async (mealName) => {
       .single();
     if (data?.image_url) return data.image_url;
 
-    const simplified = simplifyMealQuery(mealName);
-    let url = await searchUnsplash(simplified + " food photography");
+    const query = imageQuery || simplifyMealQuery(mealName);
+    let url = await searchUnsplash(query);
 
     // Fallback: first keyword only
-    if (!url && simplified.split(" ").length > 1) {
-      url = await searchUnsplash(simplified.split(" ")[0] + " food photography");
+    if (!url && query.split(" ").length > 1) {
+      url = await searchUnsplash(query.split(" ")[0] + " food");
     }
 
     if (url) {
@@ -2402,11 +2408,13 @@ MEAL SLOTS — hit these targets precisely:
 DAILY TOTALS: ~${dailyCalTarget} cal total, ~${dailyProteinTarget}g protein minimum
 RULES: UK supermarket ingredients only. Snacks must contain fruit unless protein shake. Dinner protein must NOT appear in breakfast or lunch.
 
+For imageQuery: write a 3-4 word food photography search term describing what this dish looks like on a plate. Focus on the visual appearance of the cooked, plated dish. Examples: "grilled salmon rice bowl", "chicken stir fry noodles", "scrambled eggs avocado toast". Do not use the meal name — write what a food photographer would search for.
+
 Return JSON:
 {
   "isTrainingDay": ${training},
   "meals": [
-    { "id": "v3_${dateKey.replace(/-/g,"")}_[slot]", "name": "Name", "type": "breakfast|snack|lunch|dinner", "time": "8:00 AM", "cals": 400, "protein": 30, "carbs": 35, "fat": 12, "items": ["ingredient (amount)"], "method": "Instructions", "tags": ["gf","df"] }
+    { "id": "v3_${dateKey.replace(/-/g,"")}_[slot]", "name": "Name", "type": "breakfast|snack|lunch|dinner", "time": "8:00 AM", "cals": 400, "protein": 30, "carbs": 35, "fat": 12, "items": ["ingredient (amount)"], "method": "Instructions", "tags": ["gf","df"], "imageQuery": "plated dish description" }
   ]
 }`;
 
@@ -2421,7 +2429,7 @@ Return JSON:
     if (!parsed.meals || parsed.meals.length !== 5) throw new Error(`Day ${dateKey}: invalid meal count`);
     const mealsWithImages = await Promise.all(
       parsed.meals.map(async (meal) => {
-        const imageUrl = await fetchMealImage(meal.name);
+        const imageUrl = await fetchMealImage(meal.name, meal.imageQuery);
         return { ...meal, imageUrl };
       })
     );
@@ -2496,8 +2504,10 @@ ${isLeftover ? `This is a leftover lunch using ${prevDinnerName} — quick 5-min
 Do NOT use any of these (user disliked): ${dislikedMealNames.join(", ") || "none"}
 Must be completely different from the meal being replaced.
 
+For imageQuery: write a 3-4 word food photography search term describing what this dish looks like on a plate. Focus on the visual appearance of the cooked, plated dish. Do not use the meal name — write what a food photographer would search for.
+
 Return JSON:
-{ "id": "swap_${Date.now()}", "name": "Meal Name", "type": "${targets.type||slot}", "time": "${targets.time||"12:00 PM"}", "cals": ${targets.cal}, "protein": ${targets.protein}, "carbs": ${targets.carbs}, "fat": ${targets.fat}, "items": ["ingredient (amount)"], "method": "Instructions", "tags": [] }`;
+{ "id": "swap_${Date.now()}", "name": "Meal Name", "type": "${targets.type||slot}", "time": "${targets.time||"12:00 PM"}", "cals": ${targets.cal}, "protein": ${targets.protein}, "carbs": ${targets.carbs}, "fat": ${targets.fat}, "items": ["ingredient (amount)"], "method": "Instructions", "tags": [], "imageQuery": "plated dish description" }`;
 
   try {
     const response = await client.messages.create({
@@ -2508,7 +2518,8 @@ Return JSON:
     const text = response.content[0]?.text || "";
     const clean = text.replace(/```json|```/g, "").trim();
     const meal = JSON.parse(clean);
-    res.json({ meal });
+    const imageUrl = await fetchMealImage(meal.name, meal.imageQuery);
+    res.json({ meal: { ...meal, imageUrl } });
   } catch(err) {
     console.error("Swap meal error:", err.message);
     res.status(500).json({ error: "Failed to swap meal" });
