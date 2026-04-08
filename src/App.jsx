@@ -21,7 +21,8 @@ import { TrackTab } from "./components/TrackTab.jsx";
 import { MealsTab } from "./components/MealsTab.jsx";
 import { TrainTab } from "./components/TrainTab.jsx";
 import { ProfileTab } from "./components/ProfileTab.jsx";
-import { DAILY_TIPS } from "./data/workouts.js";
+import { DAILY_TIPS, getCurrentBlock } from "./data/workouts.js";
+import { GoalReachedScreen } from "./components/GoalReachedScreen.jsx";
 import { AddToHomeScreen } from "./components/AddToHomeScreen.jsx";
 import { PushNotifications } from "./components/PushNotifications.jsx";
 
@@ -98,6 +99,7 @@ function AppInner() {
   const [syncing, setSyncing] = useState(false);
   const [showHomeScreenPrompt, setShowHomeScreenPrompt] = useState(false);
   const [showPushPrompt, setShowPushPrompt] = useState(false);
+  const [goalReached, setGoalReached] = useState(() => localStorage.getItem("leanplan_goal_reached") === "true");
 
   // Clear active workout when equipment or injuries change
   const prevEquipRef = useRef(null);
@@ -111,6 +113,28 @@ function AppInner() {
     prevEquipRef.current = equip;
     prevInjuriesRef.current = injuries;
   }, [profile?.equipment, profile?.injuries]);
+
+  // Goal reached detection
+  useEffect(() => {
+    if (!profile || goalReached) return;
+    const alreadySeen = localStorage.getItem("leanplan_goal_reached") === "true";
+    if (alreadySeen) return;
+    const goal = profile.goal;
+    if ((goal === "lose_weight" || goal === "all") && entries.length > 0) {
+      const targetKg = parseFloat(profile.targetRaw || profile.targetWeightKg || 0);
+      const latestWeight = entries[entries.length - 1].weight;
+      if (targetKg > 0 && latestWeight <= targetKg) {
+        localStorage.setItem("leanplan_goal_reached", "true");
+        setGoalReached(true);
+      }
+    } else if (goal === "build_muscle" || goal === "get_fitter") {
+      const block = getCurrentBlock(profile);
+      if (block.isProgrammeComplete) {
+        localStorage.setItem("leanplan_goal_reached", "true");
+        setGoalReached(true);
+      }
+    }
+  }, [entries, profile, goalReached]);
 
   // Listen to system dark mode changes
   useEffect(() => {
@@ -555,6 +579,18 @@ function AppInner() {
     window.location.reload();
   };
 
+  const handleMaintenance = () => {
+    setProfile(p => ({ ...p, goal: "maintain" }));
+    setGoalReached(false);
+    localStorage.removeItem("leanplan_goal_reached");
+  };
+
+  const handleNewGoal = () => {
+    setGoalReached(false);
+    localStorage.removeItem("leanplan_goal_reached");
+    setTab("Profile");
+  };
+
   return (
     <ThemeProvider isDark={isDark}>
     <div style={{ background:C.bg, minHeight:"100vh", fontFamily:FONT, color:C.text, width:"100%", overflowX:"hidden" }}>
@@ -679,6 +715,17 @@ function AppInner() {
       {/* Push notification prompt — installed PWA only */}
       {showPushPrompt && user && (
         <PushNotifications user={user} onDismiss={() => setShowPushPrompt(false)} />
+      )}
+
+      {/* Goal reached celebration */}
+      {goalReached && profile && (
+        <GoalReachedScreen
+          profile={profile}
+          weightEntries={entries}
+          workoutLog={workoutLog}
+          onMaintenance={handleMaintenance}
+          onNewGoal={handleNewGoal}
+        />
       )}
     </div>
     </ThemeProvider>
