@@ -2087,8 +2087,16 @@ app.post("/api/send-trial-reminders", async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`LeanPlan server running on port ${PORT}`);
+  // One-time cache clear: re-fetch all meal images via Unsplash
+  try {
+    const { error } = await supabaseAdmin.from("meal_images").delete().neq("meal_name", "");
+    if (error) console.error("Failed to clear meal_images cache:", error.message);
+    else console.log("Cleared meal_images cache for Unsplash migration");
+  } catch (err) {
+    console.error("meal_images cache clear error:", err.message);
+  }
 });
 
 // ── Core ingredient selector ──────────────────────────────────────────────────
@@ -2180,6 +2188,20 @@ const calcSlotTargets = (dailyCal, dailyProtein, isTrainingDay) => {
 };
 
 // ── Meal image fetcher (Pexels API + Supabase cache) ────────────────────────
+const simplifyMealQuery = (mealName) => {
+  const stripWords = new Set(["grilled","roasted","baked","steamed","fried","sauteed","poached","pan-fried","slow-cooked","braised","smoked","crispy","spiced","seasoned","with","and","on","in","a","the","of","topped","served","drizzled","mash","mashed","chunks","sliced","diced","chopped","wedges","strips"]);
+  const words = mealName.toLowerCase().replace(/[^a-z\s-]/g, "").split(/\s+/).filter(w => !stripWords.has(w) && w.length > 1);
+  return words.slice(0, 3).join(" ");
+};
+
+const searchUnsplash = async (query) => {
+  const r = await fetch(`https://api.unsplash.com/search/photos?query=${encodeURIComponent(query)}&per_page=1&orientation=landscape`, {
+    headers: { Authorization: `Client-ID ${process.env.UNSPLASH_ACCESS_KEY}` }
+  });
+  const json = await r.json();
+  return json.results?.[0]?.urls?.regular || null;
+};
+
 const fetchMealImage = async (mealName) => {
   try {
     const { data } = await supabaseAdmin
@@ -2189,12 +2211,13 @@ const fetchMealImage = async (mealName) => {
       .single();
     if (data?.image_url) return data.image_url;
 
-    const query = encodeURIComponent(mealName);
-    const r = await fetch(`https://api.pexels.com/v1/search?query=${query}&per_page=1&orientation=landscape`, {
-      headers: { Authorization: process.env.PEXELS_API_KEY }
-    });
-    const json = await r.json();
-    const url = json.photos?.[0]?.src?.medium || null;
+    const simplified = simplifyMealQuery(mealName);
+    let url = await searchUnsplash(simplified + " food photography");
+
+    // Fallback: first keyword only
+    if (!url && simplified.split(" ").length > 1) {
+      url = await searchUnsplash(simplified.split(" ")[0] + " food photography");
+    }
 
     if (url) {
       await supabaseAdmin.from("meal_images").upsert({
