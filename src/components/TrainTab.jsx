@@ -105,7 +105,7 @@ export const TrainTab = ({ profile, workoutLog, setWorkoutLog, setProfile, saved
 
   // Determine today's prescribed session from weekly plan
   const getTodaySession = () => {
-    const weekPlan = getWeeklyPlan(profile);
+    const weekPlan = getWeeklyPlan(profile, block);
     const dayOfWeek = new Date().getDay(); // 0=Sun, 1=Mon...
     // Map day names to day-of-week indices
     const dayMap = { Mon:1, Tue:2, Wed:3, Thu:4, Fri:5, Sat:6, Sun:0 };
@@ -316,7 +316,7 @@ export const TrainTab = ({ profile, workoutLog, setWorkoutLog, setProfile, saved
         </Card>
 
         {(()=>{
-          const weekPlan = getWeeklyPlan(profile);
+          const weekPlan = getWeeklyPlan(profile, block);
           return (
             <Card>
               <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:10 }}>

@@ -39,12 +39,12 @@ export const TodayTab = ({ profile, entries, mealLog, setMealLog, workoutLog, wa
   }
 
   // Today's workout
-  const weekPlan = getWeeklyPlan(profile);
+  const block = getCurrentBlock(profile);
+  const weekPlan = getWeeklyPlan(profile, block);
   const dayMap = { Mon:1, Tue:2, Wed:3, Thu:4, Fri:5, Sat:6, Sun:0 };
   const todayDayOfWeek = new Date().getDay();
   const sessionIdx = weekPlan.days.findIndex(d => dayMap[d] === todayDayOfWeek);
   const todaySession = sessionIdx !== -1 ? weekPlan.sessions[sessionIdx] : null;
-  const block = getCurrentBlock(profile);
 
   // Calorie ring
   const circumference = 2 * Math.PI * 34;

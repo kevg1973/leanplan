@@ -6,7 +6,7 @@ LeanPlan is a React PWA fitness and nutrition app. Built by Kevin Grey (solo dev
 - **App:** https://app.leanplan.uk (React PWA)
 - **Landing page:** https://www.leanplan.uk (standalone HTML)
 
-**Current update number: 260**
+**Current update number: 164**
 
 ---
 
@@ -38,7 +38,7 @@ LeanPlan is a React PWA fitness and nutrition app. Built by Kevin Grey (solo dev
 - `ADMIN_EMAILS` — comma-separated emails with permanent Pro access (e.g. `kevg1973@gmail.com`)
 - `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`
 - `RESEND_API_KEY`
-- `PEXELS_API_KEY` — Pexels image API for meal photos
+- `UNSPLASH_ACCESS_KEY` — Unsplash image API for meal photos
 - `CRON_SECRET` — secret header for cron-job.org trial reminder endpoint
 
 ---
@@ -58,7 +58,7 @@ Columns: `id`, `email`, `profile_data` (jsonb), `entries`, `favourites`, `remove
 
 ### `meal_images` table
 Columns: `meal_name` (TEXT, PRIMARY KEY), `image_url` (TEXT), `created_at` (TIMESTAMPTZ)
-Cache for Pexels meal photos — each unique meal name is looked up once, then served from cache.
+Cache for Unsplash meal photos — each unique meal name is looked up once, then served from cache.
 
 ---
 
@@ -68,7 +68,7 @@ Cache for Pexels meal photos — each unique meal name is looked up once, then s
 - `effectiveIsPro = isPro || isTrialActive()`
 - Account creation is **mandatory** after onboarding — no skip option
 - Stripe webhook marks existing accounts as `is_pro: true` on payment
-- Influencer affiliate programme planned (Rewardful integration)
+- Creator affiliate programme live (`/partners` page) — 30% recurring commission, Rewardful integration pending
 - Admin emails (set via `ADMIN_EMAILS` env var) get permanent Pro access — shown as "⭐ Lifetime Pro" in Profile
 
 ---
@@ -149,6 +149,7 @@ public/
 | `app.leanplan.uk` | `/` | `index.html` (React app) |
 | Any | `/privacy` | `privacy.html` |
 | Any | `/terms` | `terms.html` |
+| Any | `/partners` | `partners.html` |
 | Any | `/api/*` | Express API endpoints |
 | Any | `*` (catch-all) | `index.html` (React SPA) |
 
@@ -195,7 +196,7 @@ Deferred — UI stub exists, shows "coming soon".
 | `POST /api/stripe/portal` | Open billing portal |
 | `GET /api/pro-status?email=` | Check BYPASS_PRO + admin email override |
 | `POST /api/forgot-password` | Send temp password via Resend |
-| `POST /api/generate-meal-plan-v3` | Current guided ingredient-first plan (includes meal images via Pexels) |
+| `POST /api/generate-meal-plan-v3` | Current guided ingredient-first plan (includes AI-generated imageQuery field, meal images via Unsplash) |
 | `POST /api/swap-meal` | Calorie-neutral meal swap |
 | `POST /api/chat` | AI coach with live context |
 | `POST /api/send-trial-reminders` | Daily cron — sends day 5 trial reminder emails |
@@ -239,10 +240,15 @@ Deferred — UI stub exists, shows "coming soon".
 - ✅ Cancellation email via Resend (triggered on `subscription.updated` with `cancel_at_period_end`)
 - ✅ AI coach rate limiting (20 messages/day)
 - ✅ Progress photos (upload, timeline, compare, flip)
-- ✅ Meal images via Pexels API + Supabase `meal_images` cache (displayed in MealCarousel)
+- ✅ Meal images via Unsplash API with AI-generated `imageQuery` field per meal + Supabase `meal_images` cache (displayed in MealCarousel)
 - ✅ Marketing landing page (`public/landing.html`)
 - ✅ Privacy and Terms pages
 - ✅ Domain split — `app.leanplan.uk` (PWA) / `www.leanplan.uk` (landing)
+- ✅ Partners page (`leanplan.uk/partners`) — creator affiliate programme page
+- ✅ Bodyweight exercise fallbacks — 13 new exercises, minimum count check with warning UI
+- ✅ Finish workout button — workout only logged on explicit completion
+- ✅ Equipment/injury changes clear active workout session
+- ✅ Ingredient pools expanded — omnivore 5→17 proteins, veg 6→18, fruit 4→13, nuts/seeds category added
 
 ---
 
@@ -262,7 +268,7 @@ Deferred — UI stub exists, shows "coming soon".
 - Cancellation email fires on `customer.subscription.updated` (when `cancel_at_period_end === true`), NOT on `customer.subscription.deleted`
 - `landing.html` is standalone HTML (no React, no build step) — uses DM Sans font from Google Fonts, all images WebP
 - `server.js` routes by `req.hostname` — `app.leanplan.uk` gets React app, everything else gets landing page
-- `fetchMealImage()` in server.js checks `meal_images` table first, falls back to Pexels API, caches result — each meal name only calls Pexels once
+- `fetchMealImage(mealName, imageQuery)` in server.js checks `meal_images` table first, falls back to Unsplash API using AI-generated `imageQuery`, caches result — each meal name only calls Unsplash once
 - `src/data/meals.js` was deleted — `ALL_MEALS` and `filterMeals` were dead code from the v1 meal system, never used by the current AI-generated v3 system
 
 ---
@@ -278,8 +284,7 @@ Deferred — UI stub exists, shows "coming soon".
 5. Meal variety scoring
 
 ### Business
-6. Influencer affiliate programme (Rewardful integration)
-7. Marketing promo pack (Instagram, TikTok, YouTube)
+6. Rewardful integration (referral tracking + payouts for partner programme)
 
 ### Technical Debt
 8. Error monitoring (Sentry)
@@ -302,9 +307,11 @@ Deferred — UI stub exists, shows "coming soon".
 - ~~Marketing website~~ ✅ (`landing.html`)
 - ~~Cancellation email~~ ✅ (Resend, triggered on subscription update)
 - ~~Domain split~~ ✅ (`app.leanplan.uk` / `www.leanplan.uk`)
-- ~~Meal images~~ ✅ (Pexels API + Supabase `meal_images` cache)
+- ~~Meal images~~ ✅ (Unsplash API + AI-generated imageQuery + Supabase `meal_images` cache)
 - ~~Landing page redesign~~ ✅ (Updates 239–259, WebP images, review carousel, no pricing section)
 - ~~Dead code cleanup~~ ✅ (`src/data/meals.js` deleted, unused images removed)
+- ~~Influencer affiliate programme~~ ✅ (partners page live at `/partners`, Rewardful integration deferred)
+- ~~Marketing promo pack~~ ✅ (partners page serves as creator outreach material)
 
 ---
 

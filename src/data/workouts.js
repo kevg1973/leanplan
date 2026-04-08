@@ -150,7 +150,7 @@ export const buildWorkout = (type, profile, block) => {
     exercises = pick(cardioExercises.length > 0 ? cardioExercises : byMuscle("cardio"), 3);
   } else if (type === "strength") {
     exercises = [
-      ...pick(byMuscle("chest"), 1),
+      ...pick(byMuscle("chest"), 2),
       ...pick(byMuscle("back"), 2),
       ...pick(byMuscle("legs"), 2),
       ...pick(byMuscle("shoulders"), 1),
@@ -176,11 +176,13 @@ export const buildWorkout = (type, profile, block) => {
     return { tooFewExercises:true, sessionType:type, picked:filtered.length, minimum, missingGroups };
   }
 
+  // Strength sessions use fixed heavy compound scheme regardless of block
+  const isStrength = type === "strength";
   return filtered.map(ex => ({
     name: ex.name,
-    sets,
-    reps: blockReps,
-    rest: blockRest,
+    sets: isStrength ? 5 : sets,
+    reps: isStrength ? "3-6" : blockReps,
+    rest: isStrength ? "90-120 sec" : blockRest,
     equipment: ex.equip.join("/"),
     tip: ex.tip,
     muscle: ex.muscle,
@@ -242,10 +244,11 @@ export const DAILY_TIPS = [
 ];
 
 // ── Weekly Plan Generator ────────────────────────────────────────────────────
-export const getWeeklyPlan = (profile) => {
+export const getWeeklyPlan = (profile, block) => {
   const days = profile?.workoutsPerWeek || 3;
   const goal = profile?.goal || "lose_weight";
   const hasCardio = (profile?.equipment || []).some(e => ["rowing","crosstrainer","treadmill","bike"].includes(e));
+  const isStrengthBlock = block?.name === "Strength";
 
   // Session type definitions
   const FB = { type:"full-body", label:"Full Body", color:"#007aff", desc:"Strength + cardio finisher" };
@@ -253,9 +256,37 @@ export const getWeeklyPlan = (profile) => {
   const UB = { type:"upper-body", label:"Upper Body", color:"#af52de", desc:"Push & pull" };
   const LB = { type:"lower-body", label:"Lower Body", color:"#34c759", desc:"Legs & core" };
   const CD = { type:"cardio", label:"Cardio", color:"#ff9500", desc:"Steady state or intervals" };
-  const ST = { type:"strength", label:"Strength", color:"#ff2d55", desc:"Heavy compound lifts" };
+  const ST = { type:"strength", label:"Strength", color:"#ff2d55", desc:"Heavy compounds, low reps" };
 
-  // Plans by goal and days
+  // Strength block overrides (weeks 9-12)
+  const strengthPlans = {
+    lose_weight: {
+      2: { sessions:[ST,CD], note:"Heavy compound lifts preserve muscle, cardio keeps fat burning." },
+      3: { sessions:[ST,ST,CD], note:"Two heavy strength sessions plus one cardio day. Lift heavy, burn fat." },
+      4: { sessions:[ST,ST,CD,FB], note:"Two heavy days, one cardio, one full-body finisher." },
+      5: { sessions:[ST,ST,CD,FB,CD], note:"Heavy strength focus with cardio to maintain fat loss." },
+    },
+    build_muscle: {
+      2: { sessions:[ST,ST], note:"Heavy compounds twice a week. Maximum strength stimulus." },
+      3: { sessions:[ST,ST,ST], note:"Three heavy sessions. Focus on progressive overload every week." },
+      4: { sessions:[ST,ST,ST,ST], note:"Four heavy compound sessions. This is where real strength is built." },
+      5: { sessions:[ST,ST,ST,ST,FB], note:"Maximum strength frequency with a full-body volume day." },
+    },
+    get_fitter: {
+      2: { sessions:[ST,CD], note:"One heavy day builds raw strength, one cardio day builds endurance." },
+      3: { sessions:[ST,CD,FB], note:"Heavy strength, cardio endurance, and a full-body session for balance." },
+      4: { sessions:[ST,CD,FB,CD], note:"Strength and cardio balanced. Building power and fitness together." },
+      5: { sessions:[ST,CD,ST,CD,FB], note:"Two strength, two cardio, one full-body. Well-rounded power and fitness." },
+    },
+    all: {
+      2: { sessions:[ST,CD], note:"Heavy compound lifts preserve muscle, cardio keeps fat burning." },
+      3: { sessions:[ST,ST,CD], note:"Two heavy strength sessions plus one cardio day." },
+      4: { sessions:[ST,ST,CD,FB], note:"Two heavy days, one cardio, one full-body finisher." },
+      5: { sessions:[ST,ST,CD,FB,CD], note:"Heavy strength focus with cardio to maintain fat loss." },
+    },
+  };
+
+  // Standard plans by goal and days
   const plans = {
     lose_weight: {
       2: { sessions:[FB,CD], note:"Full body strength preserves muscle while cardio burns calories. Best combo for fat loss." },
@@ -283,7 +314,8 @@ export const getWeeklyPlan = (profile) => {
     },
   };
 
-  const goalPlan = plans[goal] || plans.all;
+  const activePlans = isStrengthBlock ? strengthPlans : plans;
+  const goalPlan = activePlans[goal] || activePlans.all;
   const plan = goalPlan[Math.min(days, 5)] || goalPlan[3];
 
   // Suggested days based on frequency
