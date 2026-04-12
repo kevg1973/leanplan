@@ -351,7 +351,7 @@ For example:
           onInput={e => { e.target.style.height="auto"; e.target.style.height=Math.min(e.target.scrollHeight,100)+"px"; }}
         />
         <button onClick={startListening} disabled={isListening} style={{ background:isListening?"#ef4444":C.card, border:`1px solid ${isListening?"#ef4444":C.border}`, borderRadius:"50%", width:40, height:40, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", flexShrink:0, transition:"all 0.2s" }}>
-          <span style={{ fontSize:18 }}>{isListening ? "⏹️" : "🎤"}</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill={isListening ? "#ffffff" : C.text} xmlns="http://www.w3.org/2000/svg"><rect x="9" y="2" width="6" height="11" rx="3" fill={isListening ? "#ffffff" : C.text}/><path d="M5 11a7 7 0 0 0 14 0" stroke={isListening ? "#ffffff" : C.text} strokeWidth="2" strokeLinecap="round" fill="none"/><line x1="12" y1="18" x2="12" y2="22" stroke={isListening ? "#ffffff" : C.text} strokeWidth="2" strokeLinecap="round"/><line x1="9" y1="22" x2="15" y2="22" stroke={isListening ? "#ffffff" : C.text} strokeWidth="2" strokeLinecap="round"/></svg>
         </button>
         <button onClick={send} disabled={!input.trim()||loading} style={{ width:44, height:44, borderRadius:99, background:input.trim()&&!loading?C.pink:C.border, border:`1.5px solid ${input.trim()&&!loading?C.pink:C.divider}`, cursor:input.trim()&&!loading?"pointer":"default", display:"flex", alignItems:"center", justifyContent:"center", transition:"background 0.2s", flexShrink:0 }}>
           <Icon name="arrow" size={20} color={input.trim()&&!loading?"#fff":C.muted} />
