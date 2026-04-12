@@ -284,6 +284,21 @@ app.post("/api/stripe/webhook", async (req, res) => {
 
       console.log(`Webhook: welcome email sent to ${email}`);
 
+      // Notify admin of new subscriber
+      await resend.emails.send({
+        from: "LeanPlan <hello@leanplan.uk>",
+        to: "kevg1973@gmail.com",
+        subject: `💰 New subscriber: ${email}`,
+        html: `<p style="font-family:sans-serif;font-size:15px;color:#111;">
+          <strong>New LeanPlan subscriber</strong><br><br>
+          Email: ${email}<br>
+          Plan: ${planLabel} (${planPrice})<br>
+          Stripe customer: ${customerId}<br>
+          Subscription: ${subscriptionId}
+        </p>`,
+      });
+      console.log("Webhook: admin new subscriber notification sent");
+
     } catch (err) {
       console.error("Webhook checkout.session.completed error:", err.message);
     }
@@ -366,6 +381,20 @@ app.post("/api/stripe/webhook", async (req, res) => {
             });
 
             console.log(`Webhook: cancellation email sent to ${email}`);
+
+            // Notify admin of cancellation
+            await resend.emails.send({
+              from: "LeanPlan <hello@leanplan.uk>",
+              to: "kevg1973@gmail.com",
+              subject: `❌ Cancellation: ${email}`,
+              html: `<p style="font-family:sans-serif;font-size:15px;color:#111;">
+                <strong>Subscription cancelled</strong><br><br>
+                Email: ${email}<br>
+                Active until: ${cancelDate}<br>
+                Stripe customer: ${customerId}
+              </p>`,
+            });
+            console.log("Webhook: admin cancellation notification sent");
           }
         } catch (emailErr) {
           console.error("Webhook: failed to send cancellation email:", emailErr.message);
