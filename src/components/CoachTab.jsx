@@ -111,6 +111,7 @@ For example:
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isListening, setIsListening] = useState(false);
   const [notification, setNotification] = useState(null);
   const [coachUsage, setCoachUsage] = useState(() => getCoachUsage());
   const bottomRef = useState(null);
@@ -147,6 +148,23 @@ For example:
       setProfile(p => ({ ...p, pains: [...existing, entry] }));
       showNotification(`✓ Pain noted — exercise suggestions adjusted`, C.pink);
     }
+  };
+
+  const startListening = () => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) return;
+    const recognition = new SpeechRecognition();
+    recognition.lang = "en-GB";
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+    recognition.onstart = () => setIsListening(true);
+    recognition.onend = () => setIsListening(false);
+    recognition.onerror = () => setIsListening(false);
+    recognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript;
+      setInput(prev => prev ? prev + " " + transcript : transcript);
+    };
+    recognition.start();
   };
 
   const send = async () => {
@@ -332,6 +350,9 @@ For example:
           style={{ flex:1, background:C.card, border:`1px solid ${C.border}`, borderRadius:16, padding:"12px 14px", fontSize:15, fontFamily:FONT, color:C.text, outline:"none", resize:"none", lineHeight:1.5, maxHeight:100, overflowY:"auto", boxShadow:"0 1px 3px rgba(0,0,0,0.06)" }}
           onInput={e => { e.target.style.height="auto"; e.target.style.height=Math.min(e.target.scrollHeight,100)+"px"; }}
         />
+        <button onClick={startListening} disabled={isListening} style={{ background:isListening?"#ef4444":C.card, border:`1px solid ${isListening?"#ef4444":C.border}`, borderRadius:"50%", width:40, height:40, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", flexShrink:0, transition:"all 0.2s" }}>
+          <span style={{ fontSize:18 }}>{isListening ? "⏹️" : "🎤"}</span>
+        </button>
         <button onClick={send} disabled={!input.trim()||loading} style={{ width:44, height:44, borderRadius:99, background:input.trim()&&!loading?C.pink:C.border, border:`1.5px solid ${input.trim()&&!loading?C.pink:C.divider}`, cursor:input.trim()&&!loading?"pointer":"default", display:"flex", alignItems:"center", justifyContent:"center", transition:"background 0.2s", flexShrink:0 }}>
           <Icon name="arrow" size={20} color={input.trim()&&!loading?"#fff":C.muted} />
         </button>
