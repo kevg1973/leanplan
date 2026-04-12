@@ -111,7 +111,6 @@ For example:
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const [isListening, setIsListening] = useState(false);
   const [notification, setNotification] = useState(null);
   const [coachUsage, setCoachUsage] = useState(() => getCoachUsage());
   const bottomRef = useState(null);
@@ -148,39 +147,6 @@ For example:
       setProfile(p => ({ ...p, pains: [...existing, entry] }));
       showNotification(`✓ Pain noted — exercise suggestions adjusted`, C.pink);
     }
-  };
-
-  const startListening = () => {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) return;
-    const recognition = new SpeechRecognition();
-    recognition.lang = "en-GB";
-    recognition.interimResults = true;
-    recognition.maxAlternatives = 1;
-    recognition.onstart = () => setIsListening(true);
-    recognition.onend = () => setIsListening(false);
-    recognition.onerror = () => setIsListening(false);
-    recognition.onresult = (event) => {
-      let transcript = "";
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        transcript += event.results[i][0].transcript;
-      }
-      setInput(prev => {
-        const base = prev.split(" ").slice(0, -1).join(" ");
-        return base ? base + " " + transcript : transcript;
-      });
-    };
-    const chirp = new AudioContext();
-    const osc = chirp.createOscillator();
-    const gain = chirp.createGain();
-    osc.connect(gain);
-    gain.connect(chirp.destination);
-    osc.frequency.value = 880;
-    gain.gain.setValueAtTime(0.1, chirp.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, chirp.currentTime + 0.15);
-    osc.start(chirp.currentTime);
-    osc.stop(chirp.currentTime + 0.15);
-    recognition.start();
   };
 
   const send = async () => {
@@ -365,10 +331,6 @@ For example:
           rows={1}
           style={{ flex:1, background:C.card, border:`1px solid ${C.border}`, borderRadius:16, padding:"12px 14px", fontSize:15, fontFamily:FONT, color:C.text, outline:"none", resize:"none", overflow:"hidden", lineHeight:1.5, minHeight:40, maxHeight:120, boxShadow:"0 1px 3px rgba(0,0,0,0.06)" }}
         />
-        <style>{`@keyframes micPulse { 0% { box-shadow: 0 0 0 0 rgba(239,68,68,0.6); } 70% { box-shadow: 0 0 0 10px rgba(239,68,68,0); } 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); } }`}</style>
-        <button onClick={startListening} disabled={isListening} style={{ background:isListening?"#ef4444":C.card, border:`1px solid ${isListening?"#ef4444":C.border}`, borderRadius:"50%", width:40, height:40, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", flexShrink:0, transition:"all 0.2s", animation:isListening?"micPulse 1.2s ease-out infinite":"none" }}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill={isListening ? "#ffffff" : C.text} xmlns="http://www.w3.org/2000/svg"><rect x="9" y="2" width="6" height="11" rx="3" fill={isListening ? "#ffffff" : C.text}/><path d="M5 11a7 7 0 0 0 14 0" stroke={isListening ? "#ffffff" : C.text} strokeWidth="2" strokeLinecap="round" fill="none"/><line x1="12" y1="18" x2="12" y2="22" stroke={isListening ? "#ffffff" : C.text} strokeWidth="2" strokeLinecap="round"/><line x1="9" y1="22" x2="15" y2="22" stroke={isListening ? "#ffffff" : C.text} strokeWidth="2" strokeLinecap="round"/></svg>
-        </button>
         <button onClick={send} disabled={!input.trim()||loading} style={{ width:44, height:44, borderRadius:99, background:input.trim()&&!loading?C.pink:C.border, border:`1.5px solid ${input.trim()&&!loading?C.pink:C.divider}`, cursor:input.trim()&&!loading?"pointer":"default", display:"flex", alignItems:"center", justifyContent:"center", transition:"background 0.2s", flexShrink:0 }}>
           <Icon name="arrow" size={20} color={input.trim()&&!loading?"#fff":C.muted} />
         </button>
