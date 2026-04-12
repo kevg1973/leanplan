@@ -155,14 +155,20 @@ For example:
     if (!SpeechRecognition) return;
     const recognition = new SpeechRecognition();
     recognition.lang = "en-GB";
-    recognition.interimResults = false;
+    recognition.interimResults = true;
     recognition.maxAlternatives = 1;
     recognition.onstart = () => setIsListening(true);
     recognition.onend = () => setIsListening(false);
     recognition.onerror = () => setIsListening(false);
     recognition.onresult = (event) => {
-      const transcript = event.results[0][0].transcript;
-      setInput(prev => prev ? prev + " " + transcript : transcript);
+      let transcript = "";
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        transcript += event.results[i][0].transcript;
+      }
+      setInput(prev => {
+        const base = prev.split(" ").slice(0, -1).join(" ");
+        return base ? base + " " + transcript : transcript;
+      });
     };
     recognition.start();
   };
