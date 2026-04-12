@@ -170,6 +170,16 @@ For example:
         return base ? base + " " + transcript : transcript;
       });
     };
+    const chirp = new AudioContext();
+    const osc = chirp.createOscillator();
+    const gain = chirp.createGain();
+    osc.connect(gain);
+    gain.connect(chirp.destination);
+    osc.frequency.value = 880;
+    gain.gain.setValueAtTime(0.1, chirp.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, chirp.currentTime + 0.15);
+    osc.start(chirp.currentTime);
+    osc.stop(chirp.currentTime + 0.15);
     recognition.start();
   };
 
@@ -349,12 +359,11 @@ For example:
       <div style={{ display:"flex", gap:8, alignItems:"flex-end" }}>
         <textarea
           value={input}
-          onChange={e => setInput(e.target.value)}
-          onKeyDown={handleKey}
-          placeholder="Ask your coach anything..."
+          onChange={e => { setInput(e.target.value); e.target.style.height="auto"; e.target.style.height=e.target.scrollHeight+"px"; }}
+          onKeyDown={e => { if (e.key==="Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
+          placeholder="Ask your coach..."
           rows={1}
-          style={{ flex:1, background:C.card, border:`1px solid ${C.border}`, borderRadius:16, padding:"12px 14px", fontSize:15, fontFamily:FONT, color:C.text, outline:"none", resize:"none", lineHeight:1.5, maxHeight:100, overflowY:"auto", boxShadow:"0 1px 3px rgba(0,0,0,0.06)" }}
-          onInput={e => { e.target.style.height="auto"; e.target.style.height=Math.min(e.target.scrollHeight,100)+"px"; }}
+          style={{ flex:1, background:C.card, border:`1px solid ${C.border}`, borderRadius:16, padding:"12px 14px", fontSize:15, fontFamily:FONT, color:C.text, outline:"none", resize:"none", overflow:"hidden", lineHeight:1.5, minHeight:40, maxHeight:120, boxShadow:"0 1px 3px rgba(0,0,0,0.06)" }}
         />
         <style>{`@keyframes micPulse { 0% { box-shadow: 0 0 0 0 rgba(239,68,68,0.6); } 70% { box-shadow: 0 0 0 10px rgba(239,68,68,0); } 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); } }`}</style>
         <button onClick={startListening} disabled={isListening} style={{ background:isListening?"#ef4444":C.card, border:`1px solid ${isListening?"#ef4444":C.border}`, borderRadius:"50%", width:40, height:40, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", flexShrink:0, transition:"all 0.2s", animation:isListening?"micPulse 1.2s ease-out infinite":"none" }}>
