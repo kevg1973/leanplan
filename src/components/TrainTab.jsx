@@ -20,6 +20,7 @@ export const TrainTab = ({ profile, workoutLog, setWorkoutLog, setProfile, saved
   const [expandedEx, setExpandedEx] = useState(null);
   const [loggedWeights, setLoggedWeights] = useState({});
   const [liftInputs, setLiftInputs] = useState({});
+  const [cardioInputs, setCardioInputs] = useState({});
   const [lifts, setLifts] = useState(() => {
     try { return JSON.parse(localStorage.getItem("leanplan_lifts")||"{}" ); } catch { return {}; }
   });
@@ -55,6 +56,15 @@ export const TrainTab = ({ profile, workoutLog, setWorkoutLog, setProfile, saved
       showPrToast(`🏆 New PB! ${exName} — ${newWeight}kg`);
     }
 
+  };
+  const saveCardio = (exName, duration, distance, notes) => {
+    if (!duration) return;
+    const entry = { date: todayKey(), duration: parseFloat(duration), distance: parseFloat(distance) || null, notes: notes || "", timestamp: Date.now() };
+    setWorkoutLog(wl => {
+      const prev = wl[exName] || [];
+      const updated = Array.isArray(prev) ? [...prev, entry] : [entry];
+      return { ...wl, [exName]: updated };
+    });
   };
   const getLastLift = (exName) => {
     const entries = lifts[exName];
@@ -428,6 +438,11 @@ export const TrainTab = ({ profile, workoutLog, setWorkoutLog, setProfile, saved
             const loggedEntry = allLifts.length > 0 ? allLifts[allLifts.length - 1] : null;
             const isNewPB = isLogged && loggedEntry && personalBest && loggedEntry.weight >= personalBest;
             const isBW = fullEx && (fullEx.equip.length===0 || (fullEx.equip.length===1 && fullEx.equip[0]==="bodyweight"));
+            const isCardio = fullEx?.muscle === "cardio";
+            const cardioIn = cardioInputs[ex.name] || { duration:"", distance:"", notes:"" };
+            const setCardioIn = (field, val) => setCardioInputs(ci => ({...ci, [ex.name]: {...(ci[ex.name]||{duration:"",distance:"",notes:""}), [field]: val}}));
+            const isCardioLogged = isCardio && Array.isArray(workoutLog[ex.name]) && workoutLog[ex.name].some(e => e.date === todayKey());
+            const lastCardio = isCardio && Array.isArray(workoutLog[ex.name]) && workoutLog[ex.name].filter(e => e.date !== todayKey()).slice(-1)[0];
             const inputs = liftInputs[ex.name] || { weight:"", reps: String(ex.reps?.split("-")?.[0]||"10"), sets: String(ex.sets||"3") };
             const setInput = (field, val) => setLiftInputs(li => ({...li, [ex.name]: {...(li[ex.name]||{weight:"",reps:String(ex.reps?.split("-")?.[0]||"10"),sets:String(ex.sets||"3")}), [field]: val}}));
             return <Card key={i} style={{ borderLeft:`3px solid ${isLogged ? C.green : activeWorkout.color}` }}>
@@ -450,37 +465,70 @@ export const TrainTab = ({ profile, workoutLog, setWorkoutLog, setProfile, saved
                 <p style={{ color:C.accent, fontSize:12, fontWeight:600, margin:0 }}>{isExp?"▲ Hide instructions":"▼ How to do this exercise"}</p>
               </div>
 
-              {/* Inline weight logger — always visible */}
+              {/* Inline logger — cardio or weight/bodyweight */}
               <div style={{ marginTop:12, paddingTop:12, borderTop:`1px solid ${C.border}` }}>
-                {lastLift&&!isLogged&&<p style={{ color:C.muted, fontSize:11, margin:"0 0 8px" }}>Last time: <span style={{ color:C.accent, fontWeight:600 }}>{isBW?"":`${lastLift.weight}kg × `}{lastLift.reps} reps</span></p>}
-                {isLogged ? (
-                  <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-                    <div style={{ flex:1, background:`${C.green}10`, border:`1px solid ${C.green}33`, borderRadius:10, padding:"8px 12px" }}>
-                      <span style={{ color:C.green, fontSize:13, fontWeight:600 }}>✓ Logged: {isBW?"":`${inputs.weight}kg × `}{inputs.reps} reps × {inputs.sets} sets</span>
-                      {isNewPB && <p style={{ color:"#f5a623", fontSize:11, fontWeight:600, margin:"4px 0 0" }}>🏆 New personal best!</p>}
-                    </div>
-                    <button onClick={()=>setLoggedWeights(lw=>({...lw,[ex.name]:false}))} style={{ background:"none", border:"none", color:C.muted, fontSize:12, cursor:"pointer", fontFamily:FONT, padding:"4px 6px" }}>Edit</button>
+                {isCardio ? (
+                  <div>
+                    {lastCardio&&!isCardioLogged&&<p style={{ color:C.muted, fontSize:11, margin:"0 0 8px" }}>Last time: <span style={{ color:C.accent, fontWeight:600 }}>{lastCardio.duration} min{lastCardio.distance ? ` · ${lastCardio.distance}km` : ""}</span></p>}
+                    {isCardioLogged ? (
+                      <span style={{ color:C.green, fontSize:13, fontWeight:600 }}>✓ Logged: {cardioIn.duration} min{cardioIn.distance ? ` · ${cardioIn.distance}km` : ""}</span>
+                    ) : (
+                      <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+                        <div style={{ display:"flex", gap:8 }}>
+                          <div style={{ flex:1 }}>
+                            <div style={{ color:C.muted, fontSize:11, marginBottom:4 }}>Duration (min)</div>
+                            <input type="number" value={cardioIn.duration} onChange={e=>setCardioIn("duration",e.target.value)} placeholder="30" style={{ width:"100%", background:C.sectionBg, border:`1px solid ${C.border}`, borderRadius:8, padding:"8px 10px", fontSize:14, fontFamily:FONT, color:C.text, outline:"none" }} />
+                          </div>
+                          {!["Exercise Bike — Steady","Exercise Bike — Intervals","Cross Trainer — Steady","Cross Trainer — Intervals"].includes(ex.name)&&(
+                            <div style={{ flex:1 }}>
+                              <div style={{ color:C.muted, fontSize:11, marginBottom:4 }}>Distance (km)</div>
+                              <input type="number" value={cardioIn.distance} onChange={e=>setCardioIn("distance",e.target.value)} placeholder="0.0" step="0.1" style={{ width:"100%", background:C.sectionBg, border:`1px solid ${C.border}`, borderRadius:8, padding:"8px 10px", fontSize:14, fontFamily:FONT, color:C.text, outline:"none" }} />
+                            </div>
+                          )}
+                        </div>
+                        <div>
+                          <div style={{ color:C.muted, fontSize:11, marginBottom:4 }}>Notes</div>
+                          <input type="text" value={cardioIn.notes} onChange={e=>setCardioIn("notes",e.target.value)} placeholder="Pace, resistance, how it felt..." style={{ width:"100%", background:C.sectionBg, border:`1px solid ${C.border}`, borderRadius:8, padding:"8px 10px", fontSize:14, fontFamily:FONT, color:C.text, outline:"none" }} />
+                        </div>
+                        <button onClick={()=>saveCardio(ex.name, cardioIn.duration, cardioIn.distance, cardioIn.notes)} disabled={!cardioIn.duration} style={{ width:"100%", background:cardioIn.duration?C.green:C.sectionBg, border:"none", borderRadius:10, padding:"9px 0", color:cardioIn.duration?"#fff":C.muted, fontSize:13, fontWeight:700, cursor:cardioIn.duration?"pointer":"default", fontFamily:FONT, transition:"all 0.2s" }}>
+                          Log Cardio
+                        </button>
+                      </div>
+                    )}
                   </div>
                 ) : (
-                  <div>
-                    <div style={{ display:"flex", gap:6, marginBottom:8 }}>
-                      {!isBW&&<div style={{ flex:1 }}>
-                        <p style={{ color:C.muted, fontSize:11, margin:"0 0 4px", fontWeight:600 }}>KG</p>
-                        <input type="number" value={inputs.weight} onChange={e=>setInput("weight",e.target.value)} placeholder={lastLift?`${lastLift.weight}`:"0"} style={{ width:"100%", background:C.sectionBg, border:`1px solid ${C.border}`, borderRadius:8, padding:"8px 10px", fontSize:14, fontFamily:FONT, color:C.text, outline:"none" }} />
-                      </div>}
-                      <div style={{ flex:1 }}>
-                        <p style={{ color:C.muted, fontSize:11, margin:"0 0 4px", fontWeight:600 }}>REPS</p>
-                        <input type="number" value={inputs.reps} onChange={e=>setInput("reps",e.target.value)} placeholder="10" style={{ width:"100%", background:C.sectionBg, border:`1px solid ${C.border}`, borderRadius:8, padding:"8px 10px", fontSize:14, fontFamily:FONT, color:C.text, outline:"none" }} />
+                  <>
+                    {lastLift&&!isLogged&&<p style={{ color:C.muted, fontSize:11, margin:"0 0 8px" }}>Last time: <span style={{ color:C.accent, fontWeight:600 }}>{isBW?"":`${lastLift.weight}kg × `}{lastLift.reps} reps</span></p>}
+                    {isLogged ? (
+                      <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                        <div style={{ flex:1, background:`${C.green}10`, border:`1px solid ${C.green}33`, borderRadius:10, padding:"8px 12px" }}>
+                          <span style={{ color:C.green, fontSize:13, fontWeight:600 }}>✓ Logged: {isBW?"":`${inputs.weight}kg × `}{inputs.reps} reps × {inputs.sets} sets</span>
+                          {isNewPB && <p style={{ color:"#f5a623", fontSize:11, fontWeight:600, margin:"4px 0 0" }}>🏆 New personal best!</p>}
+                        </div>
+                        <button onClick={()=>setLoggedWeights(lw=>({...lw,[ex.name]:false}))} style={{ background:"none", border:"none", color:C.muted, fontSize:12, cursor:"pointer", fontFamily:FONT, padding:"4px 6px" }}>Edit</button>
                       </div>
-                      <div style={{ flex:1 }}>
-                        <p style={{ color:C.muted, fontSize:11, margin:"0 0 4px", fontWeight:600 }}>SETS</p>
-                        <input type="number" value={inputs.sets} onChange={e=>setInput("sets",e.target.value)} placeholder="3" style={{ width:"100%", background:C.sectionBg, border:`1px solid ${C.border}`, borderRadius:8, padding:"8px 10px", fontSize:14, fontFamily:FONT, color:C.text, outline:"none" }} />
+                    ) : (
+                      <div>
+                        <div style={{ display:"flex", gap:6, marginBottom:8 }}>
+                          {!isBW&&<div style={{ flex:1 }}>
+                            <p style={{ color:C.muted, fontSize:11, margin:"0 0 4px", fontWeight:600 }}>KG</p>
+                            <input type="number" value={inputs.weight} onChange={e=>setInput("weight",e.target.value)} placeholder={lastLift?`${lastLift.weight}`:"0"} style={{ width:"100%", background:C.sectionBg, border:`1px solid ${C.border}`, borderRadius:8, padding:"8px 10px", fontSize:14, fontFamily:FONT, color:C.text, outline:"none" }} />
+                          </div>}
+                          <div style={{ flex:1 }}>
+                            <p style={{ color:C.muted, fontSize:11, margin:"0 0 4px", fontWeight:600 }}>REPS</p>
+                            <input type="number" value={inputs.reps} onChange={e=>setInput("reps",e.target.value)} placeholder="10" style={{ width:"100%", background:C.sectionBg, border:`1px solid ${C.border}`, borderRadius:8, padding:"8px 10px", fontSize:14, fontFamily:FONT, color:C.text, outline:"none" }} />
+                          </div>
+                          <div style={{ flex:1 }}>
+                            <p style={{ color:C.muted, fontSize:11, margin:"0 0 4px", fontWeight:600 }}>SETS</p>
+                            <input type="number" value={inputs.sets} onChange={e=>setInput("sets",e.target.value)} placeholder="3" style={{ width:"100%", background:C.sectionBg, border:`1px solid ${C.border}`, borderRadius:8, padding:"8px 10px", fontSize:14, fontFamily:FONT, color:C.text, outline:"none" }} />
+                          </div>
+                        </div>
+                        <button onClick={()=>saveLift(ex.name, isBW?"0":inputs.weight, inputs.reps, inputs.sets)} disabled={isBW?false:!inputs.weight} style={{ width:"100%", background:(isBW||inputs.weight)?C.green:C.sectionBg, border:"none", borderRadius:10, padding:"9px 0", color:(isBW||inputs.weight)?"#fff":C.muted, fontSize:13, fontWeight:700, cursor:(isBW||inputs.weight)?"pointer":"default", fontFamily:FONT, transition:"all 0.2s" }}>
+                          {isBW?"Log Exercise":"Log Weight"}
+                        </button>
                       </div>
-                    </div>
-                    <button onClick={()=>saveLift(ex.name, isBW?"0":inputs.weight, inputs.reps, inputs.sets)} disabled={isBW?false:!inputs.weight} style={{ width:"100%", background:(isBW||inputs.weight)?C.green:C.sectionBg, border:"none", borderRadius:10, padding:"9px 0", color:(isBW||inputs.weight)?"#fff":C.muted, fontSize:13, fontWeight:700, cursor:(isBW||inputs.weight)?"pointer":"default", fontFamily:FONT, transition:"all 0.2s" }}>
-                      {isBW?"Log Exercise":"Log Weight"}
-                    </button>
-                  </div>
+                    )}
+                  </>
                 )}
               </div>
 
