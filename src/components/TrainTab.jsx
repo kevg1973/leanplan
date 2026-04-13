@@ -8,6 +8,18 @@ import { Icon } from "./Icon.jsx";
 import { Card, Section, Row, Btn, BigChip, ProgressBar } from "./ui.jsx";
 import { LiftTracker } from "./LiftTracker.jsx";
 
+const CARDIO_MET = {
+  "Treadmill Jog": 7.0,
+  "Treadmill Walk — Incline": 5.0,
+  "Rowing Machine — Steady": 7.0,
+  "Rowing Machine — Intervals": 8.5,
+  "Exercise Bike — Steady": 6.0,
+  "Exercise Bike — Intervals": 10.0,
+  "Cross Trainer — Steady": 5.0,
+  "Cross Trainer — Intervals": 7.5,
+  "Bodyweight Circuit": 8.0,
+};
+
 export const TrainTab = ({ profile, workoutLog, setWorkoutLog, setProfile, savedWorkout, setSavedWorkout, setTab, entries=[] }) => {
   const C = useTheme();
   const [selectedType, setSelectedType] = useState("full-body");
@@ -59,7 +71,10 @@ export const TrainTab = ({ profile, workoutLog, setWorkoutLog, setProfile, saved
   };
   const saveCardio = (exName, duration, distance, notes) => {
     if (!duration) return;
-    const entry = { date: todayKey(), duration: parseFloat(duration), distance: parseFloat(distance) || null, notes: notes || "", timestamp: Date.now() };
+    const weightKg = parseFloat(profile?.startWeightKg || profile?.startWeight || 80);
+    const met = CARDIO_MET[exName] || 6.0;
+    const calories = Math.round(met * weightKg * (parseFloat(duration) / 60));
+    const entry = { date: todayKey(), duration: parseFloat(duration), distance: parseFloat(distance) || null, calories, notes: notes || "", timestamp: Date.now() };
     setWorkoutLog(wl => {
       const prev = wl[exName] || [];
       const updated = Array.isArray(prev) ? [...prev, entry] : [entry];
@@ -469,9 +484,9 @@ export const TrainTab = ({ profile, workoutLog, setWorkoutLog, setProfile, saved
               <div style={{ marginTop:12, paddingTop:12, borderTop:`1px solid ${C.border}` }}>
                 {isCardio ? (
                   <div>
-                    {lastCardio&&!isCardioLogged&&<p style={{ color:C.muted, fontSize:11, margin:"0 0 8px" }}>Last time: <span style={{ color:C.accent, fontWeight:600 }}>{lastCardio.duration} min{lastCardio.distance ? ` · ${lastCardio.distance}km` : ""}</span></p>}
+                    {lastCardio&&!isCardioLogged&&<p style={{ color:C.muted, fontSize:11, margin:"0 0 8px" }}>Last time: <span style={{ color:C.accent, fontWeight:600 }}>{lastCardio.duration} min{lastCardio.distance ? ` · ${lastCardio.distance}km` : ""}{lastCardio.calories ? ` · ~${lastCardio.calories} kcal` : ""}</span></p>}
                     {isCardioLogged ? (
-                      <span style={{ color:C.green, fontSize:13, fontWeight:600 }}>✓ Logged: {cardioIn.duration} min{cardioIn.distance ? ` · ${cardioIn.distance}km` : ""}</span>
+                      <span style={{ color:C.green, fontSize:13, fontWeight:600 }}>✓ Logged: {cardioIn.duration} min{cardioIn.distance ? ` · ${cardioIn.distance}km` : ""} · ~{Math.round((CARDIO_MET[ex.name]||6.0)*parseFloat(profile?.startWeightKg||profile?.startWeight||80)*(parseFloat(cardioIn.duration)/60))} kcal</span>
                     ) : (
                       <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
                         <div style={{ display:"flex", gap:8 }}>
