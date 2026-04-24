@@ -1,4 +1,4 @@
-# LeanPlan — Claude Development Context
+# LeanPlan  — Claude Development Context
 
 ## Project Overview
 LeanPlan is a React PWA fitness and nutrition app. Built by Kevin Grey (solo developer, Manchester UK), with Claude as primary development partner.
