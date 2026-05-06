@@ -1,5 +1,8 @@
 {
-  "appId": "uk.leanplan.app",
+  "appId": "com.leanplan.app",
   "appName": "LeanPlan",
-  "webDir": "dist"
+  "webDir": "dist",
+  "ios": {
+    "contentInset": "automatic"
+  }
 }

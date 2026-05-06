@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "start": "node server.js"
+    "start": "node server.js",
+    "ios": "vite build && npx cap sync ios && npx cap open ios",
+    "cap:sync": "vite build && npx cap sync ios"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",
