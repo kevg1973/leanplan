@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useTheme } from "../ThemeContext.jsx";
+import { API_BASE } from "../api.js";
 import { FONT } from "../constants.js";
 import { todayKey, fmtDate, calcTDEE, getPace } from "../helpers.js";
 import { SUPPS, SHOPPING } from "../data/workouts.js";
@@ -68,7 +69,7 @@ export const MealsTab = ({ profile, favourites, setFavourites, removed, setRemov
     try {
       const slot = getSlotName(meal.type);
       const prevDinner = selectedDay?.meals?.find(m => m.type === "dinner" && m.id !== meal.id);
-      const res = await fetch("/api/swap-meal", {
+      const res = await fetch(`${API_BASE}/api/swap-meal`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -138,7 +139,7 @@ export const MealsTab = ({ profile, favourites, setFavourites, removed, setRemov
       await new Promise(r => setTimeout(r, 400));
       setGenerateProgress(`Building your ${planDays}-day plan...`);
 
-      const endpoint = isGuided ? "/api/generate-meal-plan-v3" : "/api/generate-meal-plan-v2";
+      const endpoint = isGuided ? `${API_BASE}/api/generate-meal-plan-v3` : `${API_BASE}/api/generate-meal-plan-v2`;
       const body = isGuided
         ? { profile, days: planDays }
         : { profile, dislikedMealNames: dislikedMeals, style, days: planDays };
@@ -558,7 +559,7 @@ export const MealsTab = ({ profile, favourites, setFavourites, removed, setRemov
                   })).filter(cat => cat.items.length > 0);
                   if (toBuy.length === 0) { alert("Tick the items you need first, then email."); setListEmailSending(false); return; }
                   try {
-                    const res = await fetch("/api/send-shopping-list", {
+                    const res = await fetch(`${API_BASE}/api/send-shopping-list`, {
                       method:"POST", headers:{"Content-Type":"application/json"},
                       body: JSON.stringify({ email: user.email, name: profile.name, categories: toBuy, planDays: mealPlan?.days?.length || planDays })
                     });

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { supabase } from "../supabase.js";
+import { API_BASE } from "../api.js";
 import { useTheme } from "../ThemeContext.jsx";
 import { FONT } from "../constants.js";
 import { Btn, TInput } from "./ui.jsx";
@@ -41,7 +42,7 @@ export const AuthScreen = ({ onAuth, onSkip, onStartFresh }) => {
     if (!email) { setError("Enter your email address first"); return; }
     setLoading(true);
     try {
-      const res = await fetch("/api/forgot-password", {
+      const res = await fetch(`${API_BASE}/api/forgot-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),

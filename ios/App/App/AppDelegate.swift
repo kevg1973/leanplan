@@ -1,5 +1,6 @@
 import UIKit
 import Capacitor
+import WebKit
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -7,7 +8,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     var window: UIWindow?
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        // Override point for customization after application launch.
+        // WebView not available here yet — constraints set in didBecomeActive on first run
         return true
     }
 
@@ -25,8 +26,37 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         // Called as part of the transition from the background to the active state; here you can undo many of the changes made on entering the background.
     }
 
+    func findWebView(in view: UIView) -> WKWebView? {
+        if let webView = view as? WKWebView { return webView }
+        for subview in view.subviews {
+            if let found = findWebView(in: subview) { return found }
+        }
+        return nil
+    }
+
     func applicationDidBecomeActive(_ application: UIApplication) {
-        // Restart any tasks that were paused (or not yet started) while the application was inactive. If the application was previously in the background, optionally refresh the user interface.
+        guard let rootView = self.window?.rootViewController?.view,
+              let webView = findWebView(in: rootView) else { return }
+
+        webView.scrollView.bounces = false
+        webView.scrollView.alwaysBounceVertical = false
+        webView.scrollView.contentInsetAdjustmentBehavior = .never
+
+        if webView.translatesAutoresizingMaskIntoConstraints {
+            webView.translatesAutoresizingMaskIntoConstraints = false
+            if let superview = webView.superview {
+                NSLayoutConstraint.activate([
+                    webView.topAnchor.constraint(equalTo: superview.topAnchor),
+                    webView.bottomAnchor.constraint(equalTo: superview.bottomAnchor),
+                    webView.leadingAnchor.constraint(equalTo: superview.leadingAnchor),
+                    webView.trailingAnchor.constraint(equalTo: superview.trailingAnchor)
+                ])
+            }
+            self.window?.backgroundColor = UIColor.black
+            webView.backgroundColor = UIColor.black
+            webView.scrollView.backgroundColor = UIColor.black
+            webView.isOpaque = false
+        }
     }
 
     func applicationWillTerminate(_ application: UIApplication) {

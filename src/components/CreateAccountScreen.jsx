@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { supabase } from "../supabase.js";
+import { API_BASE } from "../api.js";
 import { useTheme } from "../ThemeContext.jsx";
 import { FONT } from "../constants.js";
 import { Btn, TInput } from "./ui.jsx";
@@ -45,7 +46,7 @@ export const CreateAccountScreen = ({ profileData, onDone }) => {
     try { await saveProfileToSupabase(userId, trialStart); } catch(e) { console.error("Profile save error:", e); }
 
     // Send welcome email — fire and forget, don't block account creation
-    try { fetch("/api/send-welcome", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ email, name: profileData?.name || "", sex: profileData?.sex || "male" }) }); } catch(e) {}
+    try { fetch(`${API_BASE}/api/send-welcome`, { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ email, name: profileData?.name || "", sex: profileData?.sex || "male" }) }); } catch(e) {}
 
     setLoading(false);
     onDone(data.user, email);

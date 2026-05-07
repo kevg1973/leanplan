@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { supabase } from "../supabase.js";
+import { API_BASE } from "../api.js";
 import { useTheme } from "../ThemeContext.jsx";
 import { FONT, ALLERGENS, DISLIKES_LIST } from "../constants.js";
 import { toKg, calcTDEE, calcBMI, getPace } from "../helpers.js";
@@ -578,7 +579,7 @@ export const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride,
             {proData?.customerId && proData.customerId !== "bypass" && (
               <Btn small outline color={C.green} onClick={async()=>{
                 try {
-                  const res = await fetch("/api/stripe/portal",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({customerId:proData.customerId})});
+                  const res = await fetch(`${API_BASE}/api/stripe/portal`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({customerId:proData.customerId})});
                   const data = await res.json();
                   if (data.url) window.location.href = data.url;
                   else alert("Could not open billing portal. Please contact support.");

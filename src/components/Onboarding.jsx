@@ -131,7 +131,7 @@ const OChip = ({ label, selected, onClick, color="#fff" }) => (
 );
 
 const OBtn = ({ children, onClick, disabled }) => (
-  <button onClick={onClick} disabled={disabled} style={{ width:"100%", background:disabled?"rgba(255,255,255,0.2)":"#fff", border:"none", borderRadius:99, padding:"18px 0", color:disabled?"rgba(255,255,255,0.4)":"#000", fontSize:17, fontWeight:700, cursor:disabled?"default":"pointer", fontFamily:FONT, transition:"all 0.2s" }}>{children}</button>
+  <button onClick={onClick} disabled={disabled} style={{ width:"100%", background:disabled?"rgba(255,255,255,0.2)":"#fff", border:"none", borderRadius:99, padding:"18px 0", color:disabled?"rgba(255,255,255,0.4)":"#000", fontSize:17, fontWeight:700, cursor:disabled?"default":"pointer", fontFamily:FONT, transition:"all 0.2s", marginBottom:"env(safe-area-inset-bottom)" }}>{children}</button>
 );
 
 export const Onboarding = ({ onDone }) => {

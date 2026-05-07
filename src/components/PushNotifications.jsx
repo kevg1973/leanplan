@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { supabase } from "../supabase.js";
+import { API_BASE } from "../api.js";
 import { FONT } from "../constants.js";
 
 function urlBase64ToUint8Array(base64String) {
@@ -31,7 +32,7 @@ export const PushNotifications = ({ user, onDismiss }) => {
         });
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.access_token) {
-          await fetch("/api/push/subscribe", {
+          await fetch(`${API_BASE}/api/push/subscribe`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",

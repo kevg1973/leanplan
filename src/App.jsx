@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { supabase } from "./supabase.js";
+import { API_BASE } from "./api.js";
 import { ThemeProvider, LIGHT, DARK } from "./ThemeContext.jsx";
 import { FONT, TABS, TAB_ICON_MAP } from "./constants.js";
 import { toKg, todayKey, setTrialStart, getTrialDaysLeft, isTrialActive, isTrialExpired } from "./helpers.js";
@@ -163,7 +164,7 @@ function AppInner() {
   useEffect(()=>{
     // Check server-side bypass flag — pass email for admin override
     const emailParam = user?.email ? `?email=${encodeURIComponent(user.email)}` : "";
-    fetch(`/api/pro-status${emailParam}`)
+    fetch(`${API_BASE}/api/pro-status${emailParam}`)
       .then(r => r.json())
       .then(data => {
         if (data.bypass) {
@@ -178,7 +179,7 @@ function AppInner() {
     const proStatus = params.get("pro");
     const sessionId = params.get("session_id");
     if (proStatus === "success" && sessionId) {
-      fetch(`/api/stripe/verify?session_id=${sessionId}`)
+      fetch(`${API_BASE}/api/stripe/verify?session_id=${sessionId}`)
         .then(r => r.json())
         .then(data => {
           if (data.pro) {
@@ -593,10 +594,11 @@ function AppInner() {
 
   return (
     <ThemeProvider isDark={isDark}>
-    <div style={{ background:C.bg, minHeight:"100vh", fontFamily:FONT, color:C.text, width:"100%", overflowX:"hidden" }}>
+    <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0, height:"100%", display:"flex", flexDirection:"column", overflow:"hidden", background:C.bg, fontFamily:FONT, color:C.text }}>
       <style>{`* { box-sizing:border-box; margin:0; padding:0; } input,select,textarea { outline:none; } html,body { width:100%; overflow-x:hidden; background:${C.bg}; font-family:${FONT}; color-scheme:${isDark?"dark":"light"}; } #root { width:100%; } ::-webkit-scrollbar { width:4px; } ::-webkit-scrollbar-thumb { background:${C.divider}; border-radius:4px; } ::placeholder { color:${C.muted}; }`}</style>
 
-      <div style={{ paddingTop:"max(12px, env(safe-area-inset-top))", paddingLeft:18, paddingRight:18, paddingBottom:10, background:isDark?"rgba(0,0,0,0.85)":"rgba(242,242,247,0.95)", backdropFilter:"blur(20px)", WebkitBackdropFilter:"blur(20px)", borderBottom:`1px solid ${C.border}`, position:"sticky", top:0, zIndex:10, width:"100%" }}>
+      <div style={{ flex:1, overflowY:"auto", WebkitOverflowScrolling:"touch", overflowX:"hidden" }}>
+      <div style={{ paddingTop:"env(safe-area-inset-top)", paddingLeft:18, paddingRight:18, paddingBottom:10, background:isDark?"rgba(0,0,0,0.85)":"rgba(242,242,247,0.95)", backdropFilter:"blur(20px)", WebkitBackdropFilter:"blur(20px)", borderBottom:`1px solid ${C.border}`, position:"sticky", top:0, zIndex:10, width:"100%" }}>
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
           <div>
             <div style={{ display:"flex", alignItems:"center" }}>
@@ -615,7 +617,7 @@ function AppInner() {
         </div>
       </div>
 
-      <div style={{ padding:"8px 14px 100px" }}>
+      <div style={{ padding:"8px 14px 16px" }}>
         {/* Cancellation notice */}
         {isPro && proData?.cancelAt && (
           <div style={{ background:`linear-gradient(135deg, #2d1f00, #3d2a00)`, border:`1px solid rgba(255,159,10,0.4)`, borderRadius:14, padding:"12px 16px", marginBottom:14, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
@@ -674,11 +676,12 @@ function AppInner() {
         <div style={{ display: tab==="Profile" ? "block" : "none" }}><ProfileTab profile={profile} setProfile={setProfile} onReset={handleReset} isDark={isDark} darkOverride={darkOverride} setDarkOverride={setDarkOverride} isPro={effectiveIsPro} proData={proData} onUpgrade={()=>setShowPaywall(true)} user={user} onShowAuth={()=>setShowAuth(true)} onClearMealPlan={()=>saveMealPlan(null)} avatarUrl={avatarUrl} setAvatarUrl={setAvatarUrl} /></div>
 
       </div>
+      </div>
 
       {/* Paywall modal — outside scroll container */}
       {showPaywall && <PaywallModal onClose={()=>setShowPaywall(false)} />}
 
-      <div style={{ position:"fixed", bottom:0, left:0, right:0, width:"100%", background:isDark?"rgba(0,0,0,0.85)":"rgba(242,242,247,0.95)", backdropFilter:"blur(20px)", WebkitBackdropFilter:"blur(20px)", borderTop:`1px solid ${C.border}`, display:"flex", padding:"8px 0 20px" }}>
+      <div style={{ flexShrink:0, position:"relative", width:"100%", background:isDark?"rgba(0,0,0,0.85)":"rgba(242,242,247,0.95)", backdropFilter:"blur(20px)", WebkitBackdropFilter:"blur(20px)", borderTop:`1px solid ${C.border}`, display:"flex", padding:"8px 0 0" }}>
         {TABS.map(t=>{
           const col=TAB_COLORS[t]; const active=tab===t;
           return <div key={t} onClick={()=>setTab(t)} style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"center", cursor:"pointer", gap:3 }}>
@@ -689,6 +692,7 @@ function AppInner() {
           </div>;
         })}
       </div>
+      <div style={{ height:"34px", flexShrink:0, background:isDark?"rgba(0,0,0,0.85)":"rgba(242,242,247,0.95)" }} />
 
       {/* Weekly check-in modal */}
       {showWeeklyCheckIn && profile && (

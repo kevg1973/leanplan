@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useTheme } from "../ThemeContext.jsx";
+import { API_BASE } from "../api.js";
 import { FONT } from "../constants.js";
 import { todayKey, fmtDate } from "../helpers.js";
 import { Icon } from "./Icon.jsx";
@@ -164,7 +165,7 @@ For example:
     if (!isAdmin) setCoachUsage({ count: incrementCoachUsage(), date: todayKey() });
 
     try {
-      const res = await fetch("/api/chat", {
+      const res = await fetch(`${API_BASE}/api/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

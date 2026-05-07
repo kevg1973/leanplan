@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useTheme } from "../ThemeContext.jsx";
+import { API_BASE } from "../api.js";
 import { Btn } from "./ui.jsx";
 import { Icon } from "./Icon.jsx";
 
@@ -16,7 +17,7 @@ export const PaywallModal = ({ onClose }) => {
       return id;
     })();
     try {
-      const res = await fetch("/api/stripe/checkout", {
+      const res = await fetch(`${API_BASE}/api/stripe/checkout`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ plan: selectedPlan, deviceId }),
