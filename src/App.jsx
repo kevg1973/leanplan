@@ -3,7 +3,7 @@ import { supabase } from "./supabase.js";
 import { API_BASE } from "./api.js";
 import { ThemeProvider, LIGHT, DARK } from "./ThemeContext.jsx";
 import { FONT, TABS, TAB_ICON_MAP } from "./constants.js";
-import { toKg, todayKey, setTrialStart, getTrialDaysLeft, isTrialActive, isTrialExpired } from "./helpers.js";
+import { toKg, todayKey, setTrialStart, getTrialDaysLeft, isTrialActive, isTrialExpired, isNativeIOS } from "./helpers.js";
 import { Icon } from "./components/Icon.jsx";
 import { ErrorBoundary } from "./components/ErrorBoundary.jsx";
 import { Onboarding } from "./components/Onboarding.jsx";
@@ -178,7 +178,9 @@ function AppInner() {
     const params = new URLSearchParams(window.location.search);
     const proStatus = params.get("pro");
     const sessionId = params.get("session_id");
-    if (proStatus === "success" && sessionId) {
+    // Defensive: Stripe checkout never runs on native iOS (guideline 3.1.1),
+    // so the verify return-trip should never fire there either.
+    if (!isNativeIOS() && proStatus === "success" && sessionId) {
       fetch(`${API_BASE}/api/stripe/verify?session_id=${sessionId}`)
         .then(r => r.json())
         .then(data => {
@@ -543,7 +545,7 @@ function AppInner() {
   }
 
   // 5. Trial expired — show subscribe screen
-  if (!proLoading && isTrialExpired() && !isPro && proData?.customerId !== 'bypass') return <TrialExpiredScreen onSubscribe={()=>setShowPaywall(true)} />;
+  if (!proLoading && isTrialExpired() && !isPro && proData?.customerId !== 'bypass') return <TrialExpiredScreen onSubscribe={()=>setShowPaywall(true)} onSignIn={()=>setShowAuth(true)} />;
 
   const cur = entries.length>0?entries[entries.length-1].weight:profile.startWeightLbs;
   const lost = Math.max(0,profile.startWeightLbs-cur);
@@ -670,9 +672,9 @@ function AppInner() {
 
         {tab==="Today"&&<TodayTab profile={profile} entries={entries} mealLog={mealLog} setMealLog={setMealLog} workoutLog={workoutLog} water={water} setWater={setWater} journal={journal} setJournal={setJournal} measurements={measurements} mealPlan={mealPlan} setTab={setTab} />}
         <div style={{ display: tab==="Meals" ? "block" : "none" }}><MealsTab profile={profile} favourites={favourites} setFavourites={setFavourites} removed={removed} setRemoved={setRemoved} mealLog={mealLog} setMealLog={setMealLog} isPro={effectiveIsPro} onUpgrade={()=>setShowPaywall(true)} mealPlan={mealPlan} onSaveMealPlan={saveMealPlan} generating={generating} setGenerating={setGenerating} generateProgress={generateProgress} setGenerateProgress={setGenerateProgress} generateError={generateError} setGenerateError={setGenerateError} user={user} /></div>
-        {tab==="Train"&&(effectiveIsPro ? <TrainTab profile={profile} workoutLog={workoutLog} setWorkoutLog={setWorkoutLog} setProfile={setProfile} savedWorkout={todaysWorkout} setSavedWorkout={setTodaysWorkout} setTab={setTab} /> : <LockedTab feature="Workout tracking, lift tracker and rest day planner" onUpgrade={()=>setShowPaywall(true)} />)}
-        <div style={{ display: tab==="Track" ? "block" : "none" }}>{effectiveIsPro ? <TrackTab profile={profile} entries={entries} setEntries={fn=>setEntries(typeof fn==="function"?fn(entries):fn)} measurements={measurements} setMeasurements={setMeasurements} workoutLog={workoutLog} user={user} /> : <LockedTab feature="Progress tracking, measurements and body stats" onUpgrade={()=>setShowPaywall(true)} />}</div>
-        {tab==="Coach"&&(effectiveIsPro ? <CoachTab profile={profile} setProfile={setProfile} mealPlan={mealPlan} mealLog={mealLog} workoutLog={workoutLog} entries={entries} isAdmin={proData?.customerId === "bypass"} /> : <LockedTab feature="AI personal coach" onUpgrade={()=>setShowPaywall(true)} />)}
+        {tab==="Train"&&(effectiveIsPro ? <TrainTab profile={profile} workoutLog={workoutLog} setWorkoutLog={setWorkoutLog} setProfile={setProfile} savedWorkout={todaysWorkout} setSavedWorkout={setTodaysWorkout} setTab={setTab} /> : <LockedTab feature="Workout tracking, lift tracker and rest day planner" onUpgrade={()=>setShowPaywall(true)} onSignIn={()=>setShowAuth(true)} />)}
+        <div style={{ display: tab==="Track" ? "block" : "none" }}>{effectiveIsPro ? <TrackTab profile={profile} entries={entries} setEntries={fn=>setEntries(typeof fn==="function"?fn(entries):fn)} measurements={measurements} setMeasurements={setMeasurements} workoutLog={workoutLog} user={user} /> : <LockedTab feature="Progress tracking, measurements and body stats" onUpgrade={()=>setShowPaywall(true)} onSignIn={()=>setShowAuth(true)} />}</div>
+        {tab==="Coach"&&(effectiveIsPro ? <CoachTab profile={profile} setProfile={setProfile} mealPlan={mealPlan} mealLog={mealLog} workoutLog={workoutLog} entries={entries} isAdmin={proData?.customerId === "bypass"} /> : <LockedTab feature="AI personal coach" onUpgrade={()=>setShowPaywall(true)} onSignIn={()=>setShowAuth(true)} />)}
         <div style={{ display: tab==="Profile" ? "block" : "none" }}><ProfileTab profile={profile} setProfile={setProfile} onReset={handleReset} isDark={isDark} darkOverride={darkOverride} setDarkOverride={setDarkOverride} isPro={effectiveIsPro} proData={proData} onUpgrade={()=>setShowPaywall(true)} user={user} onShowAuth={()=>setShowAuth(true)} onClearMealPlan={()=>saveMealPlan(null)} avatarUrl={avatarUrl} setAvatarUrl={setAvatarUrl} /></div>
 
       </div>

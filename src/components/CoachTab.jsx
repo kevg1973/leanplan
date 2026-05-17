@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useTheme } from "../ThemeContext.jsx";
 import { API_BASE } from "../api.js";
 import { FONT } from "../constants.js";
-import { todayKey, fmtDate } from "../helpers.js";
+import { todayKey, fmtDate, isNativeIOS } from "../helpers.js";
 import { Icon } from "./Icon.jsx";
 
 export const CoachTab = ({ profile, setProfile, mealPlan, mealLog, workoutLog, entries, isAdmin=false }) => {
@@ -172,6 +172,7 @@ For example:
           messages: newMessages.filter(m => m.role !== "system").slice(-15),
           profile,
           context,
+          isNativeIOS: isNativeIOS(),
         }),
       });
       const data = await res.json();

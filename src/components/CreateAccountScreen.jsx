@@ -4,6 +4,7 @@ import { API_BASE } from "../api.js";
 import { useTheme } from "../ThemeContext.jsx";
 import { FONT } from "../constants.js";
 import { Btn, TInput } from "./ui.jsx";
+import { isNativeIOS } from "../helpers.js";
 
 export const CreateAccountScreen = ({ profileData, onDone }) => {
   const C = useTheme();
@@ -138,7 +139,7 @@ export const CreateAccountScreen = ({ profileData, onDone }) => {
         </p>
 
         {mode === "create" && <p style={{ color:C.muted, fontSize:12, textAlign:"center", lineHeight:1.6, margin:0 }}>
-          By continuing you agree to our terms. Your 7-day free trial starts now. Cancel anytime.
+          By continuing you agree to our terms. Your 7-day free trial starts now.{!isNativeIOS() && " Cancel anytime."}
         </p>}
       </div>
     </div>

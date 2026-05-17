@@ -6,7 +6,7 @@ LeanPlan is a React PWA fitness and nutrition app. Built by Kevin Grey (solo dev
 - **App:** https://app.leanplan.uk (React PWA)
 - **Landing page:** https://www.leanplan.uk (standalone HTML)
 
-**Current update number: 164**
+**Current update number: 168**
 
 ---
 
@@ -38,8 +38,9 @@ LeanPlan is a React PWA fitness and nutrition app. Built by Kevin Grey (solo dev
 - `ADMIN_EMAILS` — comma-separated emails with permanent Pro access (e.g. `kevg1973@gmail.com`)
 - `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`
 - `RESEND_API_KEY`
-- `UNSPLASH_ACCESS_KEY` — Unsplash image API for meal photos
+- `UNSPLASH_ACCESS_KEY` — Unsplash image API for meal photos (replaced Pexels)
 - `CRON_SECRET` — secret header for cron-job.org trial reminder endpoint
+- Note: `VITE_API_URL` must NOT be set on Railway — leave unset so `API_BASE` defaults to `""` and relative URLs work for PWA
 
 ---
 
@@ -249,6 +250,11 @@ Deferred — UI stub exists, shows "coming soon".
 - ✅ Finish workout button — workout only logged on explicit completion
 - ✅ Equipment/injury changes clear active workout session
 - ✅ Ingredient pools expanded — omnivore 5→17 proteins, veg 6→18, fruit 4→13, nuts/seeds category added
+- ✅ Capacitor iOS wrapper — `com.leanplan.app` bundle ID, Xcode project configured, signing set up with Kevin Grey Apple Developer account (J4QNL8WNYB)
+- ✅ API base URL — `src/api.js` exports `API_BASE`, all 11 fetch call sites updated across 8 files to use `API_BASE` prefix so native iOS build hits Railway backend
+- ✅ Safe area fixes — nav bar fixed position, spacer div for home indicator, `AppDelegate.swift` WebView bounce disable and edge-to-edge constraints
+- ✅ App Store Connect listing — description, keywords, promotional text, screenshots uploaded, all metadata complete
+- ✅ App Store build archived and ready to upload via Xcode Organiser
 
 ---
 
@@ -270,6 +276,15 @@ Deferred — UI stub exists, shows "coming soon".
 - `server.js` routes by `req.hostname` — `app.leanplan.uk` gets React app, everything else gets landing page
 - `fetchMealImage(mealName, imageQuery)` in server.js checks `meal_images` table first, falls back to Unsplash API using AI-generated `imageQuery`, caches result — each meal name only calls Unsplash once
 - `src/data/meals.js` was deleted — `ALL_MEALS` and `filterMeals` were dead code from the v1 meal system, never used by the current AI-generated v3 system
+
+---
+
+## Key Learnings
+- Magic links permanently abandoned in PWA — use server-generated temp passwords via Resend
+- `VITE_API_URL` in local `.env` = `https://app.leanplan.uk` for iOS native build; must not be set on Railway
+- `ios/` folder not committed — regenerate locally with `npx cap sync ios`
+- Archive for App Store: select Any iOS Device (arm64) → Product → Archive → Window → Organiser → Distribute App
+- macOS Tahoe 26 required for Xcode 26.5 RC which is required for iOS 26 device support and App Store submission
 
 ---
 

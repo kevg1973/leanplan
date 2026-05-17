@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useTheme } from "../ThemeContext.jsx";
 import { API_BASE } from "../api.js";
 import { FONT } from "../constants.js";
-import { todayKey, fmtDate, calcTDEE, getPace } from "../helpers.js";
+import { todayKey, fmtDate, calcTDEE, getPace, isNativeIOS } from "../helpers.js";
 import { SUPPS, SHOPPING } from "../data/workouts.js";
 import { Icon } from "./Icon.jsx";
 import { Card, Btn, Chip, ProgressBar } from "./ui.jsx";
@@ -376,7 +376,7 @@ export const MealsTab = ({ profile, favourites, setFavourites, removed, setRemov
                 </Btn>
                 {generateError && <p style={{ color:C.red, fontSize:13, textAlign:"center", marginTop:6 }}>{generateError}</p>}
               </div>
-            ) : (
+            ) : isNativeIOS() ? null : (
               <div>
                 <Btn onClick={onUpgrade} color="#5856d6" style={{ width:"100%", padding:"11px 0" }}>✦ Unlock AI Meal Planning — Pro</Btn>
                 <p style={{ color:C.muted, fontSize:12, textAlign:"center", marginTop:6 }}>Generate a full {planDays}-day personalised meal plan</p>

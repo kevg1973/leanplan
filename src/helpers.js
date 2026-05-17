@@ -1,4 +1,10 @@
+import { Capacitor } from "@capacitor/core";
 import { TRIAL_DAYS } from "./constants.js";
+
+// ── Platform detection ───────────────────────────────────────────────────────
+// Returns true when the app is running inside the native iOS Capacitor build.
+// Used to hide subscription/paywall UI on iOS (App Store guideline 3.1.1).
+export const isNativeIOS = () => Capacitor.getPlatform() === "ios";
 
 export const toKg = lbs => (lbs * 0.453592).toFixed(1);
 export const fromKg = kg => parseFloat((kg * 2.20462).toFixed(1));

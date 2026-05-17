@@ -1,10 +1,15 @@
 import React, { useState } from "react";
 import { useTheme } from "../ThemeContext.jsx";
 import { API_BASE } from "../api.js";
+import { isNativeIOS } from "../helpers.js";
 import { Btn } from "./ui.jsx";
 import { Icon } from "./Icon.jsx";
 
 export const PaywallModal = ({ onClose }) => {
+  // On native iOS, the paywall is hidden entirely (App Store guideline 3.1.1).
+  // Subscriptions must be handled via the web at leanplan.uk.
+  if (isNativeIOS()) return null;
+
   const C = useTheme();
   const [selectedPlan, setSelectedPlan] = useState("annual");
   const [loading, setLoading] = useState(false);

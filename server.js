@@ -1491,7 +1491,7 @@ Return this JSON:
 
 // ── Chat endpoint ─────────────────────────────────────────────────────────────
 app.post("/api/chat", async (req, res) => {
-  const { messages, profile, context } = req.body;
+  const { messages, profile, context, isNativeIOS = false } = req.body;
   if (!messages || !Array.isArray(messages)) return res.status(400).json({ error: "Invalid request" });
 
   const injuries = profile?.injuries?.filter(i=>i!=="none")?.join(", ") || "none";
@@ -1560,11 +1560,17 @@ Your role:
 
 Keep responses warm, concise and practical — 2-4 sentences. Only include an ACTION line if there's a genuine profile update to make.`;
 
+  // App Store guideline 3.1.1: on the native iOS app the coach must not
+  // discuss pricing/subscriptions or refer the user off-app.
+  const finalSystemPrompt = isNativeIOS
+    ? systemPrompt + "\n\nThis user is on the iOS app. Do not discuss pricing, subscriptions, billing, payment, or refer the user to any website or external page. If asked about cost or subscribing, say that subscription is managed outside the app and you cannot help with it here."
+    : systemPrompt;
+
   try {
     const response = await client.messages.create({
       model: "claude-sonnet-4-20250514",
       max_tokens: 500,
-      system: systemPrompt,
+      system: finalSystemPrompt,
       messages: messages.map(m => ({ role: m.role, content: m.content })),
     });
 

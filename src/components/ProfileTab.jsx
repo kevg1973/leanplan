@@ -3,7 +3,7 @@ import { supabase } from "../supabase.js";
 import { API_BASE } from "../api.js";
 import { useTheme } from "../ThemeContext.jsx";
 import { FONT, ALLERGENS, DISLIKES_LIST } from "../constants.js";
-import { toKg, calcTDEE, calcBMI, getPace } from "../helpers.js";
+import { toKg, calcTDEE, calcBMI, getPace, isNativeIOS } from "../helpers.js";
 import { Card, Section, Row, Btn, BigChip, Toggle, TInput } from "./ui.jsx";
 import { PacePicker } from "./PacePicker.jsx";
 import { AvatarCropModal } from "./AvatarCropModal.jsx";
@@ -576,7 +576,9 @@ export const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride,
               <p style={{ color:C.green, fontWeight:700, fontSize:15, margin:0 }}>✓ LeanPlan Pro</p>
               <p style={{ color:C.muted, fontSize:12, margin:"2px 0 0" }}>{proData?.plan === "annual" ? "Annual plan" : "Monthly plan"}</p>
             </div>
-            {proData?.customerId && proData.customerId !== "bypass" && (
+            {/* Manage Subscription opens the Stripe billing portal — hidden on
+                native iOS per App Store guideline 3.1.1 (no external payment links). */}
+            {!isNativeIOS() && proData?.customerId && proData.customerId !== "bypass" && (
               <Btn small outline color={C.green} onClick={async()=>{
                 try {
                   const res = await fetch(`${API_BASE}/api/stripe/portal`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({customerId:proData.customerId})});
@@ -597,7 +599,7 @@ export const ProfileTab = ({ profile, setProfile, onReset, isDark, darkOverride,
             </div>
           </div>
         </div>
-      ) : (
+      ) : isNativeIOS() ? null : (
         <Btn onClick={onUpgrade} color="#5856d6" style={{ width:"100%", marginBottom:16 }}>✦ Upgrade to Pro from £14.99/mo</Btn>
       )}
 
