@@ -29,7 +29,7 @@ export const WeeklyCheckIn = ({ profile, onDone, onAddEntry }) => {
 
   return (
     <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.7)", display:"flex", alignItems:"flex-end", justifyContent:"center", zIndex:200, fontFamily:FONT }}>
-      <div style={{ background:C.bg, borderRadius:"20px 20px 0 0", padding:"24px 20px 40px", width:"100%", maxWidth:480 }}>
+      <div style={{ background:C.bg, borderRadius:"20px 20px 0 0", padding:"24px 20px", paddingBottom:"calc(env(safe-area-inset-bottom) + 80px)", width:"100%", maxWidth:480 }}>
         {done ? (
           <div style={{ textAlign:"center", padding:"20px 0" }}>
             <div style={{ fontSize:48, marginBottom:12 }}>🎯</div>

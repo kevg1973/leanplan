@@ -50,7 +50,7 @@ export const GoalReachedScreen = ({ profile, weightEntries, workoutLog, onMainte
       ];
 
   return (
-    <div style={{ position:"fixed", inset:0, zIndex:9999, background:"#0d1117", overflow:"auto", fontFamily:FONT }}>
+    <div style={{ position:"fixed", inset:0, zIndex:9999, background:"#0d1117", overflow:"auto", fontFamily:FONT, paddingBottom:"calc(env(safe-area-inset-bottom) + 40px)" }}>
       <div style={{ maxWidth:440, margin:"0 auto", padding:"60px 24px 48px", textAlign:"center" }}>
 
         {/* Trophy */}

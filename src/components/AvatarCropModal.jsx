@@ -19,7 +19,7 @@ export const AvatarCropModal = ({ url, onSave, onCancel, saving, croppieRef }) =
   }, []);
 
   return (
-    <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0, zIndex:9999, background:"#000", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"20px 0" }}>
+    <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0, zIndex:9999, background:"#000", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"20px 0", paddingBottom:"calc(env(safe-area-inset-bottom) + 40px)" }}>
       <p style={{ color:"#fff", fontSize:16, fontWeight:700, marginBottom:20, fontFamily:FONT }}>Drag & pinch to adjust</p>
       <div id="croppie-mount" />
       <div style={{ display:"flex", gap:12, marginTop:28 }}>

@@ -419,7 +419,7 @@ export const MealsTab = ({ profile, favourites, setFavourites, removed, setRemov
         {/* Swap confirmation modal */}
         {swapConfirm && (
           <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.6)", zIndex:1000, display:"flex", alignItems:"flex-end", justifyContent:"center" }}>
-            <div style={{ background:C.card, borderRadius:"20px 20px 0 0", padding:"24px 20px 40px", width:"100%", maxWidth:480 }}>
+            <div style={{ background:C.card, borderRadius:"20px 20px 0 0", padding:"24px 20px", paddingBottom:"calc(env(safe-area-inset-bottom) + 80px)", width:"100%", maxWidth:480 }}>
               <p style={{ color:C.text, fontWeight:800, fontSize:18, margin:"0 0 8px" }}>Swap this meal?</p>
               <p style={{ color:C.muted, fontSize:14, lineHeight:1.6, margin:"0 0 6px" }}>We'll find a different <strong style={{ color:C.text }}>{swapConfirm.type}</strong> with the same calories and protein so your daily targets stay on track.</p>
               <div style={{ background:C.sectionBg, borderRadius:12, padding:"10px 14px", marginBottom:20 }}>
